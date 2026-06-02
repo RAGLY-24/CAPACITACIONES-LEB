@@ -1,0 +1,13 @@
+# Bloquear credenciales y configuraciones locales
+.env
+.env.production
+*.local
+
+# Bloquear carpetas pesadas de dependencias
+node_modules/
+vendor/
+
+# Archivos temporales o de sistema
+.DS_Store
+Thumbs.db
+.phpunit.result.cache
