@@ -4,10 +4,16 @@ import axios from "axios";
 function Usuarios() {
   // --- ESTADOS PRINCIPALES ---
   const [usuarios, setUsuarios] = useState([]);
+  const [puestos, setPuestos] = useState([]);
+  const [nuevoPuesto, setNuevoPuesto] = useState("");
+  const [errorPuesto, setErrorPuesto] = useState("");
+  const [editarPuestoId, setEditarPuestoId] = useState(null);
+  const [editarPuestoNombre, setEditarPuestoNombre] = useState("");
   const [cargando, setCargando] = useState(true);
   
-  // --- SIMULACIÓN DE SESIÓN ---
-  const usuarioLogueado = { id: 1, rol: 'SistemasAdmin' };
+  // --- Usuario autenticado (desde localStorage) ---
+  const storedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
+  const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
 
   // --- ESTADOS PARA MODALES Y FORMULARIOS ---
   const [modalType, setModalType] = useState(null); // 'crear', 'editar', 'eliminar', o null
@@ -24,6 +30,7 @@ function Usuarios() {
 
   useEffect(() => {
     obtenerUsuarios();
+    obtenerPuestos();
   }, []);
 
   const obtenerUsuarios = async () => {
@@ -38,6 +45,15 @@ function Usuarios() {
     }
   };
 
+  const obtenerPuestos = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/api/puestos");
+      setPuestos(response.data);
+    } catch (err) {
+      console.error("Error al obtener puestos:", err);
+    }
+  };
+
   // --- CONTROLADORES DE ENTRADA Y DIRTY STATE ---
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,6 +63,82 @@ function Usuarios() {
     // Limpiar error específico si el usuario empieza a escribir
     if (erroresForm[name]) {
       setErroresForm({ ...erroresForm, [name]: null });
+    }
+  };
+
+  const handleNuevoPuestoChange = (e) => {
+    setNuevoPuesto(e.target.value);
+    if (errorPuesto) {
+      setErrorPuesto("");
+    }
+  };
+
+  const crearPuesto = async () => {
+    if (!nuevoPuesto.trim()) {
+      setErrorPuesto("Ingrese un nombre de puesto.");
+      return;
+    }
+
+    try {
+      await axios.post("http://localhost:8000/api/puestos", { nombre: nuevoPuesto.trim() });
+      setNuevoPuesto("");
+      obtenerPuestos();
+      alert("Puesto agregado correctamente.");
+    } catch (err) {
+      if (err.response && err.response.status === 422) {
+        setErrorPuesto(err.response.data.errors?.nombre?.[0] || "Error al crear el puesto.");
+      } else {
+        console.error(err);
+        setErrorPuesto("No se pudo crear el puesto. Revise la consola.");
+      }
+    }
+  };
+
+  const editarPuesto = (puesto) => {
+    setEditarPuestoId(puesto.id);
+    setEditarPuestoNombre(puesto.nombre);
+    setErrorPuesto("");
+  };
+
+  const guardarEdicionPuesto = async () => {
+    if (!editarPuestoNombre.trim()) {
+      setErrorPuesto("Ingrese un nombre de puesto.");
+      return;
+    }
+
+    try {
+      await axios.put(`http://localhost:8000/api/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
+      setEditarPuestoId(null);
+      setEditarPuestoNombre("");
+      obtenerPuestos();
+      alert("Puesto actualizado correctamente.");
+    } catch (err) {
+      if (err.response && err.response.status === 422) {
+        setErrorPuesto(err.response.data.errors?.nombre?.[0] || "Error al editar el puesto.");
+      } else if (err.response && err.response.status === 403) {
+        setErrorPuesto(err.response.data.message || "Acción denegada.");
+      } else {
+        console.error(err);
+        setErrorPuesto("No se pudo editar el puesto. Revise la consola.");
+      }
+    }
+  };
+
+  const eliminarPuesto = async (id) => {
+    const confirmar = window.confirm("¿Eliminar este puesto? Esto puede dejar usuarios sin puesto.");
+    if (!confirmar) return;
+
+    try {
+      await axios.delete(`http://localhost:8000/api/puestos/${id}`);
+      obtenerPuestos();
+      alert("Puesto eliminado correctamente.");
+    } catch (err) {
+      if (err.response && err.response.status === 403) {
+        alert(err.response.data.message || "Acción denegada.");
+      } else {
+        console.error(err);
+        alert("No se pudo eliminar el puesto. Revise la consola.");
+      }
     }
   };
 
@@ -260,8 +352,9 @@ function Usuarios() {
                 <label className="mb-1 block text-sm font-semibold text-gray-700">Puesto <span className="text-red-500">*</span></label>
                 <select name="puesto_id" value={formData.puesto_id} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
                   <option value="">Seleccione un puesto</option>
-                  <option value="1">SistemasAdmin</option>
-                  <option value="2">Recursos Humanos</option>
+                  {puestos.map((puesto) => (
+                    <option key={puesto.id} value={puesto.id}>{puesto.nombre}</option>
+                  ))}
                 </select>
                 {erroresForm.puesto_id && <p className="mt-1 text-xs text-red-500">{erroresForm.puesto_id}</p>}
               </div>
@@ -301,6 +394,59 @@ function Usuarios() {
           </div>
         </div>
       )}
+
+      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800">Agregar puesto</h3>
+            <p className="text-sm text-gray-500">Los puestos creados aquí no tendrán permisos de SistemasAdmin.</p>
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+          <div>
+            <input
+              type="text"
+              value={nuevoPuesto}
+              onChange={handleNuevoPuestoChange}
+              placeholder="Nombre del puesto"
+              className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none"
+            />
+            {errorPuesto && <p className="mt-1 text-xs text-red-500">{errorPuesto}</p>}
+          </div>
+          <button onClick={crearPuesto} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802]">
+            Guardar puesto
+          </button>
+        </div>
+        <div className="mt-6">
+          <h4 className="mb-3 text-sm font-semibold text-gray-700">Puestos existentes</h4>
+          <ul className="space-y-2">
+            {puestos.map((puesto) => (
+              <li key={puesto.id} className="flex items-center justify-between rounded-md border border-gray-200 p-3 bg-white">
+                <div className="flex items-center gap-4">
+                  {editarPuestoId === puesto.id ? (
+                    <input value={editarPuestoNombre} onChange={(e) => setEditarPuestoNombre(e.target.value)} className="rounded-md border border-gray-300 p-1" />
+                  ) : (
+                    <span className="font-medium text-gray-800">{puesto.nombre}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {editarPuestoId === puesto.id ? (
+                    <>
+                      <button onClick={guardarEdicionPuesto} className="rounded-md bg-green-600 px-3 py-1 text-white text-sm">Guardar</button>
+                      <button onClick={() => { setEditarPuestoId(null); setEditarPuestoNombre(""); setErrorPuesto(""); }} className="rounded-md border px-3 py-1 text-sm">Cancelar</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => editarPuesto(puesto)} className="rounded-md border px-3 py-1 text-sm">Editar</button>
+                      <button onClick={() => eliminarPuesto(puesto.id)} className="rounded-md border px-3 py-1 text-sm text-red-600">Eliminar</button>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       {/* MODAL: ELIMINAR USUARIO */}
       {modalType === 'eliminar' && (

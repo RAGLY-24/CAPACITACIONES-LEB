@@ -7,12 +7,12 @@ import fondoLogin from '../assets/paisaje-fondo-2.jpg';
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(''); // <-- Nuevo estado para mostrar errores de login
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Limpiamos cualquier error previo al intentar de nuevo
+    setError('');
 
     try {
       // 1. Hacemos la petición a tu backend de Laravel
@@ -24,6 +24,11 @@ function Login() {
       // 2. Si Laravel nos dice que todo está bien
       if (response.data.status === 'success') {
         console.log("Acceso concedido. Datos del usuario:", response.data.user);
+
+        // Guardamos el token y el usuario en el almacenamiento del navegador
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        // ------------------------------------------------
 
         // 3. Navegamos automáticamente a la pantalla de administrador
         navigate('/admin');
@@ -57,7 +62,6 @@ function Login() {
           <span className="mb-6 text-center font-['Segoe_UI',Arial,sans-serif] text-[18px] font-semibold text-[#737373]">
             Capacitaciones
           </span>
-
         </div>
 
         <h1 className="mb-4 text-[24px] font-semibold text-[#1b1b1b]">Iniciar sesión</h1>

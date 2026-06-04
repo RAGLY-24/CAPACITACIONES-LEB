@@ -7,12 +7,12 @@ function AdminPanel() {
 
   const navigate = useNavigate();
 
-  // 1. --- SIMULACIÓN DEL USUARIO LOGUEADO ---
-  // (En el futuro, esto vendrá de tu Contexto de Autenticación / Backend)
-  const usuarioLogueado = { 
-    id: 1, 
-    nombre: "Administrador", 
-    rol: "SistemasAdmin" // Prueba a cambiar esto por "Recursos Humanos" para ver la magia
+  // 1. --- Usuario autenticado (desde localStorage) ---
+  const storedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
+  const usuarioLogueado = {
+    id: storedUser?.id || null,
+    nombre: storedUser?.name || storedUser?.nombre || 'Invitado',
+    rol: storedUser?.puesto?.nombre || null,
   };
 
   const handleLogout = () => {
@@ -98,16 +98,27 @@ function AdminPanel() {
           >
             Noticias
           </button>
-          <button
-            onClick={() => irA('/admin/contenido')}
-            className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white"
-          >
-            Editar Contenido
-          </button>
+          {/* Mostrar Editar Contenido solo a SistemasAdmin */}
+          {usuarioLogueado.rol === 'SistemasAdmin' && (
+            <button
+              onClick={() => irA('/admin/contenido')}
+              className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white"
+            >
+              Editar Contenido
+            </button>
+          )}
 
           {/* 2. --- PROTECCIÓN DEL BOTÓN USUARIOS --- */}
           {/* Solo se dibuja si el rol es SistemasAdmin */}
-          {usuarioLogueado.rol === 'SistemasAdmin' && (
+          {/* Para usuarios que NO son SistemasAdmin mostramos Capacitaciones */}
+          {usuarioLogueado.rol !== 'SistemasAdmin' ? (
+            <button
+              onClick={() => irA('/admin/capacitaciones')}
+              className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white"
+            >
+              Capacitaciones
+            </button>
+          ) : (
             <button
               onClick={() => irA('/admin/usuarios')}
               className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white"

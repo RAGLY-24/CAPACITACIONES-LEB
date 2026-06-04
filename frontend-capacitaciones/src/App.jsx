@@ -4,6 +4,7 @@ import AdminPanel from "./views/AdminPanel";
 import Noticias from "./views/Noticias";
 import Contenido from "./views/Contenido";
 import Usuarios from "./views/Usuarios";
+import Capacitaciones from "./views/Capacitaciones";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           {/* Rutas Hijas */}
           <Route path="noticias" element={<Noticias />} />
           <Route path="contenido" element={<Contenido />} />
+          <Route path="capacitaciones" element={<Capacitaciones />} />
           <Route path="usuarios" element={<Usuarios />} />
         </Route>
       </Routes>

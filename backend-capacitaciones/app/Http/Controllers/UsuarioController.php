@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -49,7 +48,7 @@ class UsuarioController extends Controller
             'usuario' => $request->usuario,
             'puesto_id' => $request->puesto_id,
             'estado' => $request->estado,
-            'password' => Hash::make($request->password), // ¡NUNCA guardar contraseñas en texto plano!
+            'password' => $request->password,
         ]);
 
         // 3. Respuesta de éxito
@@ -69,17 +68,22 @@ class UsuarioController extends Controller
             'name' => 'required|string|max:255',
             'lastname' => 'nullable|string|max:255',
             'email' => [
-                'required', 'string', 'email', 'max:255',
+                'required',
+                'string',
+                'email',
+                'max:255',
                 Rule::unique('users')->ignore($usuario->id),
             ],
             'usuario' => [
-                'required', 'string', 'max:255',
+                'required',
+                'string',
+                'max:255',
                 Rule::unique('users')->ignore($usuario->id),
             ],
             'puesto_id' => 'required|exists:puestos,id',
             'estado' => 'required|in:Activo,Inactivo',
             'password' => [
-                'nullable', // Es opcional al editar
+                'nullable',
                 'string',
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/'
             ],
@@ -97,7 +101,7 @@ class UsuarioController extends Controller
 
         // Solo actualizar la contraseña si el usuario escribió una nueva
         if ($request->filled('password')) {
-            $datosUpdate['password'] = Hash::make($request->password);
+            $datosUpdate['password'] = $request->password;
         }
 
         // 3. Ejecutar actualización

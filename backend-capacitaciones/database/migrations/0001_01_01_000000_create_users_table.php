@@ -19,12 +19,14 @@ return new class extends Migration {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('lastname')->unique()->nullable();
+            $table->string('lastname')->nullable();
             $table->string('email')->unique();
-            $table->string('usuario')->unique()->nullable();
-            $table->foreignId('puesto_id')->nullable()->constrained('puestos')->onDelete('set null'); //Tabla relacional 
+            $table->string('usuario')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->foreignId('puesto_id')->nullable()->constrained('puestos')->onDelete('set null');
             $table->string('estado')->default('Activo');
             $table->string('password');
+            $table->rememberToken();
             $table->timestamps();
         });
 
