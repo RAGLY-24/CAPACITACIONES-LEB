@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 function Usuarios() {
   // --- ESTADOS PRINCIPALES ---
@@ -10,7 +11,7 @@ function Usuarios() {
   const [editarPuestoId, setEditarPuestoId] = useState(null);
   const [editarPuestoNombre, setEditarPuestoNombre] = useState("");
   const [cargando, setCargando] = useState(true);
-  
+
   // --- Usuario autenticado (desde localStorage) ---
   const storedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
   const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
@@ -23,7 +24,7 @@ function Usuarios() {
 
   // Estado inicial vacío para el formulario
   const estadoInicialForm = {
-    name: "", lastname: "", email: "", usuario: "", 
+    name: "", lastname: "", email: "", usuario: "",
     password: "", confirmPassword: "", puesto_id: "", estado: "Activo"
   };
   const [formData, setFormData] = useState(estadoInicialForm);
@@ -59,7 +60,7 @@ function Usuarios() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     setIsDirty(true); // El usuario ya modificó algo
-    
+
     // Limpiar error específico si el usuario empieza a escribir
     if (erroresForm[name]) {
       setErroresForm({ ...erroresForm, [name]: null });
@@ -106,20 +107,57 @@ function Usuarios() {
       return;
     }
 
+    // 1. Mostrar pantalla de carga
+    Swal.fire({
+      title: 'Procesando...',
+      text: 'Actualizando el nombre del puesto.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     try {
       await axios.put(`http://localhost:8000/api/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
+
+      // Limpiar estados y recargar la lista
       setEditarPuestoId(null);
       setEditarPuestoNombre("");
       obtenerPuestos();
-      alert("Puesto actualizado correctamente.");
+
+      // 2. Mostrar pantalla de éxito al terminar
+      Swal.fire({
+        icon: 'success',
+        title: '¡Actualizado!',
+        text: 'Puesto actualizado correctamente.',
+        confirmButtonColor: '#802907'
+      });
+
     } catch (err) {
+      // 3. Cerrar la alerta de carga si algo sale mal
+      Swal.close();
+
+      // Logica de errores
       if (err.response && err.response.status === 422) {
         setErrorPuesto(err.response.data.errors?.nombre?.[0] || "Error al editar el puesto.");
       } else if (err.response && err.response.status === 403) {
         setErrorPuesto(err.response.data.message || "Acción denegada.");
+        // Error de permisos
+        Swal.fire({
+          icon: 'error',
+          title: 'Acción denegada',
+          text: err.response.data.message || "No tienes permisos para esta acción.",
+          confirmButtonColor: '#802907'
+        });
       } else {
         console.error(err);
         setErrorPuesto("No se pudo editar el puesto. Revise la consola.");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de conexión',
+          text: 'No se pudo contactar con el servidor.',
+          confirmButtonColor: '#802907'
+        });
       }
     }
   };
@@ -157,12 +195,12 @@ function Usuarios() {
 
     // Validaciones de Contraseña (Diferente si es Crear o Editar)
     if (modalType === 'crear') {
-      if (!formData.password) nuevosErrores.password = "La contraseña es obligatoria.";
+      if (!formData.password) nuevosErrores.password = "La contraseña es obligatoria y debe tener mín. 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial.";
       else if (!regexPassword.test(formData.password)) nuevosErrores.password = "Debe tener mín. 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial.";
-      
+
       if (formData.password !== formData.confirmPassword) nuevosErrores.confirmPassword = "Las contraseñas no coinciden.";
     } else if (modalType === 'editar' && formData.password) {
-      if (!regexPassword.test(formData.password)) nuevosErrores.password = "No cumple los requisitos de seguridad.";
+      if (!regexPassword.test(formData.password)) nuevosErrores.password = "Debe tener mín. 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial.";
       if (formData.password !== formData.confirmPassword) nuevosErrores.confirmPassword = "Las contraseñas no coinciden.";
     }
 
@@ -198,17 +236,40 @@ function Usuarios() {
     setModalType('eliminar');
   };
 
+  /*   const cerrarModal = () => {
+      if (isDirty) {
+        const confirmar = window.confirm("Tienes cambios sin guardar. ¿Deseas salir y descartarlos?");
+        if (!confirmar) return;
+      }
+      setModalType(null);
+      setUsuarioSeleccionado(null);
+    }; */
   const cerrarModal = () => {
     if (isDirty) {
-      const confirmar = window.confirm("Tienes cambios sin guardar. ¿Deseas salir y descartarlos?");
-      if (!confirmar) return;
+      Swal.fire({
+        title: '¿Tienes cambios sin guardar!',
+        text: "¿Estás seguro de que deseas salir y descartar todo?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, descartar',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setModalType(null);
+          setUsuarioSeleccionado(null);
+        }
+      });
+      return;
     }
+
     setModalType(null);
     setUsuarioSeleccionado(null);
   };
 
   // --- ENVÍO DE DATOS (SUBMIT) ---
-  const guardarUsuario = async (e) => {
+  /* const guardarUsuario = async (e) => {
     e.preventDefault();
     if (!validarFormulario()) return;
 
@@ -218,19 +279,19 @@ function Usuarios() {
       } else {
         await axios.put(`http://localhost:8000/api/usuarios/${formData.id}`, formData);
       }
-      
-      obtenerUsuarios(); 
-      setIsDirty(false); 
-      setModalType(null); 
-      alert("¡Usuario guardado con éxito!"); 
-      
+
+      obtenerUsuarios();
+      setIsDirty(false);
+      setModalType(null);
+      alert("¡Usuario guardado con éxito!");
+
     } catch (err) {
       if (err.response && err.response.status === 422) {
         const erroresBackend = err.response.data.errors;
         const mapeoErrores = {};
-        
+
         Object.keys(erroresBackend).forEach(key => {
-            mapeoErrores[key] = erroresBackend[key][0]; 
+          mapeoErrores[key] = erroresBackend[key][0];
         });
 
         setErroresForm(mapeoErrores);
@@ -239,18 +300,119 @@ function Usuarios() {
         alert("Ocurrió un error inesperado al conectar con el servidor. Revisa la consola (F12).");
       }
     }
+  }; */
+  // --- ENVÍO DE DATOS (SUBMIT) ---
+  const guardarUsuario = async (e) => {
+    e.preventDefault();
+    if (!validarFormulario()) return;
+
+    // 1. Mostrar pantalla de cargando que no se puede cerrar con clics afuera
+    Swal.fire({
+      title: 'Procesando...',
+      text: 'Guardando la información del usuario',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      if (modalType === 'crear') {
+        await axios.post("http://localhost:8000/api/usuarios", formData);
+      } else {
+        await axios.put(`http://localhost:8000/api/usuarios/${formData.id}`, formData);
+      }
+
+      obtenerUsuarios(); // Recargar tabla
+      setIsDirty(false); // Limpiar estado sucio
+      setModalType(null); // Cerrar modal de React
+
+      // 2. Cambiar a pantalla de éxito
+      Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: modalType === 'crear' ? 'El usuario fue creado correctamente.' : 'Los cambios fueron guardados.',
+        confirmButtonColor: '#802907'
+      });
+
+    } catch (err) {
+      // 3. Cerrar el modal de carga antes de mostrar errores
+      Swal.close();
+
+      if (err.response && err.response.status === 422) {
+        const erroresBackend = err.response.data.errors;
+        const mapeoErrores = {};
+
+        Object.keys(erroresBackend).forEach(key => {
+          mapeoErrores[key] = erroresBackend[key][0];
+        });
+
+        setErroresForm(mapeoErrores);
+      } else {
+        console.error("Error completo:", err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error del servidor',
+          text: 'Ocurrió un problema al conectar con la base de datos.',
+          confirmButtonColor: '#802907'
+        });
+      }
+    }
   };
 
+  // const confirmarEliminacion = async () => {
+  //   try {
+  //     await axios.delete(`http://localhost:8000/api/usuarios/${usuarioSeleccionado.id}`);
+  //     obtenerUsuarios();
+  //     setModalType(null);
+  //   } catch (err) {
+  //     if (err.response && err.response.status === 403) {
+  //       alert(err.response.data.message || "No se puede eliminar al último administrador.");
+  //     } else {
+  //       alert("Error al eliminar el usuario.");
+  //     }
+  //   }
+  // };
+
   const confirmarEliminacion = async () => {
+    // 1. Mostrar pantalla de eliminando
+    Swal.fire({
+      title: 'Eliminando...',
+      text: 'Dando de baja al usuario',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     try {
       await axios.delete(`http://localhost:8000/api/usuarios/${usuarioSeleccionado.id}`);
       obtenerUsuarios();
-      setModalType(null);
+      setModalType(null); // Cierra tu modal de eliminación de React
+
+      // 2. Pantalla de éxito
+      Swal.fire({
+        icon: 'success',
+        title: '¡Eliminado!',
+        text: 'El usuario ha sido borrado permanentemente.',
+        confirmButtonColor: '#802907'
+      });
+
     } catch (err) {
       if (err.response && err.response.status === 403) {
-        alert(err.response.data.message || "No se puede eliminar al último administrador.");
+        Swal.fire({
+          icon: 'warning',
+          title: 'Acción Bloqueada',
+          text: err.response.data.message || "No se puede eliminar al último administrador.",
+          confirmButtonColor: '#802907'
+        });
       } else {
-        alert("Error al eliminar el usuario.");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Hubo un problema al intentar eliminar este usuario.',
+          confirmButtonColor: '#802907'
+        });
       }
     }
   };
@@ -267,13 +429,13 @@ function Usuarios() {
 
   return (
     <div className="rounded-xl bg-white p-6 shadow-sm relative">
-      
+
       {/* CABECERA */}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Directorio de Usuarios</h2>
         </div>
-        <button 
+        <button
           onClick={abrirModalCrear}
           className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802]"
         >
@@ -302,8 +464,8 @@ function Usuarios() {
                   <button onClick={() => abrirModalEditar(user)} className="font-semibold text-blue-600 hover:underline">
                     Editar
                   </button>
-                  <button 
-                    onClick={() => abrirModalEliminar(user)} 
+                  <button
+                    onClick={() => abrirModalEliminar(user)}
                     disabled={user.id === usuarioLogueado.id}
                     className={`font-semibold ${user.id === usuarioLogueado.id ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:underline'}`}
                   >
@@ -323,7 +485,7 @@ function Usuarios() {
             <h2 className="mb-6 text-2xl font-bold text-gray-800">
               {modalType === 'crear' ? 'Crear Nuevo Usuario' : 'Editar Usuario'}
             </h2>
-            
+
             <form onSubmit={guardarUsuario} className="grid grid-cols-2 gap-6">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
@@ -359,7 +521,7 @@ function Usuarios() {
                 {erroresForm.puesto_id && <p className="mt-1 text-xs text-red-500">{erroresForm.puesto_id}</p>}
               </div>
 
-               <div>
+              <div>
                 <label className="mb-1 block text-sm font-semibold text-gray-700">Estado</label>
                 <select name="estado" value={formData.estado} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
                   <option value="Activo">Activo</option>
@@ -457,7 +619,7 @@ function Usuarios() {
             </svg>
             <h3 className="text-lg font-bold text-gray-900 mb-2">¿Estás seguro de que deseas eliminar a {usuarioSeleccionado?.name}?</h3>
             <p className="text-sm text-gray-500 mb-6">Esta acción borrará permanentemente la cuenta y no se puede deshacer.</p>
-            
+
             <div className="flex justify-center gap-4">
               <button onClick={cerrarModal} className="rounded-md border border-gray-300 px-6 py-2 font-semibold text-gray-700 hover:bg-gray-50">
                 Cancelar

@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Outlet, Navigate } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
 import logoEmpresa from '../assets/leb_logotipo.png';
 import fondoLogin from '../assets/paisaje-fondo-2.jpg';
 
@@ -10,31 +11,62 @@ function Login() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Si ya tiene token, leemos quién es y lo regresamos a su panel
+      const datosUsuario = localStorage.getItem('user');
+      const usuarioLogueado = datosUsuario ? JSON.parse(datosUsuario) : null;
+
+      if (usuarioLogueado && usuarioLogueado.puesto_id === 1) {
+        navigate('/admin/usuarios', { replace: true });
+      } else {
+        navigate('/admin/noticias', { replace: true });
+      }
+    }
+  }, [navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
+    // 1. Mostrar pantalla de carga interactiva
+    Swal.fire({
+      title: 'Iniciando Sesión...',
+      text: 'Por favor, espera un momento.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     try {
-      // 1. Hacemos la petición a tu backend de Laravel
       const response = await axios.post('http://localhost:8000/api/login', {
         usuario: email,
         password: password
       });
 
-      // 2. Si Laravel nos dice que todo está bien
       if (response.data.status === 'success') {
-        console.log("Acceso concedido. Datos del usuario:", response.data.user);
+        const usuarioLogueado = response.data.user;
 
-        // Guardamos el token y el usuario en el almacenamiento del navegador
         localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        // ------------------------------------------------
+        localStorage.setItem("user", JSON.stringify(usuarioLogueado));
 
-        // 3. Navegamos automáticamente a la pantalla de administrador
-        navigate('/admin');
+        Swal.close();
+
+        // REDIRECCIÓN INTELIGENTE
+        // Si el puesto es 1 (SistemasAdmin), mándalo a la vista de usuarios o contenido
+        if (usuarioLogueado.puesto_id === 1) {
+          navigate('/admin/usuarios', { replace: true });
+        } else {
+          // Si es cualquier otro puesto, mándalo directo a Noticias o Capacitaciones
+          navigate('/admin/noticias', { replace: true });
+        }
       }
     } catch (err) {
-      // 4. Si Laravel rechaza el login (Error 401)
+      // 3. Cerramos la alerta de carga si ocurre un error
+      Swal.close();
+
       if (err.response && err.response.status === 401) {
         setError("Usuario o contraseña incorrectos");
       } else {

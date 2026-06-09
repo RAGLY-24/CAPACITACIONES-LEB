@@ -5,7 +5,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\PuestoController;
-// Importamos tu middleware personalizado de seguridad
 use App\Http\Middleware\CheckSistemasAdmin;
 
 /*
@@ -31,13 +30,13 @@ Route::middleware(['auth:sanctum', CheckSistemasAdmin::class])->group(function (
 
     // Listar usuarios
     Route::get('/usuarios', [UsuarioController::class, 'index']);
-    
+
     // Crear usuario
     Route::post('/usuarios', [UsuarioController::class, 'store']);
-    
+
     // Editar usuario
     Route::put('/usuarios/{id}', [UsuarioController::class, 'update']);
-    
+
     // Eliminar usuario
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
 
