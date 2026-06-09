@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Outlet, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import logoEmpresa from '../assets/leb_logotipo.png';
@@ -11,6 +11,8 @@ function Login() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const getDefaultAdminPath = () => '/admin/noticias';
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -18,10 +20,8 @@ function Login() {
       const datosUsuario = localStorage.getItem('user');
       const usuarioLogueado = datosUsuario ? JSON.parse(datosUsuario) : null;
 
-      if (usuarioLogueado && usuarioLogueado.puesto_id === 1) {
-        navigate('/admin/usuarios', { replace: true });
-      } else {
-        navigate('/admin/noticias', { replace: true });
+      if (usuarioLogueado) {
+        navigate(getDefaultAdminPath(), { replace: true });
       }
     }
   }, [navigate]);
@@ -54,14 +54,8 @@ function Login() {
 
         Swal.close();
 
-        // REDIRECCIÓN INTELIGENTE
-        // Si el puesto es 1 (SistemasAdmin), mándalo a la vista de usuarios o contenido
-        if (usuarioLogueado.puesto_id === 1) {
-          navigate('/admin/usuarios', { replace: true });
-        } else {
-          // Si es cualquier otro puesto, mándalo directo a Noticias o Capacitaciones
-          navigate('/admin/noticias', { replace: true });
-        }
+        // REDIRECCIÓN INTELIGENTE: la pantalla de noticias es la predeterminada para todos
+        navigate(getDefaultAdminPath(), { replace: true });
       }
     } catch (err) {
       // 3. Cerramos la alerta de carga si ocurre un error

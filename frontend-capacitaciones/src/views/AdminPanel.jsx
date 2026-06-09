@@ -15,7 +15,12 @@ function AdminPanel() {
   // 1. Obtenemos el usuario real que inició sesión desde el almacenamiento del navegador
   const datosUsuario = localStorage.getItem('user');
   const usuarioLogueado = datosUsuario ? JSON.parse(datosUsuario) : {};
-  const esAdmin = usuarioLogueado.puesto_id === 1;
+  const esAdmin = usuarioLogueado.puesto?.nombre === 'SistemasAdmin';
+  const permisos = usuarioLogueado.permissions || {};
+  const muestraNoticias = permisos.news_access !== false;
+  const muestraUsuarios = esAdmin || permisos.create_users || permisos.delete_users || permisos.assign_permissions;
+  const muestraContenido = esAdmin || permisos.edit_trainings;
+  const muestraCapacitaciones = true;
 
   //Para no dejarlo entrar en caso de que no este iniciado sesion
   const token = localStorage.getItem('token');
@@ -137,26 +142,28 @@ function AdminPanel() {
         <div className="flex flex-col gap-2 p-4 mt-4">
 
           {/* --- VISIBLES PARA TODOS --- */}
-          <button onClick={() => irA('/admin/noticias')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
-            Noticias
-          </button>
+          {muestraNoticias && (
+            <button onClick={() => irA('/admin/noticias')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
+              Noticias
+            </button>
+          )}
 
-          {/* Aquí agregamos la pestaña de Capacitaciones */}
-          <button onClick={() => irA('/admin/capacitaciones')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
-            Capacitaciones
-          </button>
+          {muestraCapacitaciones && (
+            <button onClick={() => irA('/admin/capacitaciones')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
+              Capacitaciones
+            </button>
+          )}
 
-          {/* --- VISIBLES SOLO PARA ADMINISTRADORES --- */}
-          {esAdmin && (
-            <>
-              <button onClick={() => irA('/admin/contenido')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
-                Editar Contenido
-              </button>
+          {muestraContenido && (
+            <button onClick={() => irA('/admin/contenido')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
+              Editar Contenido
+            </button>
+          )}
 
-              <button onClick={() => irA('/admin/usuarios')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
-                Usuarios
-              </button>
-            </>
+          {muestraUsuarios && (
+            <button onClick={() => irA('/admin/usuarios')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
+              Usuarios
+            </button>
           )}
 
         </div>

@@ -15,6 +15,13 @@ function Usuarios() {
   // --- Usuario autenticado (desde localStorage) ---
   const storedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
   const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
+  const esAdmin = usuarioLogueado.rol === 'SistemasAdmin';
+  const permisosUsuario = storedUser?.permissions || {};
+  const puedeCrearUsuarios = esAdmin || permisosUsuario.create_users;
+  const puedeEliminarUsuarios = esAdmin || permisosUsuario.delete_users;
+  const puedeAsignarPermisos = esAdmin || permisosUsuario.assign_permissions;
+  const puedeVerUsuarios = puedeCrearUsuarios || puedeEliminarUsuarios || puedeAsignarPermisos;
+  const puedeEditarUsuarios = esAdmin || puedeAsignarPermisos;
 
   // --- ESTADOS PARA MODALES Y FORMULARIOS ---
   const [modalType, setModalType] = useState(null); // 'crear', 'editar', 'eliminar', o null
@@ -25,7 +32,16 @@ function Usuarios() {
   // Estado inicial vacío para el formulario
   const estadoInicialForm = {
     name: "", lastname: "", email: "", usuario: "",
-    password: "", confirmPassword: "", puesto_id: "", estado: "Activo"
+    password: "", confirmPassword: "", puesto_id: "", estado: "Activo",
+    permissions: {
+      create_users: false,
+      delete_users: false,
+      manage_news: false,
+      edit_trainings: false,
+      manage_passwords: false,
+      assign_permissions: false,
+      news_access: true,
+    }
   };
   const [formData, setFormData] = useState(estadoInicialForm);
 
@@ -65,6 +81,18 @@ function Usuarios() {
     if (erroresForm[name]) {
       setErroresForm({ ...erroresForm, [name]: null });
     }
+  };
+
+  const handlePermissionChange = (e) => {
+    const { name, checked } = e.target;
+    setFormData({
+      ...formData,
+      permissions: {
+        ...formData.permissions,
+        [name]: checked,
+      }
+    });
+    setIsDirty(true);
   };
 
   const handleNuevoPuestoChange = (e) => {
@@ -217,11 +245,24 @@ function Usuarios() {
   };
 
   const abrirModalEditar = (user) => {
-    if (user.puesto?.nombre === 'SistemasAdmin' && usuarioLogueado.rol !== 'SistemasAdmin') {
+    if (!puedeEditarUsuarios) {
+      alert("No tienes permisos para editar usuarios.");
+      return;
+    }
+
+    if (user.puesto?.nombre === 'SistemasAdmin' && !esAdmin) {
       alert("No tienes permisos para editar a un Administrador del sistema.");
       return;
     }
-    setFormData({ ...user, password: "", confirmPassword: "" });
+    setFormData({
+      ...user,
+      password: "",
+      confirmPassword: "",
+      permissions: {
+        ...estadoInicialForm.permissions,
+        ...user.permissions,
+      },
+    });
     setErroresForm({});
     setIsDirty(false);
     setModalType('editar');
@@ -306,7 +347,11 @@ function Usuarios() {
     e.preventDefault();
     if (!validarFormulario()) return;
 
-    // 1. Mostrar pantalla de cargando que no se puede cerrar con clics afuera
+    const payload = { ...formData };
+    if (usuarioLogueado.rol !== 'SistemasAdmin') {
+      delete payload.permissions;
+    }
+
     Swal.fire({
       title: 'Procesando...',
       text: 'Guardando la información del usuario',
@@ -318,16 +363,15 @@ function Usuarios() {
 
     try {
       if (modalType === 'crear') {
-        await axios.post("http://localhost:8000/api/usuarios", formData);
+        await axios.post("http://localhost:8000/api/usuarios", payload);
       } else {
-        await axios.put(`http://localhost:8000/api/usuarios/${formData.id}`, formData);
+        await axios.put(`http://localhost:8000/api/usuarios/${formData.id}`, payload);
       }
 
       obtenerUsuarios(); // Recargar tabla
       setIsDirty(false); // Limpiar estado sucio
       setModalType(null); // Cerrar modal de React
 
-      // 2. Cambiar a pantalla de éxito
       Swal.fire({
         icon: 'success',
         title: '¡Éxito!',
@@ -336,7 +380,6 @@ function Usuarios() {
       });
 
     } catch (err) {
-      // 3. Cerrar el modal de carga antes de mostrar errores
       Swal.close();
 
       if (err.response && err.response.status === 422) {
@@ -418,7 +461,7 @@ function Usuarios() {
   };
 
   // NUEVA PROTECCIÓN: Echar al intruso
-  if (usuarioLogueado.rol !== 'SistemasAdmin') {
+  if (!puedeVerUsuarios) {
     return (
       <div className="rounded-xl bg-white p-8 text-center shadow-sm border border-red-200">
         <h2 className="text-2xl font-bold text-red-600 mb-2">Acceso Denegado</h2>
@@ -435,12 +478,14 @@ function Usuarios() {
         <div>
           <h2 className="text-xl font-bold text-gray-800">Directorio de Usuarios</h2>
         </div>
-        <button
-          onClick={abrirModalCrear}
-          className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802]"
-        >
-          + Crear Nuevo Usuario
-        </button>
+        {puedeCrearUsuarios && (
+          <button
+            onClick={abrirModalCrear}
+            className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802]"
+          >
+            + Crear Nuevo Usuario
+          </button>
+        )}
       </div>
 
       {/* TABLA */}
@@ -461,13 +506,17 @@ function Usuarios() {
                 <td className="px-6 py-4">{user.usuario}</td>
                 <td className="px-6 py-4 text-blue-600 font-medium">{user.puesto?.nombre || "N/A"}</td>
                 <td className="px-6 py-4 text-center space-x-4">
-                  <button onClick={() => abrirModalEditar(user)} className="font-semibold text-blue-600 hover:underline">
+                  <button
+                    onClick={() => abrirModalEditar(user)}
+                    disabled={!puedeEditarUsuarios || (user.puesto?.nombre === 'SistemasAdmin' && !esAdmin)}
+                    className={`font-semibold ${!puedeEditarUsuarios || (user.puesto?.nombre === 'SistemasAdmin' && !esAdmin) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
+                  >
                     Editar
                   </button>
                   <button
                     onClick={() => abrirModalEliminar(user)}
-                    disabled={user.id === usuarioLogueado.id}
-                    className={`font-semibold ${user.id === usuarioLogueado.id ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:underline'}`}
+                    disabled={!puedeEliminarUsuarios || user.id === usuarioLogueado.id}
+                    className={`font-semibold ${!puedeEliminarUsuarios || user.id === usuarioLogueado.id ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:underline'}`}
                   >
                     Eliminar
                   </button>
@@ -543,6 +592,34 @@ function Usuarios() {
                   {erroresForm.confirmPassword && <p className="mt-1 text-xs text-red-500">{erroresForm.confirmPassword}</p>}
                 </div>
               </div>
+
+              {puedeAsignarPermisos && (
+                <div className="col-span-2 rounded-md bg-white p-4 border border-gray-200">
+                  <h3 className="mb-3 text-sm font-semibold text-gray-800">Permisos del usuario</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      { key: 'create_users', label: 'Crear usuarios' },
+                      { key: 'delete_users', label: 'Eliminar usuarios' },
+                      { key: 'manage_news', label: 'Administrar noticias' },
+                      { key: 'news_access', label: 'Permitir acceso a noticias' },
+                      { key: 'edit_trainings', label: 'Editar capacitaciones' },
+                      { key: 'manage_passwords', label: 'Administrar contraseñas' },
+                      { key: 'assign_permissions', label: 'Asignar permisos' },
+                    ].map(permission => (
+                      <label key={permission.key} className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          name={permission.key}
+                          checked={formData.permissions?.[permission.key] || false}
+                          onChange={handlePermissionChange}
+                          className="h-4 w-4 rounded border-gray-300 text-[#802907] focus:ring-[#802907]"
+                        />
+                        {permission.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="col-span-2 mt-4 flex justify-end gap-4">
                 <button type="button" onClick={cerrarModal} className="rounded-md px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100">

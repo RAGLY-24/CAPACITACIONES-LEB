@@ -26,6 +26,7 @@ class User extends Authenticatable
         'usuario',
         'estado',
         'puesto_id',
+        'permissions',
     ];
 
     /**
@@ -46,7 +47,35 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'permissions' => 'array',
     ];
+
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->puesto?->nombre === 'SistemasAdmin') {
+            return true;
+        }
+
+        return data_get($this->permissions, $permission, false) === true;
+    }
+
+    public function canAccessNews(): bool
+    {
+        if ($this->puesto?->nombre === 'SistemasAdmin') {
+            return true;
+        }
+
+        return data_get($this->permissions, 'news_access', true) !== false;
+    }
+
+    public function canManageNews(): bool
+    {
+        if ($this->puesto?->nombre === 'SistemasAdmin') {
+            return true;
+        }
+
+        return data_get($this->permissions, 'manage_news', false) === true;
+    }
 
     public function puesto()
     {

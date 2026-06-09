@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Puesto;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -12,6 +13,18 @@ class UsuarioController extends Controller
     // --- 1. LEER: Listar todos los usuarios ---
     public function index()
     {
+        $authUser = Auth::user();
+
+        if (!$authUser instanceof User || !(
+            $authUser->hasPermission('create_users') ||
+            $authUser->hasPermission('delete_users') ||
+            $authUser->hasPermission('assign_permissions')
+        )) {
+            return response()->json([
+                'message' => 'Acceso denegado. No tienes permiso para ver los usuarios.'
+            ], 403);
+        }
+
         $usuarios = User::with('puesto')->get();
         return response()->json($usuarios, 200);
     }
@@ -19,6 +32,14 @@ class UsuarioController extends Controller
     // --- 2. CREAR: Guardar un usuario nuevo ---
     public function store(Request $request)
     {
+        $authUser = Auth::user();
+
+        if (!$authUser instanceof User || !$authUser->hasPermission('create_users')) {
+            return response()->json([
+                'message' => 'Acceso denegado. No tienes permiso para crear usuarios.'
+            ], 403);
+        }
+
         // 1. Validaciones estrictas
         $request->validate([
             'name' => 'required|string|max:255',
@@ -33,6 +54,7 @@ class UsuarioController extends Controller
                 'string',
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/'
             ],
+            'permissions' => 'sometimes|array',
         ], [
             // Mensajes personalizados de error (opcional, pero buena práctica)
             'email.unique' => 'El correo ya está registrado.',
@@ -40,7 +62,38 @@ class UsuarioController extends Controller
             'password.regex' => 'La contraseña no cumple con las políticas de seguridad.'
         ]);
 
-        // 2. Creación en base de datos
+        $puesto = Puesto::find($request->input('puesto_id'));
+        $defaultPermissions = [];
+
+        if ($puesto && $puesto->nombre === 'SistemasAdmin') {
+            $defaultPermissions = [
+                'manage_news' => true,
+                'news_access' => true,
+                'edit_trainings' => true,
+                'manage_passwords' => true,
+                'create_users' => true,
+                'delete_users' => true,
+                'assign_permissions' => true,
+            ];
+        }
+
+        if ($puesto && $puesto->nombre === 'Gerente') {
+            $defaultPermissions = [
+                'manage_news' => true,
+                'news_access' => true,
+                'edit_trainings' => true,
+                'manage_passwords' => true,
+                'create_users' => true,
+                'delete_users' => false,
+                'assign_permissions' => false,
+            ];
+        }
+
+        $requestedPermissions = $request->input('permissions', []);
+        if (!$authUser instanceof User || !$authUser->hasPermission('assign_permissions')) {
+            $requestedPermissions = [];
+        }
+
         $usuario = User::create([
             'name' => $request->name,
             'lastname' => $request->lastname,
@@ -49,9 +102,9 @@ class UsuarioController extends Controller
             'puesto_id' => $request->puesto_id,
             'estado' => $request->estado,
             'password' => $request->password,
+            'permissions' => array_merge($defaultPermissions, $requestedPermissions),
         ]);
 
-        // 3. Respuesta de éxito
         return response()->json([
             'message' => 'Usuario creado exitosamente',
             'user' => $usuario
@@ -61,7 +114,20 @@ class UsuarioController extends Controller
     // --- 3. ACTUALIZAR: Modificar un usuario existente ---
     public function update(Request $request, $id)
     {
+        $authUser = Auth::user();
         $usuario = User::findOrFail($id);
+
+        if ($usuario->puesto?->nombre === 'SistemasAdmin' && $authUser->puesto?->nombre !== 'SistemasAdmin') {
+            return response()->json([
+                'message' => 'Acceso denegado. No puedes editar un Administrador de Sistemas.'
+            ], 403);
+        }
+
+        if (!$authUser instanceof User || !$authUser->hasPermission('assign_permissions')) {
+            return response()->json([
+                'message' => 'Acceso denegado. No tienes permiso para actualizar usuarios.'
+            ], 403);
+        }
 
         // 1. Validaciones (Notar el uso de Rule::unique para ignorar al usuario actual)
         $request->validate([
@@ -87,6 +153,7 @@ class UsuarioController extends Controller
                 'string',
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/'
             ],
+            'permissions' => 'sometimes|array',
         ]);
 
         // 2. Preparar los datos a actualizar
@@ -104,6 +171,11 @@ class UsuarioController extends Controller
             $datosUpdate['password'] = $request->password;
         }
 
+        // Control de permisos de asignación
+        if ($authUser instanceof User && $authUser->hasPermission('assign_permissions')) {
+            $datosUpdate['permissions'] = $request->input('permissions', []);
+        }
+
         // 3. Ejecutar actualización
         $usuario->update($datosUpdate);
 
@@ -116,14 +188,20 @@ class UsuarioController extends Controller
     // --- 4. ELIMINAR: Borrar un usuario ---
     public function destroy($id)
     {
+        $authUser = Auth::user();
         $usuario = User::findOrFail($id);
 
+        if (!$authUser instanceof User || !$authUser->hasPermission('delete_users')) {
+            return response()->json([
+                'message' => 'Acceso denegado. No tienes permiso para eliminar usuarios.'
+            ], 403);
+        }
+
         // Protección 1: Prevención de suicidio de cuenta
-        // (Asumiendo que estás usando autenticación por token en el futuro)
-        if (Auth::id() == $usuario->id) {
+        if ($authUser->id == $usuario->id) {
             return response()->json([
                 'message' => 'Acción denegada: No puedes eliminar tu propia cuenta.'
-            ], 403); // El 403 lo atrapa tu React para mostrar el Alert
+            ], 403);
         }
 
         // Protección 2: Evitar borrar al único administrador que queda
