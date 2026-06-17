@@ -13,7 +13,12 @@ class Noticia extends Model
         'title',
         'body',
         'evidence',
+        'file_paths',
         'created_by',
+    ];
+
+    protected $casts = [
+        'file_paths' => 'array',
     ];
 
     public function author()

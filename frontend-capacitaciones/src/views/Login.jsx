@@ -14,10 +14,10 @@ function Login() {
   const getDefaultAdminPath = () => '/admin/noticias';
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (token) {
       // Si ya tiene token, leemos quién es y lo regresamos a su panel
-      const datosUsuario = localStorage.getItem('user');
+      const datosUsuario = sessionStorage.getItem('user');
       const usuarioLogueado = datosUsuario ? JSON.parse(datosUsuario) : null;
 
       if (usuarioLogueado) {
@@ -49,8 +49,9 @@ function Login() {
       if (response.data.status === 'success') {
         const usuarioLogueado = response.data.user;
 
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(usuarioLogueado));
+        // Guardamos el token en sessionStorage para forzar login al cerrar pestaña
+        sessionStorage.setItem("token", response.data.token);
+        sessionStorage.setItem("user", JSON.stringify(usuarioLogueado));
 
         Swal.close();
 

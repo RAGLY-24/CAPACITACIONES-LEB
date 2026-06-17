@@ -13,7 +13,7 @@ function Usuarios() {
   const [cargando, setCargando] = useState(true);
 
   // --- Usuario autenticado (desde localStorage) ---
-  const storedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
+  const storedUser = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('user') || 'null') : null;
   const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
   const esAdmin = usuarioLogueado.rol === 'SistemasAdmin';
   const permisosUsuario = storedUser?.permissions || {};

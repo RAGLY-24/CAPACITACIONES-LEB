@@ -1,5 +1,5 @@
 function Contenido() {
-    const storedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
+    const storedUser = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('user') || 'null') : null;
     const rol = storedUser?.puesto?.nombre || null;
     const puedeEditar = rol === 'SistemasAdmin' || rol === 'Gerente';
 

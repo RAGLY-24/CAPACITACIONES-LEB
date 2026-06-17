@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Outlet, Navigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import axios from 'axios';
 import logoEmpresa from '../assets/leb_logotipo.png';
 
 function AdminPanel() {
@@ -13,7 +14,7 @@ function AdminPanel() {
   const navigate = useNavigate();
 
   // 1. Obtenemos el usuario real que inició sesión desde el almacenamiento del navegador
-  const datosUsuario = localStorage.getItem('user');
+  const datosUsuario = sessionStorage.getItem('user');
   const usuarioLogueado = datosUsuario ? JSON.parse(datosUsuario) : {};
   const esAdmin = usuarioLogueado.puesto?.nombre === 'SistemasAdmin';
   const permisos = usuarioLogueado.permissions || {};
@@ -23,7 +24,7 @@ function AdminPanel() {
   const muestraCapacitaciones = true;
 
   //Para no dejarlo entrar en caso de que no este iniciado sesion
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   if (!token) {
     return <Navigate to="/" replace />;
   }
@@ -40,6 +41,22 @@ function AdminPanel() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // --- EFECTO 2: Limpiar sesión si el usuario sale de la página ---
+  useEffect(() => {
+    const clearSession = () => {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+    };
+
+    window.addEventListener('beforeunload', clearSession);
+    window.addEventListener('pagehide', clearSession);
+
+    return () => {
+      window.removeEventListener('beforeunload', clearSession);
+      window.removeEventListener('pagehide', clearSession);
+    };
+  }, []);
+
   // --- EFECTO 2: Cerrar menú de perfil automáticamente tras 15 segundos ---
   useEffect(() => {
     let temporizador;
@@ -53,7 +70,7 @@ function AdminPanel() {
   }, [isUserMenuOpen]);
 
   // Función para cerrar sesión con estilo
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Swal.fire({
       title: 'Cerrando Sesión...',
       text: 'Hasta pronto.',
@@ -63,12 +80,16 @@ function AdminPanel() {
       }
     });
 
-    setTimeout(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      Swal.close();
-      navigate('/');
-    }, 800);
+    try {
+      await axios.post('http://localhost:8000/api/logout');
+    } catch (err) {
+      // Ignoramos errores de logout remoto y procedemos a limpiar local
+    }
+
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    Swal.close();
+    navigate('/');
   };
 
   const irA = (ruta) => {

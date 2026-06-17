@@ -24,3 +24,6 @@ class CheckSistemasAdmin
         return $next($request);
     }
 }
+
+
+//matar sesion atraves de la cahe, (investigar)
