@@ -191,11 +191,14 @@ function AdminPanel() {
       </div>
 
       {/* --- CONTENIDO PRINCIPAL DINÁMICO --- */}
-      {/* Añadimos margen superior (pt-24) para esquivar la barra fija y margen izquierdo si el menú está abierto */}
-      <div className={`transition-all duration-300 ease-in-out pt-[90px] ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
-        <main className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
+      {/* Cambié pt-[90px] a pt-[72px] para que pegue exacto con tu barra de arriba que mide 72px */}
+      <div className={`transition-all duration-300 ease-in-out pt-[72px] ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
+        
+        {/* Dejamos el main completamente libre para que las pantallas decidan su propio tamaño */}
+        <main className="w-full">
           <Outlet />
         </main>
+
       </div>
 
     </div>

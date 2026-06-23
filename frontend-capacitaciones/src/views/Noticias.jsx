@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
+import fondodeinterfaz from '../assets/fondodeinterfaz.jpg';
 
 function Noticias() {
     const [noticias, setNoticias] = useState([]);
@@ -50,7 +51,6 @@ function Noticias() {
         setModalType('editar');
     };
 
-    // NUEVO: Función para abrir el modo lectura
     const abrirModalVer = (noticia) => {
         setSelectedNoticia(noticia);
         setModalType('ver');
@@ -66,7 +66,6 @@ function Noticias() {
         setFormData({ ...formData, [name]: value });
     };
 
-    // NUEVO: Manejar múltiples archivos
     const handleFileChange = (e) => {
         const filesArray = Array.from(e.target.files);
         setFormData({ ...formData, files: filesArray });
@@ -88,10 +87,9 @@ function Noticias() {
             dataToSend.append('body', formData.body);
             if (formData.evidence) dataToSend.append('evidence', formData.evidence);
 
-            // Adjuntamos el arreglo de archivos al FormData
             if (formData.files && formData.files.length > 0) {
                 formData.files.forEach((file) => {
-                    dataToSend.append('files[]', file); // Laravel leerá esto como un array
+                    dataToSend.append('files[]', file);
                 });
             }
 
@@ -113,7 +111,7 @@ function Noticias() {
     };
 
     const eliminarNoticia = async (noticia, e) => {
-        e.stopPropagation(); // Evita que se abra el modal de lectura al darle clic a eliminar
+        e.stopPropagation(); 
         const confirm = await Swal.fire({
             title: 'Eliminar noticia',
             text: `¿Deseas eliminar "${noticia.title}"?`,
@@ -136,7 +134,6 @@ function Noticias() {
         }
     };
 
-    // Función auxiliar para obtener todas las urls de imagen/video de la noticia
     const obtenerImagenes = (noticia) => {
         if (noticia.file_paths && noticia.file_paths.length > 0) {
             return noticia.file_paths.map((p) => {
@@ -156,7 +153,6 @@ function Noticias() {
         return [];
     };
 
-    // Componente de carrusel
     const CarouselTile = ({ images }) => {
         const [idx, setIdx] = useState(0);
 
@@ -177,7 +173,6 @@ function Noticias() {
         );
     };
 
-    // Carrusel grande para el modal de lectura
     const FullCarousel = ({ images }) => {
         const [idx, setIdx] = useState(0);
 
@@ -217,16 +212,21 @@ function Noticias() {
     };
 
     return (
-        <div className="min-h-screen bg-[#f3f2f1] p-4 md:p-8 font-sans text-gray-900">
-            <div className="mx-auto max-w-7xl">
-
-                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-700 pb-4">
+        <div 
+            className="min-h-screen w-full p-4 md:p-6 font-sans text-gray-900 bg-cover bg-center bg-no-repeat bg-fixed"
+            //style={{ backgroundImage: `url(${fondodeinterfaz})` }}
+        >
+            <div className="w-[95%] max-w-[1600px] mx-auto">
+                
+                {/* CABEZERA */}
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border border-white/20 pb-5 pt-5 px-6 bg-white/30 backdrop-blur-md rounded-2xl shadow-lg">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-black">Panel de Noticias</h2>
-                        <p className="text-xs text-gray-400 mt-1">Titulares destacados y actualizaciones recientes.</p>
+                        {/* drop-shadow para la cabezera */}
+                        <h2 className="text-3xl font-bold tracking-tight text-gray-900 drop-shadow-md">Panel de Noticias</h2>
+                        <p className="text-sm font-semibold text-gray-800 mt-1 drop-shadow-sm">Titulares destacados y actualizaciones recientes.</p>
                     </div>
                     {puedeCrearNoticias && (
-                        <button onClick={abrirModalCrear} className="rounded-md bg-white px-5 py-2 text-xs font-bold text-black hover:bg-gray-200 transition-colors">
+                        <button onClick={abrirModalCrear} className="rounded-lg bg-[#802907] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#5a1b04] transition-all shadow-md hover:shadow-lg hover:scale-105">
                             + Crear Noticia
                         </button>
                     )}
@@ -237,27 +237,28 @@ function Noticias() {
                         Acceso denegado al feed de noticias.
                     </div>
                 ) : noticias.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-gray-700 p-12 text-center text-sm text-gray-500">
+                    <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center text-sm text-gray-500">
                         No hay noticias.
                     </div>
                 ) : (
-                    /* --- GRID MOSAICO (BENTO GRID) --- */
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[250px]">
+                    /* --- NUEVO GRID: 2 Columnas para mejor proporción --- */
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {noticias.map((noticia, index) => {
                             const authorInitial = (noticia.author?.name || 'U').charAt(0).toUpperCase();
                             const imagenes = obtenerImagenes(noticia);
                             const imgUrl = imagenes[0];
                             const esVideo = imgUrl && imgUrl.match(/\.(mp4|webm|ogg)$/i);
 
-                            // La primera noticia ocupa 2 columnas y 2 filas (Destacada)
+                            // La noticia principal ocupa TODO el ancho de la fila (col-span-2)
                             const isFeatured = index === 0;
 
                             return (
                                 <div
                                     key={noticia.id}
                                     onClick={() => abrirModalVer(noticia)}
-                                    className={`group relative flex flex-col overflow-hidden rounded-xl bg-[#2d2d2d] transition-transform duration-300 hover:scale-[1.02] hover:shadow-2xl cursor-pointer ${isFeatured ? 'md:col-span-2 md:row-span-2' : 'col-span-1 row-span-1'
-                                        }`}
+                                    className={`group relative flex flex-col overflow-hidden rounded-xl bg-[#2d2d2d] transition-transform duration-300 hover:scale-[1.01] hover:shadow-2xl cursor-pointer ${
+                                        isFeatured ? 'md:col-span-2 h-[400px] md:h-[550px]' : 'col-span-1 h-[280px] md:h-[350px]'
+                                    }`}
                                 >
                                     {/* FONDO IMAGEN/VIDEO */}
                                     <div className="absolute inset-0 z-0 bg-[#1e1e1e]">
@@ -280,11 +281,11 @@ function Noticias() {
                                     <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
 
                                     {/* CONTENIDO TEXTUAL (Sobre la imagen) */}
-                                    <div className="relative z-20 flex h-full flex-col justify-end p-5">
+                                    <div className="relative z-20 flex h-full flex-col justify-end p-6">
 
                                         {/* Botones administrativos flotantes */}
                                         {(puedeAdministrarNoticias || noticia.created_by === storedUser?.id) && (
-                                            <div className="absolute top-3 right-3 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                                            <div className="absolute top-4 right-4 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                                                 <button onClick={(e) => { e.stopPropagation(); abrirModalEditar(noticia); }} className="rounded-full bg-black/60 p-2 text-white hover:bg-blue-600 backdrop-blur-sm" title="Editar">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                 </button>
@@ -296,23 +297,21 @@ function Noticias() {
                                             </div>
                                         )}
 
-                                        <span className="mb-2 w-max rounded bg-blue-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                                        <span className="mb-3 w-max rounded bg-blue-600 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
                                             {noticia.author?.name || 'Interno'}
                                         </span>
 
-                                        <h3 className={`font-bold leading-tight text-white group-hover:underline decoration-2 underline-offset-4 ${isFeatured ? 'text-2xl md:text-3xl lg:text-4xl line-clamp-3 mb-3' : 'text-lg line-clamp-2 mb-2'}`}>
+                                        <h3 className={`font-bold leading-tight text-white group-hover:underline decoration-2 underline-offset-4 ${isFeatured ? 'text-3xl md:text-5xl line-clamp-3 mb-4' : 'text-xl md:text-2xl line-clamp-2 mb-2'}`}>
                                             {noticia.title}
                                         </h3>
 
-                                        {/* Solo mostrar un poco del cuerpo si es la noticia destacada */}
-                                        {isFeatured && (
-                                            <p className="mb-4 text-sm text-gray-300 line-clamp-2">
-                                                {noticia.body}
-                                            </p>
-                                        )}
+                                        {/* Mostrar siempre un fragmento del cuerpo en todas, pero más largo en la destacada */}
+                                        <p className={`text-gray-300 ${isFeatured ? 'text-lg line-clamp-3 mb-4' : 'text-sm line-clamp-2 mb-3'}`}>
+                                            {noticia.body}
+                                        </p>
 
-                                        <div className="flex items-center text-xs text-gray-400">
-                                            <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        <div className="flex items-center text-sm font-semibold text-gray-300 hover:text-white transition-colors">
+                                            <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                             Leer noticia completa
                                         </div>
                                     </div>
@@ -326,10 +325,9 @@ function Noticias() {
             {/* --- MODAL DE LECTURA COMPLETA --- */}
             {modalType === 'ver' && selectedNoticia && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm" onClick={cerrarModal}>
-                    <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-[#1e1e1e] shadow-2xl border border-gray-700" onClick={(e) => e.stopPropagation()}>
+                    <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl bg-[#1e1e1e] shadow-2xl border border-gray-700" onClick={(e) => e.stopPropagation()}>
 
-                        {/* Cabecera visual (Imagen principal grande) */}
-                        <div className="relative w-full h-64 bg-black">
+                        <div className="relative w-full h-80 bg-black">
                             <button onClick={cerrarModal} className="absolute top-4 right-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-gray-700 transition-colors">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
@@ -340,21 +338,19 @@ function Noticias() {
                                     const src = imgs[0];
                                     const esVid = src.match(/\.(mp4|webm|ogg)(\?|$)/i);
                                     return esVid ? (
-                                        <video src={src} className="w-full h-full object-cover opacity-80" muted loop playsInline />
+                                        <video src={src} className="w-full h-full object-cover opacity-80" controls />
                                     ) : (
                                         <img src={src} className="w-full h-full object-cover opacity-80" alt="Portada" />
                                     );
                                 }
-
-                                // Carrusel completo en el modal
                                 return <FullCarousel images={imgs} />;
                             })()}
                         </div>
 
-                        <div className="p-8">
-                            <h2 className="text-3xl font-bold text-white mb-4">{selectedNoticia.title}</h2>
-                            <div className="flex items-center gap-3 text-sm text-gray-400 mb-8 border-b border-gray-700 pb-4">
-                                <span className="bg-[#802907] text-white px-2 py-1 rounded-md font-semibold">{selectedNoticia.author?.name}</span>
+                        <div className="p-8 md:p-10">
+                            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{selectedNoticia.title}</h2>
+                            <div className="flex items-center gap-3 text-sm text-gray-400 mb-8 border-b border-gray-700 pb-5">
+                                <span className="bg-[#802907] text-white px-3 py-1 rounded-md font-semibold">{selectedNoticia.author?.name}</span>
                                 <span>Publicado recientemente</span>
                             </div>
 
@@ -363,20 +359,19 @@ function Noticias() {
                             </div>
 
                             {selectedNoticia.evidence && (
-                                <div className="mt-8 rounded-lg bg-blue-900/20 border border-blue-800 p-4">
+                                <div className="mt-8 rounded-lg bg-blue-900/20 border border-blue-800 p-5">
                                     <h4 className="text-blue-400 font-bold mb-2">Información Adicional / Evidencia:</h4>
-                                    <p className="text-sm text-gray-300">{selectedNoticia.evidence}</p>
+                                    <p className="text-sm text-gray-300 leading-relaxed">{selectedNoticia.evidence}</p>
                                 </div>
                             )}
 
-                            {/* GALERÍA DE MÚLTIPLES FOTOS (Futuro) */}
                             {selectedNoticia.file_paths && selectedNoticia.file_paths.length > 1 && (
-                                <div className="mt-8">
+                                <div className="mt-10">
                                     <h4 className="text-gray-400 font-bold mb-4">Galería adjunta</h4>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                         {selectedNoticia.file_paths.slice(1).map((ruta, i) => (
-                                            <a key={i} href={`/noticias/${ruta}`} target="_blank" rel="noreferrer">
-                                                <img src={`/noticias/${ruta}`} className="w-full h-24 object-cover rounded hover:opacity-80 transition" alt="Evidencia adjunta" />
+                                            <a key={i} href={`/noticias/${ruta}`} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
+                                                <img src={`/noticias/${ruta}`} className="w-full h-32 object-cover hover:scale-110 hover:opacity-80 transition duration-300" alt="Evidencia adjunta" />
                                             </a>
                                         ))}
                                     </div>
@@ -417,7 +412,7 @@ function Noticias() {
                                     type="file"
                                     name="files"
                                     multiple
-                                    accept=".jpg,.jpeg,.png"
+                                    accept=".jpg,.jpeg,.png,.mp4"
                                     onChange={handleFileChange}
                                     className="w-full text-sm text-gray-400 file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-white hover:file:bg-blue-700 cursor-pointer"
                                 />
@@ -428,7 +423,7 @@ function Noticias() {
 
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
                                 <button type="button" onClick={cerrarModal} className="rounded bg-transparent px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white">Cancelar</button>
-                                <button type="submit" className="rounded bg-blue-600 px-6 py-2 text-sm font-bold text-white hover:bg-blue-700">Publicar</button>
+                                <button type="submit" className="rounded bg-[#802907] px-6 py-2 text-sm font-bold text-white hover:bg-[#5a1b04]">Publicar</button>
                             </div>
                         </form>
                     </div>
