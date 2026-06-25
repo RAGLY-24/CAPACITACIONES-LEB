@@ -113,7 +113,7 @@ function Noticias() {
     };
 
     const eliminarNoticia = async (noticia, e) => {
-        e.stopPropagation(); 
+        e.stopPropagation();
         const confirm = await Swal.fire({
             title: 'Eliminar noticia',
             text: `¿Deseas eliminar "${noticia.title}"?`,
@@ -214,12 +214,12 @@ function Noticias() {
     };
 
     return (
-        <div 
+        <div
             className="min-h-screen w-full p-4 md:p-6 font-sans text-gray-900 bg-cover bg-center bg-no-repeat bg-fixed"
-            //style={{ backgroundImage: `url(${fondodeinterfaz})` }}
+        //style={{ backgroundImage: `url(${fondodeinterfaz})` }}
         >
             <div className="w-[95%] max-w-[1600px] mx-auto">
-                
+
                 {/* CABEZERA */}
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border border-white/20 pb-5 pt-5 px-6 bg-white/30 backdrop-blur-md rounded-2xl shadow-lg">
                     <div>
@@ -258,9 +258,8 @@ function Noticias() {
                                 <div
                                     key={noticia.id}
                                     onClick={() => abrirModalVer(noticia)}
-                                    className={`group relative flex flex-col overflow-hidden rounded-xl bg-[#2d2d2d] transition-transform duration-300 hover:scale-[1.01] hover:shadow-2xl cursor-pointer ${
-                                        isFeatured ? 'md:col-span-2 h-[400px] md:h-[550px]' : 'col-span-1 h-[280px] md:h-[350px]'
-                                    }`}
+                                    className={`group relative flex flex-col overflow-hidden rounded-xl bg-[#2d2d2d] transition-transform duration-300 hover:scale-[1.01] hover:shadow-2xl cursor-pointer ${isFeatured ? 'md:col-span-2 h-[400px] md:h-[550px]' : 'col-span-1 h-[280px] md:h-[350px]'
+                                        }`}
                                 >
                                     {/* FONDO IMAGEN/VIDEO */}
                                     <div className="absolute inset-0 z-0 bg-[#1e1e1e]">
