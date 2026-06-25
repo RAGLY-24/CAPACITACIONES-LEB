@@ -69,23 +69,28 @@ class UsuarioController extends Controller
             $defaultPermissions = [
                 'manage_news' => true,
                 'news_access' => true,
-                'edit_trainings' => true,
+                'edit_capacitaciones_course' => true,
                 'manage_passwords' => true,
                 'create_users' => true,
                 'delete_users' => true,
                 'assign_permissions' => true,
             ];
-        }
-
-        if ($puesto && $puesto->nombre === 'Gerente') {
+        } elseif ($puesto && $puesto->nombre === 'Gerente') {
             $defaultPermissions = [
-                'manage_news' => true,
+                'manage_news' => false,
                 'news_access' => true,
-                'edit_trainings' => true,
+                'edit_capacitaciones_course' => false,
                 'manage_passwords' => true,
                 'create_users' => true,
                 'delete_users' => false,
                 'assign_permissions' => false,
+            ];
+        } else {
+            // Usuarios normales: no pueden publicar noticias ni editar capacitaciones por defecto
+            $defaultPermissions = [
+                'manage_news' => false,
+                'news_access' => true,
+                'edit_capacitaciones_course' => false,
             ];
         }
 

@@ -12,6 +12,8 @@ function Usuarios() {
   const [editarPuestoNombre, setEditarPuestoNombre] = useState("");
   const [cargando, setCargando] = useState(true);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
   // --- Usuario autenticado (desde localStorage) ---
   const storedUser = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('user') || 'null') : null;
   const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
@@ -37,7 +39,7 @@ function Usuarios() {
       create_users: false,
       delete_users: false,
       manage_news: false,
-      edit_trainings: false,
+      edit_capacitaciones_course: false,
       manage_passwords: false,
       assign_permissions: false,
       news_access: true,
@@ -53,7 +55,7 @@ function Usuarios() {
   const obtenerUsuarios = async () => {
     try {
       setCargando(true);
-      const response = await axios.get("http://localhost:8000/api/usuarios");
+      const response = await axios.get(`${API_URL}/api/usuarios`);
       setUsuarios(response.data);
     } catch (err) {
       console.error("Error:", err);
@@ -64,7 +66,7 @@ function Usuarios() {
 
   const obtenerPuestos = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/api/puestos");
+      const response = await axios.get(`${API_URL}/api/puestos`);
       setPuestos(response.data);
     } catch (err) {
       console.error("Error al obtener puestos:", err);
@@ -109,7 +111,7 @@ function Usuarios() {
     }
 
     try {
-      await axios.post("http://localhost:8000/api/puestos", { nombre: nuevoPuesto.trim() });
+      await axios.post(`${API_URL}/api/puestos`, { nombre: nuevoPuesto.trim() });
       setNuevoPuesto("");
       obtenerPuestos();
       alert("Puesto agregado correctamente.");
@@ -146,7 +148,7 @@ function Usuarios() {
     });
 
     try {
-      await axios.put(`http://localhost:8000/api/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
+      await axios.put(`${API_URL}/api/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
 
       // Limpiar estados y recargar la lista
       setEditarPuestoId(null);
@@ -195,7 +197,7 @@ function Usuarios() {
     if (!confirmar) return;
 
     try {
-      await axios.delete(`http://localhost:8000/api/puestos/${id}`);
+      await axios.delete(`${API_URL}/api/puestos/${id}`);
       obtenerPuestos();
       alert("Puesto eliminado correctamente.");
     } catch (err) {
@@ -348,7 +350,7 @@ function Usuarios() {
     if (!validarFormulario()) return;
 
     const payload = { ...formData };
-    if (usuarioLogueado.rol !== 'SistemasAdmin') {
+    if (!esAdmin && !permisosUsuario.assign_permissions) {
       delete payload.permissions;
     }
 
@@ -363,9 +365,9 @@ function Usuarios() {
 
     try {
       if (modalType === 'crear') {
-        await axios.post("http://localhost:8000/api/usuarios", payload);
+        await axios.post(`${API_URL}/api/usuarios`, payload);
       } else {
-        await axios.put(`http://localhost:8000/api/usuarios/${formData.id}`, payload);
+        await axios.put(`${API_URL}/api/usuarios/${formData.id}`, payload);
       }
 
       obtenerUsuarios(); // Recargar tabla
@@ -429,7 +431,7 @@ function Usuarios() {
     });
 
     try {
-      await axios.delete(`http://localhost:8000/api/usuarios/${usuarioSeleccionado.id}`);
+      await axios.delete(`${API_URL}/api/usuarios/${usuarioSeleccionado.id}`);
       obtenerUsuarios();
       setModalType(null); // Cierra tu modal de eliminación de React
 
@@ -600,9 +602,9 @@ function Usuarios() {
                     {[
                       { key: 'create_users', label: 'Crear usuarios' },
                       { key: 'delete_users', label: 'Eliminar usuarios' },
-                      { key: 'manage_news', label: 'Administrar noticias' },
-                      { key: 'news_access', label: 'Permitir acceso a noticias' },
-                      { key: 'edit_trainings', label: 'Editar capacitaciones' },
+                      { key: 'manage_news', label: 'Publicar noticias' },
+                      { key: 'news_access', label: 'Acceso a noticias' },
+                      { key: 'edit_capacitaciones_course', label: 'Editar capacitaciones' },
                       { key: 'manage_passwords', label: 'Administrar contraseñas' },
                       { key: 'assign_permissions', label: 'Asignar permisos' },
                     ].map(permission => (

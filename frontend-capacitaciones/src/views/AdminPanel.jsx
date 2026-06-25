@@ -21,7 +21,7 @@ function AdminPanel() {
   const muestraNoticias = permisos.news_access !== false;
   const muestraUsuarios = esAdmin || permisos.create_users || permisos.delete_users || permisos.assign_permissions;
   const muestraContenido = esAdmin || permisos.edit_trainings;
-  const muestraCapacitaciones = true;
+  const muestraCapacitaciones = true; // Todos los empleados pueden tomar módulos de capacitación
 
   //Para no dejarlo entrar en caso de que no este iniciado sesion
   const token = sessionStorage.getItem('token');

@@ -77,6 +77,15 @@ class User extends Authenticatable
         return data_get($this->permissions, 'manage_news', false) === true;
     }
 
+    public function canEditCapacitaciones(): bool
+    {
+        if ($this->puesto?->nombre === 'SistemasAdmin') {
+            return true;
+        }
+
+        return data_get($this->permissions, 'edit_capacitaciones_course', false) === true;
+    }
+
     public function puesto()
     {
         return $this->belongsTo(Puesto::class);

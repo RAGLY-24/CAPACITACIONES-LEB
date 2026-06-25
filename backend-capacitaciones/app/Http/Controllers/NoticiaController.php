@@ -28,8 +28,8 @@ class NoticiaController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user instanceof User || !$user->canAccessNews()) {
-            return response()->json(['message' => 'Acceso denegado.'], 403);
+        if (!$user instanceof User || !$user->canManageNews()) {
+            return response()->json(['message' => 'Acceso denegado. No tienes permisos para publicar noticias.'], 403);
         }
 
         // Fíjate cómo validamos el arreglo de archivos (files.*)

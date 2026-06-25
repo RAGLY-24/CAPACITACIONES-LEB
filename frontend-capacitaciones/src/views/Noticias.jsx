@@ -11,12 +11,14 @@ function Noticias() {
     // Cambiamos 'file' por 'files' (arreglo) para soportar múltiples
     const [formData, setFormData] = useState({ title: '', body: '', evidence: '', files: [] });
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
     const storedUser = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('user') || 'null') : null;
     const rol = storedUser?.puesto?.nombre || null;
     const permisosUsuario = storedUser?.permissions || {};
     const puedeVerNoticias = permisosUsuario.news_access !== false;
-    const puedeCrearNoticias = puedeVerNoticias;
-    const puedeAdministrarNoticias = rol === 'SistemasAdmin' || rol === 'Gerente' || permisosUsuario.manage_news === true;
+    const puedeCrearNoticias = rol === 'SistemasAdmin' || permisosUsuario.manage_news === true;
+    const puedeAdministrarNoticias = puedeCrearNoticias;
 
     useEffect(() => {
         if (puedeVerNoticias) {
@@ -26,7 +28,7 @@ function Noticias() {
 
     const obtenerNoticias = async () => {
         try {
-            const response = await axios.get("http://localhost:8000/api/noticias");
+            const response = await axios.get(`${API_URL}/api/noticias`);
             setNoticias(response.data);
         } catch (err) {
             console.error(err);
@@ -94,11 +96,11 @@ function Noticias() {
             }
 
             if (modalType === 'crear') {
-                await axios.post("http://localhost:8000/api/noticias", dataToSend);
+                await axios.post(`${API_URL}/api/noticias`, dataToSend);
                 Swal.fire({ icon: 'success', title: 'Publicada', confirmButtonColor: '#802907' });
             } else {
                 dataToSend.append('_method', 'PUT');
-                await axios.post(`http://localhost:8000/api/noticias/${selectedNoticia.id}`, dataToSend);
+                await axios.post(`${API_URL}/api/noticias/${selectedNoticia.id}`, dataToSend);
                 Swal.fire({ icon: 'success', title: 'Actualizada', confirmButtonColor: '#802907' });
             }
 
@@ -125,7 +127,7 @@ function Noticias() {
         if (!confirm.isConfirmed) return;
 
         try {
-            await axios.delete(`http://localhost:8000/api/noticias/${noticia.id}`);
+            await axios.delete(`${API_URL}/api/noticias/${noticia.id}`);
             obtenerNoticias();
             setModalType(null);
             Swal.fire({ icon: 'success', title: 'Eliminada', confirmButtonColor: '#802907' });
