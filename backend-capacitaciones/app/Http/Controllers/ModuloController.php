@@ -74,21 +74,28 @@ class ModuloController extends Controller
             'nombre'      => 'required|string|min:5|max:150',
             'descripcion' => 'required|string|min:10|max:2000',
             'estado'      => 'required|in:Activo,Inactivo',
-            'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:204800',
+            'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:102400',
+            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
         ], [
             'nombre.min'       => 'El nombre debe tener al menos 5 caracteres.',
             'nombre.max'       => 'El nombre no puede exceder 150 caracteres.',
             'descripcion.min'  => 'La descripción debe tener al menos 10 caracteres.',
             'descripcion.max'  => 'La descripción no puede exceder 2000 caracteres.',
             'archivo.mimes'    => 'Solo se permiten archivos PDF, MP4 o WEBM.',
-            'archivo.max'      => 'El archivo no puede superar los 200 MB.',
+            'archivo.max'      => 'El archivo no puede superar los 100 MB.',
+            'imagen.mimes'     => 'La imagen debe ser JPG, PNG o WEBP.',
+            'imagen.max'       => 'La imagen no puede superar los 5 MB.',
         ]);
 
         $filePath = null;
         $fileType = null;
+        $imagenPath = null;
 
         if ($request->hasFile('archivo')) {
             [$filePath, $fileType] = $this->guardarArchivo($request->file('archivo'));
+        }
+        if ($request->hasFile('imagen')) {
+            $imagenPath = $this->guardarImagen($request->file('imagen'));
         }
 
         $modulo = Modulo::create([
@@ -98,6 +105,7 @@ class ModuloController extends Controller
             'estado'      => $request->estado,
             'file_path'   => $filePath,
             'file_type'   => $fileType,
+            'imagen'      => $imagenPath,
             'created_by'  => Auth::id(),
         ]);
 
@@ -119,14 +127,17 @@ class ModuloController extends Controller
             'nombre'      => 'required|string|min:5|max:150',
             'descripcion' => 'required|string|min:10|max:2000',
             'estado'      => 'required|in:Activo,Inactivo',
-            'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:204800',
+            'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:102400',
+            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
         ], [
             'nombre.min'      => 'El nombre debe tener al menos 5 caracteres.',
             'nombre.max'      => 'El nombre no puede exceder 150 caracteres.',
             'descripcion.min' => 'La descripción debe tener al menos 10 caracteres.',
             'descripcion.max' => 'La descripción no puede exceder 2000 caracteres.',
             'archivo.mimes'   => 'Solo se permiten archivos PDF, MP4 o WEBM.',
-            'archivo.max'     => 'El archivo no puede superar los 200 MB.',
+            'archivo.max'     => 'El archivo no puede superar los 100 MB.',
+            'imagen.mimes'    => 'La imagen debe ser JPG, PNG o WEBP.',
+            'imagen.max'      => 'La imagen no puede superar los 5 MB.',
         ]);
 
         $datos = [
@@ -140,6 +151,11 @@ class ModuloController extends Controller
             [$filePath, $fileType] = $this->guardarArchivo($request->file('archivo'));
             $datos['file_path'] = $filePath;
             $datos['file_type'] = $fileType;
+        }
+
+        if ($request->hasFile('imagen')) {
+            $this->eliminarImagenFisica($modulo->imagen);
+            $datos['imagen'] = $this->guardarImagen($request->file('imagen'));
         }
 
         $modulo->update($datos);
@@ -158,6 +174,7 @@ class ModuloController extends Controller
 
         $modulo = Modulo::findOrFail($id);
         $this->eliminarArchivoFisico($modulo->file_path);
+        $this->eliminarImagenFisica($modulo->imagen);
         $modulo->delete();
 
         return response()->json(['message' => 'Módulo eliminado exitosamente.'], 200);
@@ -178,6 +195,28 @@ class ModuloController extends Controller
     }
 
     private function eliminarArchivoFisico(?string $filename): void
+    {
+        if (!$filename) return;
+
+        Storage::disk('public')->delete('modulos/' . $filename);
+        $frontendPath = base_path('../frontend-capacitaciones/public/modulos/' . $filename);
+        File::delete($frontendPath);
+    }
+
+    private function guardarImagen($file): string
+    {
+        $ext      = $file->getClientOriginalExtension();
+        $filename = 'img_' . time() . '_' . Str::random(8) . '.' . $ext;
+
+        $storedPath  = $file->storeAs('modulos', $filename, 'public');
+        $frontendDir = base_path('../frontend-capacitaciones/public/modulos');
+        File::ensureDirectoryExists($frontendDir);
+        copy(storage_path('app/public/' . $storedPath), $frontendDir . '/' . $filename);
+
+        return $filename;
+    }
+
+    private function eliminarImagenFisica(?string $filename): void
     {
         if (!$filename) return;
 

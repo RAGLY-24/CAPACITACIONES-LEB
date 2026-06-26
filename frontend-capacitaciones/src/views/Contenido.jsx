@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -6,16 +6,18 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // ─── Íconos ──────────────────────────────────────────────────────────────────
 const Ico = {
-  plus:   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>,
-  edit:   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.5-6.5a2.121 2.121 0 013 3L12 14H9v-3z"/></svg>,
-  trash:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
-  qa:     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
-  file:   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>,
-  video:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>,
-  check:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>,
+  plus:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>,
+  edit:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.5-6.5a2.121 2.121 0 013 3L12 14H9v-3z"/></svg>,
+  trash: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+  qa:    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
+  file:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>,
+  video: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>,
+  img:   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>,
+  back:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>,
+  check: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>,
 };
 
-// ─── Modal Sección ────────────────────────────────────────────────────────────
+// ─── Modal Sección ─────────────────────────────────────────────────────────────
 function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
   const [form, setForm]     = useState({ nombre: datos?.nombre || "", descripcion: datos?.descripcion || "", estado: datos?.estado || "Activo" });
   const [errs, setErrs]     = useState({});
@@ -30,7 +32,7 @@ function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
   const submit = async e => {
     e.preventDefault();
     const v = {};
-    if (!form.nombre || form.nombre.length < 3) v.nombre = "Mínimo 3 caracteres.";
+    if (!form.nombre || form.nombre.trim().length < 3) v.nombre = "Mínimo 3 caracteres.";
     if (form.nombre.length > 150) v.nombre = "Máximo 150 caracteres.";
     if (Object.keys(v).length) { setErrs(v); return; }
     setSaving(true);
@@ -40,11 +42,8 @@ function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
       onGuardar();
     } catch (err) {
       const backErrs = err.response?.data?.errors || {};
-      if (backErrs.nombre) {
-        setErrs(p => ({ ...p, nombre: backErrs.nombre[0] }));
-      } else {
-        Swal.fire({ icon: "error", title: err.response?.data?.message || "Error al guardar.", confirmButtonColor: "#802907" });
-      }
+      if (backErrs.nombre) setErrs(p => ({ ...p, nombre: backErrs.nombre[0] }));
+      else Swal.fire({ icon: "error", title: err.response?.data?.message || "Error al guardar.", confirmButtonColor: "#802907" });
     } finally { setSaving(false); }
   };
 
@@ -60,7 +59,7 @@ function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
             <label className="text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
             <input name="nombre" value={form.nombre} onChange={handle} maxLength={150}
               className={`mt-1 w-full rounded border p-2 text-sm focus:outline-none focus:border-[#802907] ${errs.nombre ? "border-red-500" : "border-gray-300"}`}
-              placeholder="Ej: Módulo de Seguridad Laboral" />
+              placeholder="Ej: Seguridad Laboral" />
             {errs.nombre && <p className="text-xs text-red-500 mt-1">{errs.nombre}</p>}
           </div>
           <div>
@@ -90,29 +89,40 @@ function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
   );
 }
 
-// ─── Modal Módulo ─────────────────────────────────────────────────────────────
+// ─── Modal Módulo ──────────────────────────────────────────────────────────────
 function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
-  const [form, setForm]     = useState({
+  const [form, setForm] = useState({
     nombre:      datos?.nombre || "",
     descripcion: datos?.descripcion || "",
     estado:      datos?.estado || "Activo",
     archivo:     null,
+    imagen:      null,
   });
-  const [errs, setErrs]     = useState({});
-  const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState(datos?.imagen ? `/modulos/${datos.imagen}` : null);
+  const [errs, setErrs]       = useState({});
+  const [saving, setSaving]   = useState(false);
 
   const handle = e => {
     const { name, value, files } = e.target;
-    setForm(p => ({ ...p, [name]: files ? files[0] : value }));
+    if (files && files[0]) {
+      const file = files[0];
+      setForm(p => ({ ...p, [name]: file }));
+      if (name === "imagen") {
+        const url = URL.createObjectURL(file);
+        setPreview(url);
+      }
+    } else {
+      setForm(p => ({ ...p, [name]: value }));
+    }
     if (errs[name]) setErrs(p => ({ ...p, [name]: null }));
   };
 
   const submit = async e => {
     e.preventDefault();
     const v = {};
-    if (!form.nombre || form.nombre.length < 5) v.nombre = "Mínimo 5 caracteres.";
+    if (!form.nombre || form.nombre.trim().length < 5) v.nombre = "Mínimo 5 caracteres.";
     if (form.nombre.length > 150) v.nombre = "Máximo 150 caracteres.";
-    if (!form.descripcion || form.descripcion.length < 10) v.descripcion = "Mínimo 10 caracteres.";
+    if (!form.descripcion || form.descripcion.trim().length < 10) v.descripcion = "Mínimo 10 caracteres.";
     if (Object.keys(v).length) { setErrs(v); return; }
     setSaving(true);
 
@@ -122,12 +132,12 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
     fd.append("descripcion", form.descripcion);
     fd.append("estado",      form.estado);
     if (form.archivo) fd.append("archivo", form.archivo);
+    if (form.imagen)  fd.append("imagen", form.imagen);
 
     try {
       if (tipo === "crear") {
         await axios.post(`${API}/api/modulos`, fd);
       } else {
-        fd.append("_method", "PUT");
         await axios.post(`${API}/api/modulos/${datos.id}/update`, fd);
       }
       onGuardar();
@@ -142,12 +152,34 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b px-6 py-4">
+      <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
           <h3 className="font-bold text-gray-800">{tipo === "crear" ? "Nuevo Módulo" : "Editar Módulo"}</h3>
           <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl">✕</button>
         </div>
-        <form onSubmit={submit} className="p-6 space-y-4">
+        <form onSubmit={submit} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Imagen portada */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700">Imagen de portada</label>
+            <label className="mt-1 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:border-[#802907] transition-colors overflow-hidden"
+              style={{ minHeight: 140 }}>
+              {preview ? (
+                <img src={preview} alt="portada" className="w-full h-36 object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-8 text-gray-400">
+                  {Ico.img}
+                  <span className="text-xs">Haz clic para subir imagen (JPG, PNG, WEBP · máx. 5 MB)</span>
+                </div>
+              )}
+              <input type="file" name="imagen" accept=".jpg,.jpeg,.png,.webp" onChange={handle} className="hidden" />
+            </label>
+            {preview && (
+              <button type="button" onClick={() => { setPreview(null); setForm(p => ({ ...p, imagen: null })); }}
+                className="mt-1 text-xs text-red-500 hover:underline">Quitar imagen</button>
+            )}
+            {errs.imagen && <p className="text-xs text-red-500 mt-1">{errs.imagen}</p>}
+          </div>
+
           <div>
             <label className="text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
             <input name="nombre" value={form.nombre} onChange={handle} maxLength={150}
@@ -177,9 +209,10 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
               <label className="text-sm font-semibold text-gray-700">Archivo (PDF / MP4)</label>
               <input type="file" name="archivo" accept=".pdf,.mp4,.webm" onChange={handle}
                 className="mt-1 block w-full text-xs text-gray-500 file:rounded file:border-0 file:bg-[#802907] file:px-3 file:py-1.5 file:text-white hover:file:bg-[#5a1b04] cursor-pointer" />
-              {tipo === "editar" && datos?.file_path && (
+              {tipo === "editar" && datos?.file_path && !form.archivo && (
                 <p className="text-xs text-gray-400 mt-0.5">Actual: <strong>{datos.file_type?.toUpperCase()}</strong></p>
               )}
+              {errs.archivo && <p className="text-xs text-red-500 mt-1">{errs.archivo}</p>}
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-2 border-t">
@@ -195,16 +228,60 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
   );
 }
 
-// ─── Constructor de examen ────────────────────────────────────────────────────
+// ─── Editor de opciones (fuera de PanelExamen para evitar pérdida de foco) ────
+function EditorOpciones({ ops, setOps, setCorrecta }) {
+  return (
+    <div className="space-y-2 mt-2">
+      {ops.map((op, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input
+            type="radio"
+            checked={op.es_correcta}
+            onChange={() => setCorrecta(i)}
+            className="accent-green-600 shrink-0"
+            title="Respuesta correcta"
+          />
+          <input
+            value={op.texto}
+            onChange={e => {
+              const val = e.target.value;
+              setOps(o => { const c = [...o]; c[i] = { ...c[i], texto: val }; return c; });
+            }}
+            placeholder={`Opción ${i + 1}`}
+            className="flex-1 rounded border border-gray-300 p-1.5 text-sm focus:outline-none focus:border-[#802907]"
+          />
+          {ops.length > 2 && (
+            <button
+              type="button"
+              onClick={() => setOps(o => o.filter((_, idx) => idx !== i))}
+              className="text-red-400 hover:text-red-600 shrink-0"
+            >
+              {Ico.trash}
+            </button>
+          )}
+        </div>
+      ))}
+      <p className="text-xs text-gray-400">El radio seleccionado = respuesta correcta</p>
+      {ops.length < 5 && (
+        <button
+          type="button"
+          onClick={() => setOps(o => [...o, { texto: "", es_correcta: false }])}
+          className="text-xs rounded border px-2 py-1 text-blue-600 hover:bg-blue-50"
+        >
+          + Agregar opción
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Constructor de examen ─────────────────────────────────────────────────────
 function PanelExamen({ modulo, onCerrar }) {
   const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando]   = useState(true);
   const [nueva, setNueva]         = useState(false);
   const [npTexto, setNpTexto]     = useState("");
-  const [npOps, setNpOps]         = useState([
-    { texto: "", es_correcta: true },
-    { texto: "", es_correcta: false },
-  ]);
+  const [npOps, setNpOps]         = useState([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]);
   const [editId, setEditId]       = useState(null);
   const [editTexto, setEditTexto] = useState("");
   const [editOps, setEditOps]     = useState([]);
@@ -225,8 +302,8 @@ function PanelExamen({ modulo, onCerrar }) {
 
   const validarOps = (ops, texto) => {
     if (!texto.trim()) { Swal.fire({ icon: "warning", title: "Escribe el texto de la pregunta.", confirmButtonColor: "#802907" }); return false; }
-    if (ops.some(o => !o.texto.trim())) { Swal.fire({ icon: "warning", title: "Completa el texto de todas las opciones.", confirmButtonColor: "#802907" }); return false; }
-    if (!ops.some(o => o.es_correcta)) { Swal.fire({ icon: "warning", title: "Marca una opción como correcta (radio).", confirmButtonColor: "#802907" }); return false; }
+    if (ops.some(o => !o.texto.trim())) { Swal.fire({ icon: "warning", title: "Completa todas las opciones.", confirmButtonColor: "#802907" }); return false; }
+    if (!ops.some(o => o.es_correcta)) { Swal.fire({ icon: "warning", title: "Marca una opción como correcta.", confirmButtonColor: "#802907" }); return false; }
     return true;
   };
 
@@ -237,13 +314,8 @@ function PanelExamen({ modulo, onCerrar }) {
       setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]);
       setNueva(false); cargar();
     } catch (err) {
-      Swal.fire({ icon: "error", title: err.response?.data?.message || "Error al guardar pregunta.", confirmButtonColor: "#802907" });
+      Swal.fire({ icon: "error", title: err.response?.data?.message || "Error.", confirmButtonColor: "#802907" });
     }
-  };
-
-  const abrirEditar = p => {
-    setEditId(p.id); setEditTexto(p.texto);
-    setEditOps(p.opciones.map(o => ({ texto: o.texto, es_correcta: o.es_correcta })));
   };
 
   const guardarEdicion = async () => {
@@ -252,58 +324,33 @@ function PanelExamen({ modulo, onCerrar }) {
       await axios.put(`${API}/api/preguntas/${editId}`, { texto: editTexto, opciones: editOps });
       setEditId(null); cargar();
     } catch (err) {
-      Swal.fire({ icon: "error", title: err.response?.data?.message || "Error al actualizar.", confirmButtonColor: "#802907" });
+      Swal.fire({ icon: "error", title: err.response?.data?.message || "Error.", confirmButtonColor: "#802907" });
     }
   };
 
   const eliminar = async id => {
-    const ok = await Swal.fire({ title: "¿Eliminar pregunta?", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", cancelButtonColor: "#6b7280", confirmButtonText: "Sí, eliminar", cancelButtonText: "Cancelar" });
+    const ok = await Swal.fire({ title: "¿Eliminar pregunta?", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", cancelButtonColor: "#6b7280", confirmButtonText: "Sí", cancelButtonText: "Cancelar" });
     if (!ok.isConfirmed) return;
     try { await axios.delete(`${API}/api/preguntas/${id}`); cargar(); }
     catch { Swal.fire({ icon: "error", title: "Error al eliminar.", confirmButtonColor: "#802907" }); }
   };
 
-  const EditorOpciones = ({ ops, setOps, setCorrecta }) => (
-    <div className="space-y-2 mt-2">
-      {ops.map((op, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <input type="radio" checked={op.es_correcta} onChange={() => setCorrecta(i)} className="accent-green-600 shrink-0" title="Marcar como correcta" />
-          <input value={op.texto} onChange={e => setOps(o => { const c=[...o]; c[i]={...c[i],texto:e.target.value}; return c; })}
-            placeholder={`Opción ${i+1}`}
-            className="flex-1 rounded border border-gray-300 p-1.5 text-sm focus:outline-none focus:border-[#802907]" />
-          {ops.length > 2 && (
-            <button onClick={() => setOps(o => o.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 shrink-0">{Ico.trash}</button>
-          )}
-        </div>
-      ))}
-      <p className="text-xs text-gray-400">El radio seleccionado = respuesta correcta</p>
-      {ops.length < 5 && (
-        <button onClick={() => setOps(o => [...o, { texto: "", es_correcta: false }])}
-          className="text-xs rounded border px-2 py-1 text-blue-600 hover:bg-blue-50">+ Agregar opción</button>
-      )}
-    </div>
-  );
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl bg-gray-50 shadow-2xl overflow-hidden">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4 shrink-0">
+        <div className="flex items-center justify-between border-b bg-white px-6 py-4 shrink-0">
           <div>
             <h3 className="font-bold text-gray-800">Examen — {modulo.nombre}</h3>
-            <p className="text-xs text-gray-500">{preguntas.length} pregunta(s) · Pasa con ≥70%</p>
+            <p className="text-xs text-gray-500">{preguntas.length} pregunta(s) · Aprueba con ≥70%</p>
           </div>
           <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold">✕</button>
         </div>
-
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {cargando ? (
-            <p className="text-center text-sm text-gray-400 py-6">Cargando...</p>
-          ) : (
+          {cargando ? <p className="text-center text-sm text-gray-400 py-6">Cargando...</p> : (
             <>
               {preguntas.length === 0 && !nueva && (
                 <p className="text-center text-sm text-gray-400 py-6">Sin preguntas. Agrega la primera.</p>
               )}
-
               {preguntas.map((p, idx) => (
                 <div key={p.id} className="rounded-lg border bg-white p-4">
                   {editId === p.id ? (
@@ -321,7 +368,8 @@ function PanelExamen({ modulo, onCerrar }) {
                       <div className="flex items-start justify-between">
                         <p className="text-sm font-semibold text-gray-800">{idx + 1}. {p.texto}</p>
                         <div className="flex gap-1 shrink-0 ml-2">
-                          <button onClick={() => abrirEditar(p)} className="rounded p-1 text-blue-600 hover:bg-blue-50">{Ico.edit}</button>
+                          <button onClick={() => { setEditId(p.id); setEditTexto(p.texto); setEditOps(p.opciones.map(o => ({ texto: o.texto, es_correcta: o.es_correcta }))); }}
+                            className="rounded p-1 text-blue-600 hover:bg-blue-50">{Ico.edit}</button>
                           <button onClick={() => eliminar(p.id)} className="rounded p-1 text-red-600 hover:bg-red-50">{Ico.trash}</button>
                         </div>
                       </div>
@@ -338,8 +386,6 @@ function PanelExamen({ modulo, onCerrar }) {
                   )}
                 </div>
               ))}
-
-              {/* Formulario nueva pregunta */}
               {nueva && (
                 <div className="rounded-lg border-2 border-dashed border-[#802907] bg-white p-4 space-y-2">
                   <p className="text-sm font-semibold text-gray-700">Nueva pregunta</p>
@@ -349,12 +395,11 @@ function PanelExamen({ modulo, onCerrar }) {
                   <EditorOpciones ops={npOps} setOps={setNpOps} setCorrecta={setCorrectaNueva} />
                   <div className="flex gap-2 pt-1">
                     <button onClick={guardarNueva} className="text-xs rounded bg-[#802907] text-white px-3 py-1.5 hover:bg-[#5a1b04]">Guardar pregunta</button>
-                    <button onClick={() => { setNueva(false); setNpTexto(""); setNpOps([{ texto:"",es_correcta:true},{texto:"",es_correcta:false}]); }}
+                    <button onClick={() => { setNueva(false); setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]); }}
                       className="text-xs rounded border px-3 py-1.5 text-gray-600 hover:bg-gray-100">Cancelar</button>
                   </div>
                 </div>
               )}
-
               {!nueva && (
                 <button onClick={() => setNueva(true)}
                   className="w-full rounded-lg border-2 border-dashed border-gray-300 py-3 text-sm text-gray-400 hover:border-[#802907] hover:text-[#802907] transition-colors">
@@ -369,55 +414,113 @@ function PanelExamen({ modulo, onCerrar }) {
   );
 }
 
-// ─── Tarjeta de módulo ────────────────────────────────────────────────────────
-function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar }) {
+// ─── Tarjeta de módulo (con imagen) ────────────────────────────────────────────
+function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiada }) {
+  const inputRef    = useRef(null);
+  const [subiendo, setSubiendo] = useState(false);
+
+  const subirImagen = async e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Resetear el input para que pueda re-seleccionarse el mismo archivo
+    e.target.value = "";
+    setSubiendo(true);
+    const fd = new FormData();
+    fd.append("nombre",      modulo.nombre);
+    fd.append("descripcion", modulo.descripcion);
+    fd.append("estado",      modulo.estado);
+    fd.append("imagen",      file);
+    try {
+      await axios.post(`${API}/api/modulos/${modulo.id}/update`, fd);
+      onImagenCambiada();
+    } catch (err) {
+      const errores = err.response?.data?.errors || {};
+      const msg = errores.imagen?.[0]
+        || err.response?.data?.message
+        || `Error ${err.response?.status || ""} al subir la imagen.`;
+      Swal.fire({ icon: "error", title: msg, confirmButtonColor: "#802907" });
+    } finally { setSubiendo(false); }
+  };
+
+  const imgSrc = modulo.imagen ? `/modulos/${modulo.imagen}` : null;
+
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-4 hover:shadow-sm transition-shadow group">
-      <div className={`mt-0.5 rounded-lg p-2 shrink-0 ${modulo.file_type === "pdf" ? "bg-red-50 text-red-600" : modulo.file_type === "video" ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-400"}`}>
-        {modulo.file_type === "pdf" ? Ico.file : modulo.file_type === "video" ? Ico.video : Ico.file}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-gray-800 text-sm">{modulo.nombre}</span>
-          <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${modulo.estado === "Activo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-            {modulo.estado}
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-shadow">
+      {/* Zona de imagen */}
+      <div
+        className="relative h-40 bg-gray-100 cursor-pointer overflow-hidden"
+        onClick={() => inputRef.current?.click()}
+        title="Haz clic para cambiar la imagen"
+      >
+        {imgSrc ? (
+          <img src={imgSrc} alt={modulo.nombre} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-300">
+            {Ico.img}
+            <span className="text-xs text-gray-400">Sin imagen</span>
+          </div>
+        )}
+        {/* Overlay al hover */}
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          <span className="text-white text-xs font-semibold">
+            {subiendo ? "Subiendo..." : imgSrc ? "Cambiar imagen" : "Subir imagen"}
           </span>
-          {modulo.preguntas_count > 0 && (
-            <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-purple-100 text-purple-700">
-              {modulo.preguntas_count} preg.
-            </span>
-          )}
         </div>
-        <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{modulo.descripcion}</p>
+        {/* Badge tipo archivo */}
+        {modulo.file_type && (
+          <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${modulo.file_type === "pdf" ? "bg-red-600 text-white" : "bg-blue-600 text-white"}`}>
+            {modulo.file_type.toUpperCase()}
+          </span>
+        )}
+        {/* Badge estado */}
+        <span className={`absolute top-2 right-2 text-[10px] font-bold rounded-full px-2 py-0.5 ${modulo.estado === "Activo" ? "bg-green-500 text-white" : "bg-gray-500 text-white"}`}>
+          {modulo.estado}
+        </span>
+        <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={subirImagen} className="hidden" />
       </div>
-      <div className="flex gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEditar(modulo)} title="Editar módulo"
-          className="rounded border border-blue-200 bg-blue-50 p-1.5 text-blue-700 hover:bg-blue-100">
-          {Ico.edit}
-        </button>
-        <button onClick={() => onExamen(modulo)} title="Gestionar examen"
-          className="rounded border border-purple-200 bg-purple-50 p-1.5 text-purple-700 hover:bg-purple-100">
-          {Ico.qa}
-        </button>
-        <button onClick={() => onEliminar(modulo)} title="Eliminar módulo"
-          className="rounded border border-red-200 bg-red-50 p-1.5 text-red-700 hover:bg-red-100">
-          {Ico.trash}
-        </button>
+
+      {/* Info del módulo */}
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        <div>
+          <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{modulo.nombre}</h4>
+          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{modulo.descripcion}</p>
+        </div>
+        {modulo.preguntas_count > 0 && (
+          <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-purple-100 text-purple-700 self-start">
+            {modulo.preguntas_count} pregunta(s)
+          </span>
+        )}
+
+        {/* Acciones */}
+        <div className="flex gap-2 mt-auto pt-2 border-t border-gray-100">
+          <button onClick={() => onEditar(modulo)} title="Editar módulo"
+            className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100">
+            {Ico.edit} Editar
+          </button>
+          <button onClick={() => onExamen(modulo)} title="Gestionar examen"
+            className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-purple-200 bg-purple-50 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100">
+            {Ico.qa} Examen
+          </button>
+          <button onClick={() => onEliminar(modulo)} title="Eliminar módulo"
+            className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-red-700 hover:bg-red-100">
+            {Ico.trash}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Panel de sección activa ──────────────────────────────────────────────────
-function PanelSeccion({ seccion, onRefrescar }) {
-  const [modalMod, setModalMod]     = useState(null); // {tipo, datos}
-  const [examenModulo, setExamen]   = useState(null);
-  const [editandoSec, setEditando]  = useState(false);
+// ─── Vista: módulos de una sección ─────────────────────────────────────────────
+function VistaModulos({ seccion, onVolver, onRefrescar }) {
+  const [modalMod, setModalMod]   = useState(null);
+  const [examenMod, setExamenMod] = useState(null);
+  const [editSec, setEditSec]     = useState(false);
 
   const eliminarModulo = async m => {
     const ok = await Swal.fire({
       title: `¿Eliminar "${m.nombre}"?`, icon: "warning",
-      text: "Se eliminarán sus preguntas y el progreso de los usuarios.",
+      text: "Se eliminarán sus preguntas y el progreso asociado.",
       showCancelButton: true, confirmButtonColor: "#d33", cancelButtonColor: "#6b7280",
       confirmButtonText: "Sí, eliminar", cancelButtonText: "Cancelar",
     });
@@ -427,92 +530,143 @@ function PanelSeccion({ seccion, onRefrescar }) {
       onRefrescar();
       Swal.fire({ icon: "success", title: "Módulo eliminado.", confirmButtonColor: "#802907" });
     } catch (err) {
-      Swal.fire({ icon: "error", title: err.response?.data?.message || "Error al eliminar.", confirmButtonColor: "#802907" });
+      Swal.fire({ icon: "error", title: err.response?.data?.message || "Error.", confirmButtonColor: "#802907" });
     }
   };
 
-  const alGuardarModulo = () => {
+  const alGuardar = () => {
     setModalMod(null);
     onRefrescar();
     Swal.fire({ icon: "success", title: "Módulo guardado.", confirmButtonColor: "#802907" });
   };
 
-  const alGuardarSeccion = () => {
-    setEditando(false);
-    onRefrescar();
-    Swal.fire({ icon: "success", title: "Sección actualizada.", confirmButtonColor: "#802907" });
-  };
-
   return (
-    <div className="space-y-4">
-      {/* Descripción + botón editar sección */}
-      <div className="flex items-center justify-between gap-4">
-        {seccion.descripcion && <p className="text-sm text-gray-500">{seccion.descripcion}</p>}
-        <button onClick={() => setEditando(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 shrink-0 ml-auto">
-          {Ico.edit} Editar sección
-        </button>
+    <div className="space-y-5">
+      {/* Breadcrumb + acciones */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <button onClick={onVolver}
+            className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
+            {Ico.back} Secciones
+          </button>
+          <span className="text-gray-400">/</span>
+          <span className="font-semibold text-gray-800">{seccion.nombre}</span>
+          <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${seccion.estado === "Activo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+            {seccion.estado}
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setEditSec(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
+            {Ico.edit} Editar sección
+          </button>
+          <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
+            className="flex items-center gap-2 rounded-lg bg-[#802907] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
+            {Ico.plus} Nuevo módulo
+          </button>
+        </div>
       </div>
 
-      {/* Lista de módulos */}
-      <div className="space-y-2">
-        {(seccion.modulos || []).length === 0 ? (
-          <p className="rounded-lg border border-dashed border-gray-200 py-8 text-center text-sm text-gray-400">
-            Esta sección no tiene módulos. Agrega el primero.
-          </p>
-        ) : (
-          (seccion.modulos || []).map(m => (
+      {seccion.descripcion && (
+        <p className="text-sm text-gray-500">{seccion.descripcion}</p>
+      )}
+
+      {/* Grid de tarjetas de módulo */}
+      {(seccion.modulos || []).length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
+          <p className="text-gray-400 text-sm mb-4">Esta sección no tiene módulos todavía.</p>
+          <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
+            className="rounded-lg bg-[#802907] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
+            Crear primer módulo
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {(seccion.modulos || []).map(m => (
             <TarjetaModulo
               key={m.id}
               modulo={m}
               onEditar={mod => setModalMod({ tipo: "editar", datos: mod })}
-              onExamen={mod => setExamen(mod)}
+              onExamen={mod => setExamenMod(mod)}
               onEliminar={eliminarModulo}
+              onImagenCambiada={onRefrescar}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Botón agregar módulo */}
-      <button
-        onClick={() => setModalMod({ tipo: "crear", datos: null })}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-[#802907] hover:text-[#802907] transition-colors"
-      >
-        {Ico.plus} Agregar módulo en esta sección
-      </button>
-
-      {/* Modales */}
       {modalMod && (
-        <ModalModulo
-          tipo={modalMod.tipo}
-          seccionId={seccion.id}
-          datos={modalMod.datos}
-          onGuardar={alGuardarModulo}
-          onCerrar={() => setModalMod(null)}
-        />
+        <ModalModulo tipo={modalMod.tipo} seccionId={seccion.id} datos={modalMod.datos}
+          onGuardar={alGuardar} onCerrar={() => setModalMod(null)} />
       )}
-      {editandoSec && (
-        <ModalSeccion tipo="editar" datos={seccion} onGuardar={alGuardarSeccion} onCerrar={() => setEditando(false)} />
+      {examenMod && (
+        <PanelExamen modulo={examenMod} onCerrar={() => { setExamenMod(null); onRefrescar(); }} />
       )}
-      {examenModulo && (
-        <PanelExamen modulo={examenModulo} onCerrar={() => { setExamen(null); onRefrescar(); }} />
+      {editSec && (
+        <ModalSeccion tipo="editar" datos={seccion}
+          onGuardar={() => { setEditSec(false); onRefrescar(); Swal.fire({ icon: "success", title: "Sección actualizada.", confirmButtonColor: "#802907" }); }}
+          onCerrar={() => setEditSec(false)} />
       )}
     </div>
   );
 }
 
-// ─── Vista principal ──────────────────────────────────────────────────────────
+// ─── Tarjeta de sección ────────────────────────────────────────────────────────
+function TarjetaSeccion({ seccion, onClick, onEditar, onEliminar }) {
+  return (
+    <div
+      onClick={onClick}
+      className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 cursor-pointer hover:border-[#802907] hover:shadow-md transition-all group relative"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${seccion.estado === "Activo" ? "bg-green-500" : "bg-red-400"}`} />
+            <h3 className="font-bold text-gray-800 truncate group-hover:text-[#802907] transition-colors">
+              {seccion.nombre}
+            </h3>
+          </div>
+          {seccion.descripcion && (
+            <p className="text-xs text-gray-400 line-clamp-2 mt-1">{seccion.descripcion}</p>
+          )}
+          <p className="text-xs text-gray-500 mt-3 font-medium">
+            {seccion.modulos?.length || 0} módulo(s)
+          </p>
+        </div>
+        {/* Botones de acción (no propagan el click a la tarjeta) */}
+        <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+          <button onClick={() => onEditar(seccion)} title="Editar sección"
+            className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600">
+            {Ico.edit}
+          </button>
+          <button onClick={() => onEliminar(seccion)} title="Eliminar sección"
+            className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600">
+            {Ico.trash}
+          </button>
+        </div>
+      </div>
+
+      {/* Flecha indicadora */}
+      <div className="absolute bottom-4 right-4 text-gray-200 group-hover:text-[#802907] transition-colors text-lg">
+        →
+      </div>
+    </div>
+  );
+}
+
+// ─── Vista principal ────────────────────────────────────────────────────────────
 function Contenido() {
   const storedUser  = typeof window !== "undefined" ? JSON.parse(sessionStorage.getItem("user") || "null") : null;
   const rol         = storedUser?.puesto?.nombre || null;
   const permisos    = storedUser?.permissions || {};
   const puedeEditar = rol === "SistemasAdmin" || permisos.edit_trainings;
 
-  const [secciones, setSecciones] = useState([]);
-  const [abiertos, setAbiertos]   = useState({});   // {seccionId: true/false}
-  const [cargando, setCargando]   = useState(true);
-  const [modalSec, setModalSec]   = useState(false);
+  const [secciones, setSecciones]  = useState([]);
+  const [cargando, setCargando]    = useState(true);
+  const [seccionActiva, setActiva] = useState(null);
+  const [modalSec, setModalSec]    = useState(null);
 
+  // Carga la lista de secciones sin tocar seccionActiva
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
@@ -523,20 +677,25 @@ function Contenido() {
     } finally { setCargando(false); }
   }, []);
 
+  // Recarga y actualiza la sección activa (para cuando se crean/editan módulos)
+  const refrescar = useCallback(async () => {
+    try {
+      const r = await axios.get(`${API}/api/secciones`);
+      setSecciones(r.data);
+      setActiva(prev => {
+        if (!prev) return null;
+        return r.data.find(s => s.id === prev.id) ?? prev;
+      });
+    } catch {
+      Swal.fire({ icon: "error", title: "Error al cargar.", confirmButtonColor: "#802907" });
+    }
+  }, []);
+
   useEffect(() => { cargar(); }, [cargar]);
 
-  const toggle = id => setAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
-
-  const alCrearSeccion = () => {
-    setModalSec(false);
-    cargar();
-    Swal.fire({ icon: "success", title: "Sección creada.", confirmButtonColor: "#802907" });
-  };
-
-  const confirmarEliminarSeccion = async (e, seccion) => {
-    e.stopPropagation();
+  const confirmarEliminar = async seccion => {
     const ok = await Swal.fire({
-      title: `¿Eliminar sección "${seccion.nombre}"?`,
+      title: `¿Eliminar "${seccion.nombre}"?`,
       text: "Solo puedes eliminarla si no tiene módulos.",
       icon: "warning", showCancelButton: true,
       confirmButtonColor: "#d33", cancelButtonColor: "#6b7280",
@@ -545,6 +704,7 @@ function Contenido() {
     if (!ok.isConfirmed) return;
     try {
       await axios.delete(`${API}/api/secciones/${seccion.id}`);
+      if (seccionActiva?.id === seccion.id) setActiva(null);
       cargar();
       Swal.fire({ icon: "success", title: "Sección eliminada.", confirmButtonColor: "#802907" });
     } catch (err) {
@@ -561,18 +721,29 @@ function Contenido() {
     );
   }
 
+  // ── Vista módulos de la sección activa ──
+  if (seccionActiva) {
+    return (
+      <div className="p-6">
+        <VistaModulos
+          seccion={seccionActiva}
+          onVolver={() => setActiva(null)}
+          onRefrescar={refrescar}
+        />
+      </div>
+    );
+  }
+
+  // ── Vista lista de secciones ──
   return (
-    <div className="p-6 space-y-4">
-      {/* Encabezado */}
+    <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Editar Contenido de Capacitaciones</h2>
-          <p className="text-sm text-gray-500">Organiza el material en secciones y módulos, y configura los exámenes.</p>
+          <h2 className="text-xl font-bold text-gray-800">Editar Contenido</h2>
+          <p className="text-sm text-gray-500">Selecciona una sección para ver y gestionar sus módulos.</p>
         </div>
-        <button
-          onClick={() => setModalSec(true)}
-          className="flex items-center gap-2 rounded-lg bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] transition-colors"
-        >
+        <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
+          className="flex items-center gap-2 rounded-lg bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
           {Ico.plus} Nueva Sección
         </button>
       </div>
@@ -583,72 +754,38 @@ function Contenido() {
         </div>
       ) : secciones.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white p-16 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-300">
-            {Ico.plus}
-          </div>
-          <p className="text-lg font-semibold text-gray-600 mb-1">Sin secciones todavía</p>
-          <p className="text-sm text-gray-400 mb-5">Crea la primera sección para empezar a organizar los módulos de capacitación.</p>
-          <button onClick={() => setModalSec(true)}
+          <p className="text-lg font-semibold text-gray-600 mb-1">Sin secciones</p>
+          <p className="text-sm text-gray-400 mb-5">Crea la primera sección para organizar los módulos.</p>
+          <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
             className="rounded-lg bg-[#802907] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
             Crear primera sección
           </button>
         </div>
       ) : (
-        /* Acordeón vertical de secciones */
-        <div className="space-y-3">
-          {secciones.map(sec => {
-            const abierto = !!abiertos[sec.id];
-            return (
-              <div key={sec.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                {/* Cabecera clicable */}
-                <button
-                  onClick={() => toggle(sec.id)}
-                  className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-50 transition-colors"
-                >
-                  {/* Chevron */}
-                  <span className={`shrink-0 text-gray-400 transition-transform duration-200 ${abierto ? "rotate-90" : ""}`}>
-                    ▶
-                  </span>
-
-                  {/* Punto de estado */}
-                  <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${sec.estado === "Activo" ? "bg-green-500" : "bg-red-400"}`} />
-
-                  {/* Nombre y contador */}
-                  <span className="flex-1 font-semibold text-gray-800">{sec.nombre}</span>
-                  <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 shrink-0">
-                    {sec.modulos?.length || 0} módulo(s)
-                  </span>
-
-                  {/* Botón eliminar */}
-                  <span
-                    role="button"
-                    onClick={e => confirmarEliminarSeccion(e, sec)}
-                    className="ml-1 rounded-full p-1 text-gray-300 hover:bg-red-100 hover:text-red-600 transition-colors shrink-0"
-                    title="Eliminar sección"
-                  >
-                    {Ico.trash}
-                  </span>
-                </button>
-
-                {/* Panel expandible */}
-                {abierto && (
-                  <div className="border-t border-gray-100 p-5">
-                    <PanelSeccion
-                      key={sec.id}
-                      seccion={sec}
-                      onRefrescar={cargar}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {secciones.map(sec => (
+            <TarjetaSeccion
+              key={sec.id}
+              seccion={sec}
+              onClick={() => setActiva(sec)}
+              onEditar={s => setModalSec({ tipo: "editar", datos: s })}
+              onEliminar={confirmarEliminar}
+            />
+          ))}
         </div>
       )}
 
-      {/* Modal nueva sección */}
       {modalSec && (
-        <ModalSeccion tipo="crear" datos={null} onGuardar={alCrearSeccion} onCerrar={() => setModalSec(false)} />
+        <ModalSeccion
+          tipo={modalSec.tipo}
+          datos={modalSec.datos}
+          onGuardar={() => {
+            setModalSec(null);
+            cargar();
+            Swal.fire({ icon: "success", title: modalSec.tipo === "crear" ? "Sección creada." : "Sección actualizada.", confirmButtonColor: "#802907" });
+          }}
+          onCerrar={() => setModalSec(null)}
+        />
       )}
     </div>
   );

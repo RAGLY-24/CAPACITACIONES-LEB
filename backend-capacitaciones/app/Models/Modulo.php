@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Modulo extends Model
 {
-    protected $fillable = ['seccion_id', 'orden', 'nombre', 'descripcion', 'estado', 'file_path', 'file_type', 'created_by'];
+    protected $fillable = ['seccion_id', 'orden', 'nombre', 'descripcion', 'estado', 'file_path', 'file_type', 'imagen', 'created_by'];
 
     public function preguntas()
     {

@@ -102,22 +102,70 @@ function LeyendaPastel({ datos }) {
   );
 }
 
-// ─── Visor de archivo y Examen ───────────────────────────────────────────────
+// ─── Visor de archivo ────────────────────────────────────────────────────────
+function SinArchivo() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
+      <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+          d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+      </svg>
+      <p className="text-gray-500 font-medium text-sm">No hay archivos para mostrar</p>
+      <p className="text-gray-400 text-xs">El administrador aún no ha subido contenido para este módulo.</p>
+    </div>
+  );
+}
+
 function VisorArchivo({ filePath, fileType }) {
-  if (!filePath) return null;
-  const src = `/modulos/${filePath}`;
-  if (fileType === "video") {
+  const [estado, setEstado] = useState("verificando"); // "verificando" | "ok" | "error"
+
+  useEffect(() => {
+    if (!filePath) { setEstado("error"); return; }
+    setEstado("verificando");
+    fetch(`/modulos/${filePath}`, { method: "HEAD" })
+      .then(r => {
+        // Vite devuelve 200 + text/html para rutas inexistentes (SPA fallback).
+        // Solo aceptamos el archivo si el Content-Type NO es HTML.
+        const ct = r.headers.get("content-type") || "";
+        const esArchivoReal = r.ok && !ct.includes("text/html");
+        setEstado(esArchivoReal ? "ok" : "error");
+      })
+      .catch(() => setEstado("error"));
+  }, [filePath]);
+
+  if (!filePath || estado === "error") return <SinArchivo />;
+
+  if (estado === "verificando") {
     return (
-      <div className="rounded-lg overflow-hidden bg-black">
-        <video src={src} controls className="w-full max-h-80 object-contain" />
+      <div className="flex items-center justify-center py-12">
+        <p className="text-sm text-gray-400">Verificando archivo...</p>
       </div>
     );
   }
+
+  const src = `/modulos/${filePath}`;
+
+  if (fileType === "video") {
+    return (
+      <div className="rounded-lg overflow-hidden bg-black">
+        <video
+          src={src}
+          controls
+          className="w-full max-h-80 object-contain"
+          onError={() => setEstado("error")}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg overflow-hidden border border-gray-200">
       <embed src={src} type="application/pdf" className="w-full h-96" />
       <p className="text-xs text-center text-gray-400 py-1">
-        Si el PDF no se muestra, <a href={src} target="_blank" rel="noreferrer" className="text-blue-600 underline">ábrelo aquí</a>.
+        Si el PDF no se muestra,{" "}
+        <a href={src} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+          ábrelo aquí
+        </a>.
       </p>
     </div>
   );
@@ -269,9 +317,7 @@ function ModalTomarModulo({ item, onCerrar }) {
         <div className="flex-1 overflow-y-auto p-6">
           {tab === "contenido" ? (
             <div className="space-y-4">
-              {modulo.file_path
-                ? <VisorArchivo filePath={modulo.file_path} fileType={modulo.file_type} />
-                : <p className="text-center text-sm text-gray-400 py-8">Este módulo no tiene archivo adjunto.</p>}
+              <VisorArchivo filePath={modulo.file_path} fileType={modulo.file_type} />
               <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
                 <p className="text-sm text-blue-800 font-medium">¿Ya revisaste el contenido?</p>
                 <p className="text-xs text-blue-600 mt-1">Ve a la pestaña <strong>Examen</strong> cuando estés listo.</p>
@@ -467,7 +513,7 @@ function VistaAdmin() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
             {pieData.map(sec => (
               <div key={sec.seccion_id} className="rounded-xl border border-gray-100 bg-gray-50 p-4 flex flex-col items-center gap-2 hover:shadow-md transition-shadow">
-                <p className="text-xs font-bold text-gray-700 text-center break-words w-full line-clamp-2 min-h-[2rem]" title={sec.nombre}>
+                <p className="text-xs font-bold text-gray-700 text-center wrap-break-word w-full line-clamp-2 min-h-8" title={sec.nombre}>
                   {sec.nombre}
                 </p>
                 <div className="py-2">
