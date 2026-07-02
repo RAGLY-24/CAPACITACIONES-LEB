@@ -25,6 +25,9 @@ class ExamenController extends Controller
         if ($modulo->estado === 'Inactivo') {
             return response()->json(['message' => 'Este módulo no está disponible.'], 403);
         }
+        if ($modulo->estaBloqueadoPara($user)) {
+            return response()->json(['message' => 'Debes aprobar el examen del módulo anterior primero.'], 403);
+        }
 
         if ($modulo->preguntas->isEmpty()) {
             return response()->json(['message' => 'Este módulo aún no tiene examen configurado.'], 404);
@@ -62,6 +65,9 @@ class ExamenController extends Controller
 
         if ($modulo->estado === 'Inactivo') {
             return response()->json(['message' => 'Este módulo no está disponible.'], 403);
+        }
+        if ($modulo->estaBloqueadoPara($user)) {
+            return response()->json(['message' => 'Debes aprobar el examen del módulo anterior primero.'], 403);
         }
 
         $request->validate([

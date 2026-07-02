@@ -94,7 +94,7 @@ export function VisorPresentacion({ presentacionJson }) {
   }
 
   return (
-    <div className="relative h-96 rounded-lg overflow-hidden border border-gray-200">
+    <div className="relative h-full min-h-[70vh] rounded-lg overflow-hidden border border-gray-200">
       <Tldraw onMount={handleMount} hideUi />
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/95 text-sm text-gray-400">

@@ -110,7 +110,7 @@ function LeyendaPastel({ datos }) {
 // ─── Visor de archivo ────────────────────────────────────────────────────────
 function SinArchivo() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
+    <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
       <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
           d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
@@ -122,7 +122,7 @@ function SinArchivo() {
 }
 
 function VisorArchivo({ filePath, fileType, presentacionJson }) {
-  const [estado, setEstado] = useState("verificando"); // "verificando" | "ok" | "error"
+  const [estado, setEstado] = useState("verificando");
 
   useEffect(() => {
     if (fileType === "presentacion") return; // se valida dentro de VisorPresentacion
@@ -141,9 +141,11 @@ function VisorArchivo({ filePath, fileType, presentacionJson }) {
 
   if (fileType === "presentacion") {
     return (
-      <Suspense fallback={<p className="text-center text-sm text-gray-400 py-12">Cargando presentación...</p>}>
-        <VisorPresentacion presentacionJson={presentacionJson} />
-      </Suspense>
+      <div className="flex-1 min-h-0 flex flex-col">
+        <Suspense fallback={<p className="text-center text-sm text-gray-400 py-12">Cargando presentación...</p>}>
+          <VisorPresentacion presentacionJson={presentacionJson} />
+        </Suspense>
+      </div>
     );
   }
 
@@ -151,7 +153,7 @@ function VisorArchivo({ filePath, fileType, presentacionJson }) {
 
   if (estado === "verificando") {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex-1 min-h-0 flex items-center justify-center py-12">
         <p className="text-sm text-gray-400">Verificando archivo...</p>
       </div>
     );
@@ -161,11 +163,11 @@ function VisorArchivo({ filePath, fileType, presentacionJson }) {
 
   if (fileType === "video") {
     return (
-      <div className="rounded-lg overflow-hidden bg-black">
+      <div className="flex-1 min-h-0 rounded-lg overflow-hidden bg-black">
         <video
           src={src}
           controls
-          className="w-full max-h-80 object-contain"
+          className="w-full h-full object-contain"
           onError={() => setEstado("error")}
         />
       </div>
@@ -173,9 +175,9 @@ function VisorArchivo({ filePath, fileType, presentacionJson }) {
   }
 
   return (
-    <div className="rounded-lg overflow-hidden border border-gray-200">
-      <embed src={src} type="application/pdf" className="w-full h-96" />
-      <p className="text-xs text-center text-gray-400 py-1">
+    <div className="flex-1 min-h-0 flex flex-col rounded-lg overflow-hidden border border-gray-200">
+      <embed src={src} type="application/pdf" className="w-full flex-1 min-h-0" />
+      <p className="text-xs text-center text-gray-400 py-1 shrink-0">
         Si el PDF no se muestra,{" "}
         <a href={src} target="_blank" rel="noreferrer" className="text-blue-600 underline">
           ábrelo aquí
@@ -185,7 +187,7 @@ function VisorArchivo({ filePath, fileType, presentacionJson }) {
   );
 }
 
-function SeccionExamen({ moduloId, onTerminar }) {
+function SeccionExamen({ moduloId, onCalificado }) {
   const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [respuestas, setRespuestas] = useState({});
@@ -216,7 +218,7 @@ function SeccionExamen({ moduloId, onTerminar }) {
     try {
       const res = await axios.post(`${API}/api/modulos/${moduloId}/examen`, { respuestas });
       setResultado(res.data);
-      onTerminar();
+      onCalificado?.();
     } catch (err) {
       Swal.fire({ icon: "error", title: err.response?.data?.message || "Error al enviar.", confirmButtonColor: "#802907" });
     } finally { setEnviando(false); }
@@ -297,49 +299,134 @@ function SeccionExamen({ moduloId, onTerminar }) {
   );
 }
 
-function ModalTomarModulo({ item, onCerrar }) {
-  const { modulo, estado } = item;
+function IconoEstadoModulo({ estado, desbloqueado }) {
+  if (!desbloqueado) return <span className="text-gray-300">🔒</span>;
+  if (estado === "completado") return <span className="text-green-600">✓</span>;
+  if (estado === "reprobado") return <span className="text-red-500">✗</span>;
+  if (estado === "en_progreso") return <span className="text-yellow-600">●</span>;
+  return <span className="text-gray-300">○</span>;
+}
+
+// VISTA ESTILO CISCO
+function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizado }) {
+  const [activoId, setActivoId] = useState(moduloInicialId);
   const [tab, setTab] = useState("contenido");
-  const [yaIniciado, setInit] = useState(estado !== "pendiente");
+  const [abiertos, setAbiertos] = useState(() => {
+    const open = {};
+    secciones.forEach(s => {
+      open[s.seccion.id] = s.modulos.some(m => m.modulo.id === moduloInicialId);
+    });
+    return open;
+  });
+
+  const activo = useMemo(() => {
+    for (const s of secciones) {
+      const found = s.modulos.find(m => m.modulo.id === activoId);
+      if (found) return found;
+    }
+    return null;
+  }, [secciones, activoId]);
 
   useEffect(() => {
-    if (!yaIniciado) {
-      axios.post(`${API}/api/modulos/${modulo.id}/iniciar`)
-        .then(() => setInit(true))
-        .catch(() => setInit(true));
+    if (activo && activo.estado === "pendiente") {
+      axios.post(`${API}/api/modulos/${activo.modulo.id}/iniciar`).catch(() => {});
     }
-  }, []);
+  }, [activo?.modulo.id]);
+
+  if (!activo) return null;
+
+  const { modulo, tiene_examen } = activo;
+
+  const seleccionar = item => {
+    if (!item.desbloqueado) return;
+    setActivoId(item.modulo.id);
+    setTab("contenido");
+  };
+
+  const toggleSeccion = id => setAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl max-h-[92vh] flex flex-col rounded-xl bg-white shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between border-b px-6 py-4 shrink-0 bg-gray-50">
-          <div>
-            <h3 className="font-bold text-gray-800">{modulo.nombre}</h3>
-            <p className="text-xs text-gray-500 line-clamp-1">{modulo.descripcion}</p>
-          </div>
-          <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold ml-4">✕</button>
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+      <div className="flex items-center justify-between border-b px-6 py-3 shrink-0 bg-gray-50 shadow-sm">
+        <div className="min-w-0">
+          <h3 className="font-bold text-gray-800 truncate">{modulo.nombre}</h3>
+          <p className="text-xs text-gray-500 line-clamp-1">{modulo.descripcion}</p>
         </div>
-        <div className="flex border-b shrink-0 px-6 pt-2 bg-gray-50">
-          {[["contenido", "📄 Contenido"], ["examen", "📝 Examen"]].map(([k, l]) => (
-            <button key={k} onClick={() => setTab(k)}
-              className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === k ? "border-b-2 border-[#802907] text-[#802907] bg-white" : "text-gray-500 hover:text-gray-700"}`}>
-              {l}
-            </button>
-          ))}
-        </div>
-        <div className="flex-1 overflow-y-auto p-6">
-          {tab === "contenido" ? (
-            <div className="space-y-4">
-              <VisorArchivo filePath={modulo.file_path} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json} />
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-                <p className="text-sm text-blue-800 font-medium">¿Ya revisaste el contenido?</p>
-                <p className="text-xs text-blue-600 mt-1">Ve a la pestaña <strong>Examen</strong> cuando estés listo.</p>
+        <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold ml-4 shrink-0">✕</button>
+      </div>
+
+      <div className="flex flex-1 min-h-0">
+        {/* Esquema de curso */}
+        <aside className="w-72 shrink-0 border-r border-gray-200 bg-gray-50 overflow-y-auto hidden md:block">
+          {secciones.map(secData => {
+            const { seccion, modulos } = secData;
+            if (!modulos?.length) return null;
+            const completados = modulos.filter(m => m.estado === "completado").length;
+            const expandido = !!abiertos[seccion.id];
+            return (
+              <div key={seccion.id} className="border-b border-gray-200">
+                <button onClick={() => toggleSeccion(seccion.id)}
+                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-100">
+                  <span className="text-sm font-semibold text-gray-800">{seccion.nombre}</span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] text-gray-400">{completados}/{modulos.length}</span>
+                    <span className="text-gray-400 text-xs">{expandido ? "▲" : "▼"}</span>
+                  </span>
+                </button>
+                {expandido && modulos.map(item => {
+                  const esActivo = item.modulo.id === activoId;
+                  const bloqueado = !item.desbloqueado;
+                  return (
+                    <button key={item.modulo.id}
+                      onClick={() => seleccionar(item)}
+                      disabled={bloqueado}
+                      title={bloqueado ? "Aprueba el examen del módulo anterior (mínimo 70%) para desbloquearlo" : undefined}
+                      className={`w-full flex items-center gap-2 pl-6 pr-4 py-2.5 text-left text-xs border-l-4 transition-colors ${
+                        esActivo ? "border-[#802907] bg-white font-semibold text-[#802907]"
+                          : bloqueado ? "border-transparent text-gray-400 cursor-not-allowed"
+                          : "border-transparent text-gray-600 hover:bg-gray-100"
+                      }`}>
+                      <IconoEstadoModulo estado={item.estado} desbloqueado={item.desbloqueado} />
+                      <span className="truncate flex-1">{item.modulo.nombre}</span>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          ) : (
-            <SeccionExamen moduloId={modulo.id} onTerminar={onCerrar} />
-          )}
+            );
+          })}
+        </aside>
+
+        {/* Contenido del módulo activo */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex border-b shrink-0 px-6 pt-2 bg-gray-50">
+            <button onClick={() => setTab("contenido")}
+              className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === "contenido" ? "border-b-2 border-[#802907] text-[#802907] bg-white" : "text-gray-500 hover:text-gray-700"}`}>
+              📄 Contenido
+            </button>
+            {tiene_examen && (
+              <button onClick={() => setTab("examen")}
+                className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === "examen" ? "border-b-2 border-[#802907] text-[#802907] bg-white" : "text-gray-500 hover:text-gray-700"}`}>
+                📝 Examen
+              </button>
+            )}
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto p-6">
+            {tab === "contenido" ? (
+              <div className="h-full flex flex-col gap-4">
+                <VisorArchivo filePath={modulo.file_path} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json} />
+                {tiene_examen && (
+                  <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 shrink-0">
+                    <p className="text-sm text-blue-800 font-medium">¿Ya revisaste el contenido?</p>
+                    <p className="text-xs text-blue-600 mt-1">Ve a la pestaña <strong>Examen</strong> cuando estés listo.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="max-w-2xl mx-auto">
+                <SeccionExamen moduloId={modulo.id} onCalificado={onProgresoActualizado} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -591,36 +678,131 @@ function VistaAdmin() {
   );
 }
 
-// ─── Vista Empleado ──────────────────────────────────────────────────────────
-function VistaEmpleado() {
-  const [secciones, setSecciones] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [abiertos, setAbiertos] = useState({});
-  const [moduloActivo, setModuloActivo] = useState(null);
+// VISTA DE EMPLEADO 
+function TarjetaSeccionEmpleado({ seccion, modulos, onClick }) {
+  const completados = modulos.filter(m => m.estado === "completado").length;
+  const pct = modulos.length ? Math.round((completados / modulos.length) * 100) : 0;
 
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    try {
-      const res = await axios.get(`${API}/api/progreso/mio`);
-      setSecciones(res.data);
-      // Abrir todas las secciones por defecto
-      const open = {};
-      res.data.forEach((s, i) => { open[i] = true; });
-      setAbiertos(open);
-    } catch {
-      Swal.fire({ icon: "error", title: "Error al cargar tus capacitaciones.", confirmButtonColor: "#802907" });
-    } finally { setCargando(false); }
-  }, []);
+  return (
+    <div
+      onClick={onClick}
+      className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 cursor-pointer hover:border-[#802907] hover:shadow-md transition-all group relative"
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${pct === 100 ? "bg-green-500" : "bg-gray-300"}`} />
+        <h3 className="font-bold text-gray-800 truncate group-hover:text-[#802907] transition-colors">
+          {seccion.nombre}
+        </h3>
+      </div>
+      {seccion.descripcion && (
+        <p className="text-xs text-gray-400 line-clamp-2 mt-1">{seccion.descripcion}</p>
+      )}
+      <p className="text-xs text-gray-500 mt-3 font-medium">{modulos.length} módulo(s)</p>
 
-  useEffect(() => { cargar(); }, [cargar]);
+      {/* Barra de progreso */}
+      <div className="mt-3 flex items-center gap-2">
+        <div className="flex-1 rounded-full bg-gray-200 h-1.5 overflow-hidden">
+          <div className="h-1.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="text-xs text-gray-500 shrink-0">{completados}/{modulos.length} completados</span>
+      </div>
 
-  const toggle = i => setAbiertos(prev => ({ ...prev, [i]: !prev[i] }));
+      <div className="absolute bottom-4 right-4 text-gray-200 group-hover:text-[#802907] transition-colors text-lg">
+        →
+      </div>
+    </div>
+  );
+}
 
-  const botonLabel = estado => {
+
+function TarjetaModuloEmpleado({ item, onAbrir }) {
+  const { modulo, estado, puntaje, intentos, tiene_examen } = item;
+  const desbloqueado = item.desbloqueado !== false;
+  const imgSrc = modulo.imagen ? `/modulos/${modulo.imagen}` : null;
+
+  const botonLabel = () => {
+    if (!desbloqueado) return "Bloqueado";
     if (estado === "pendiente") return "Iniciar";
     if (estado === "en_progreso") return "Continuar";
     return "Reintentar";
   };
+
+  return (
+    <div
+      onClick={() => desbloqueado && onAbrir(modulo.id)}
+      className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col group transition-shadow ${desbloqueado ? "cursor-pointer hover:shadow-md" : "opacity-70"}`}
+    >
+      {/* Zona de imagen */}
+      <div className="relative h-36 bg-gray-100 overflow-hidden">
+        {imgSrc ? (
+          <img src={imgSrc} alt={modulo.nombre} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-300 text-3xl">
+            {modulo.file_type === "pdf" ? "📄" : modulo.file_type === "presentacion" ? "🖼️" : modulo.file_type === "video" ? "🎬" : "📦"}
+          </div>
+        )}
+        {!desbloqueado && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-3xl">🔒</div>
+        )}
+        {modulo.file_type && (
+          <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${
+            modulo.file_type === "pdf" ? "bg-red-600 text-white"
+              : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
+              : "bg-blue-600 text-white"
+          }`}>
+            {modulo.file_type === "presentacion" ? "PRESENTACIÓN" : modulo.file_type.toUpperCase()}
+          </span>
+        )}
+        <span className="absolute top-2 right-2"><Badge estado={estado} /></span>
+      </div>
+
+      {/* Info del módulo */}
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        <div>
+          <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{modulo.nombre}</h4>
+          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{modulo.descripcion}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap text-[10px]">
+          {tiene_examen && <span className="font-bold rounded-full px-2 py-0.5 bg-purple-100 text-purple-700">📝 Examen</span>}
+          {intentos > 0 && <span className="text-gray-400">🔁 {intentos} intento(s)</span>}
+          {puntaje !== null && (
+            <span className={`font-bold ${puntaje >= 70 ? "text-green-600" : "text-red-500"}`}>{puntaje}%</span>
+          )}
+          {!desbloqueado && <span className="text-gray-400">🔒 Requiere aprobar el módulo anterior</span>}
+        </div>
+
+        <button
+          onClick={e => { e.stopPropagation(); if (desbloqueado) onAbrir(modulo.id); }}
+          disabled={!desbloqueado}
+          title={!desbloqueado ? "Aprueba el examen del módulo anterior (mínimo 70%) para desbloquearlo" : undefined}
+          className={`mt-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${desbloqueado ? "bg-[#802907] text-white hover:bg-[#5a1b04]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+          {botonLabel()}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Vista Empleado ──────────────────────────────────────────────────────────
+function VistaEmpleado() {
+  const [secciones, setSecciones] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [seccionActivaId, setSeccionActivaId] = useState(null);
+  const [cursoModuloId, setCursoModuloId] = useState(null);
+
+  // silencioso=true evita el parpadeo de "Cargando..." cuando se refresca el
+  // progreso mientras el visor de curso sigue abierto (p. ej. tras un examen).
+  const cargar = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCargando(true);
+    try {
+      const res = await axios.get(`${API}/api/progreso/mio`);
+      setSecciones(res.data);
+    } catch {
+      Swal.fire({ icon: "error", title: "Error al cargar tus capacitaciones.", confirmButtonColor: "#802907" });
+    } finally { if (!silencioso) setCargando(false); }
+  }, []);
+
+  useEffect(() => { cargar(); }, [cargar]);
 
   if (cargando) return <p className="text-center text-sm text-gray-400 py-12">Cargando módulos...</p>;
 
@@ -633,84 +815,61 @@ function VistaEmpleado() {
     );
   }
 
+  const seccionActiva = secciones.find(s => s.seccion.id === seccionActivaId);
+
   return (
-    <div className="space-y-4">
-      {secciones.map((secData, idx) => {
-        const { seccion, modulos } = secData;
-        if (!modulos || modulos.length === 0) return null;
-        const completados = modulos.filter(m => m.estado === "completado").length;
-        const pct = Math.round((completados / modulos.length) * 100);
-
-        return (
-          <div key={seccion.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            {/* Cabecera sección (acordeón) */}
-            <button onClick={() => toggle(idx)}
-              className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-gray-50 transition-colors">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-800">{seccion.nombre}</span>
-                  <span className="text-xs text-gray-400">{modulos.length} módulo(s)</span>
-                </div>
-                {/* Barra de progreso */}
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="flex-1 rounded-full bg-gray-200 h-1.5 overflow-hidden">
-                    <div className="h-1.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="text-xs text-gray-500 shrink-0">{completados}/{modulos.length} completados</span>
-                </div>
-              </div>
-              <span className="text-gray-400 text-sm shrink-0">{abiertos[idx] ? "▲" : "▼"}</span>
+    <div className="space-y-5">
+      {seccionActiva ? (
+        // ── Módulos de la sección activa, en tarjetas ──
+        <>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => setSeccionActivaId(null)}
+              className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
+              ← Secciones
             </button>
-
-            {/* Módulos (lista colapsable) */}
-            {abiertos[idx] && (
-              <div className="border-t border-gray-100 divide-y divide-gray-100">
-                {modulos.map(item => {
-                  const { modulo, estado, puntaje, intentos, tiene_examen } = item;
-                  return (
-                    <div key={modulo.id} className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50">
-                      {/* Indicador de estado */}
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${estado === "completado" ? "bg-green-100 text-green-700" : estado === "reprobado" ? "bg-red-100 text-red-600" : estado === "en_progreso" ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-400"}`}>
-                        {estado === "completado" ? "✓" : estado === "reprobado" ? "✗" : "○"}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{modulo.nombre}</p>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
-                          {modulo.file_type && (
-                            <span>
-                              {modulo.file_type === "pdf" ? "📄 PDF" : modulo.file_type === "presentacion" ? "🖼️ Presentación" : "🎬 Video"}
-                            </span>
-                          )}
-                          {tiene_examen && <span>📝 Examen</span>}
-                          {intentos > 0 && <span>🔁 {intentos} intento(s)</span>}
-                        </div>
-                      </div>
-
-                      {puntaje !== null && (
-                        <span className={`text-sm font-bold shrink-0 ${puntaje >= 70 ? "text-green-600" : "text-red-500"}`}>
-                          {puntaje}%
-                        </span>
-                      )}
-
-                      <Badge estado={estado} />
-
-                      <button
-                        onClick={() => setModuloActivo(item)}
-                        className="shrink-0 rounded-lg bg-[#802907] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#5a1b04]">
-                        {botonLabel(estado)}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <span className="text-gray-400">/</span>
+            <span className="font-semibold text-gray-800">{seccionActiva.seccion.nombre}</span>
           </div>
-        );
-      })}
+          {seccionActiva.seccion.descripcion && (
+            <p className="text-sm text-gray-500">{seccionActiva.seccion.descripcion}</p>
+          )}
 
-      {moduloActivo && (
-        <ModalTomarModulo item={moduloActivo} onCerrar={() => { setModuloActivo(null); cargar(); }} />
+          {seccionActiva.modulos.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
+              <p className="text-gray-400 text-sm">Esta sección no tiene módulos todavía.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {seccionActiva.modulos.map(item => (
+                <TarjetaModuloEmpleado key={item.modulo.id} item={item} onAbrir={setCursoModuloId} />
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        // ── Lista de secciones, en tarjetas ──
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {secciones.map(secData => {
+            if (!secData.modulos?.length) return null;
+            return (
+              <TarjetaSeccionEmpleado
+                key={secData.seccion.id}
+                seccion={secData.seccion}
+                modulos={secData.modulos}
+                onClick={() => setSeccionActivaId(secData.seccion.id)}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {cursoModuloId && (
+        <VisorCurso
+          secciones={secciones}
+          moduloInicialId={cursoModuloId}
+          onCerrar={() => { setCursoModuloId(null); cargar(); }}
+          onProgresoActualizado={() => cargar(true)}
+        />
       )}
     </div>
   );

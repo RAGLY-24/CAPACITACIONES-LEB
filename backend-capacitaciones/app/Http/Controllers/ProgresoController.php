@@ -28,6 +28,9 @@ class ProgresoController extends Controller
         if ($modulo->estado === 'Inactivo') {
             return response()->json(['message' => 'Módulo no disponible.'], 403);
         }
+        if ($modulo->estaBloqueadoPara($user)) {
+            return response()->json(['message' => 'Debes aprobar el examen del módulo anterior primero.'], 403);
+        }
 
         $progreso = ProgresoModulo::firstOrCreate(
             ['user_id' => $user->id, 'modulo_id' => $moduloId],
@@ -54,8 +57,8 @@ class ProgresoController extends Controller
             ->get()
             ->keyBy('modulo_id');
 
-        $resultado = $secciones->map(function ($seccion) use ($progresosMap) {
-            $modulos = $seccion->modulos->map(function ($modulo) use ($progresosMap) {
+        $resultado = $secciones->map(function ($seccion) use ($progresosMap, $user) {
+            $modulos = $seccion->modulos->map(function ($modulo) use ($progresosMap, $user) {
                 $progreso = $progresosMap->get($modulo->id);
                 return [
                     'modulo'       => $modulo,
@@ -65,6 +68,7 @@ class ProgresoController extends Controller
                     'started_at'   => $progreso?->started_at,
                     'completed_at' => $progreso?->completed_at,
                     'tiene_examen' => $modulo->preguntas_count > 0,
+                    'desbloqueado' => !$modulo->estaBloqueadoPara($user),
                 ];
             });
 
