@@ -57,8 +57,27 @@ class ProgresoController extends Controller
             ->get()
             ->keyBy('modulo_id');
 
-        $resultado = $secciones->map(function ($seccion) use ($progresosMap, $user) {
-            $modulos = $seccion->modulos->map(function ($modulo) use ($progresosMap, $user) {
+        // $secciones ya viene ordenado por seccion.orden y modulo.orden, así que aplanarlo
+        // reproduce el mismo criterio que Modulo::ordenGlobal() sin volver a consultar la BD.
+        $modulosOrdenados = $secciones->flatMap(fn($s) => $s->modulos)->values();
+
+        $bloqueado = [];
+        foreach ($modulosOrdenados as $idx => $modulo) {
+            if ($idx === 0) {
+                $bloqueado[$modulo->id] = false;
+                continue;
+            }
+            $anterior = $modulosOrdenados[$idx - 1];
+            if ($anterior->preguntas_count === 0) {
+                $bloqueado[$modulo->id] = false;
+                continue;
+            }
+            $progresoAnterior = $progresosMap->get($anterior->id);
+            $bloqueado[$modulo->id] = !($progresoAnterior && $progresoAnterior->estado === 'completado');
+        }
+
+        $resultado = $secciones->map(function ($seccion) use ($progresosMap, $bloqueado) {
+            $modulos = $seccion->modulos->map(function ($modulo) use ($progresosMap, $bloqueado) {
                 $progreso = $progresosMap->get($modulo->id);
                 return [
                     'modulo'       => $modulo,
@@ -68,7 +87,7 @@ class ProgresoController extends Controller
                     'started_at'   => $progreso?->started_at,
                     'completed_at' => $progreso?->completed_at,
                     'tiene_examen' => $modulo->preguntas_count > 0,
-                    'desbloqueado' => !$modulo->estaBloqueadoPara($user),
+                    'desbloqueado' => !$bloqueado[$modulo->id],
                 ];
             });
 
@@ -132,7 +151,14 @@ class ProgresoController extends Controller
         $totalUsuarios = User::count();
         $secciones     = Seccion::with('modulos:id,seccion_id')->orderBy('orden')->get();
 
-        $resultado = $secciones->map(function ($seccion) use ($totalUsuarios) {
+        // Una sola consulta para todos los módulos de todas las secciones, en vez de
+        // una consulta por sección dentro del map() de abajo.
+        $todosModuloIds = $secciones->flatMap(fn($s) => $s->modulos->pluck('id'))->all();
+        $progresosPorModulo = ProgresoModulo::whereIn('modulo_id', $todosModuloIds)
+            ->get()
+            ->groupBy('modulo_id');
+
+        $resultado = $secciones->map(function ($seccion) use ($totalUsuarios, $progresosPorModulo) {
             $moduloIds = $seccion->modulos->pluck('id')->toArray();
 
             if (empty($moduloIds)) {
@@ -148,7 +174,7 @@ class ProgresoController extends Controller
                 ];
             }
 
-            $progresos = ProgresoModulo::whereIn('modulo_id', $moduloIds)->get();
+            $progresos = collect($moduloIds)->flatMap(fn($id) => $progresosPorModulo->get($id, collect()));
             $porUsuario = $progresos->groupBy('user_id');
 
             $completados = 0;

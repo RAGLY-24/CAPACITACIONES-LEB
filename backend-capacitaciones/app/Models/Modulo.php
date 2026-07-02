@@ -28,10 +28,17 @@ class Modulo extends Model
         return $this->hasMany(ProgresoModulo::class);
     }
 
+    protected static ?\Illuminate\Support\Collection $ordenGlobalCache = null;
+
     // Todos los módulos activos, en el orden en que deben cursarse (sección.orden, luego módulo.orden).
+    // Memoizado por request: esta consulta se pedía antes en cada llamada a estaBloqueadoPara().
     public static function ordenGlobal()
     {
-        return self::where('estado', 'Activo')
+        if (self::$ordenGlobalCache !== null) {
+            return self::$ordenGlobalCache;
+        }
+
+        return self::$ordenGlobalCache = self::where('estado', 'Activo')
             ->whereHas('seccion', fn($q) => $q->where('estado', 'Activo'))
             ->with('seccion')
             ->get()
