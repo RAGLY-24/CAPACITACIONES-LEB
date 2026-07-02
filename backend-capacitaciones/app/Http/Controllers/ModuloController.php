@@ -149,8 +149,9 @@ class ModuloController extends Controller
         if ($request->hasFile('archivo')) {
             $this->eliminarArchivoFisico($modulo->file_path);
             [$filePath, $fileType] = $this->guardarArchivo($request->file('archivo'));
-            $datos['file_path'] = $filePath;
-            $datos['file_type'] = $fileType;
+            $datos['file_path']         = $filePath;
+            $datos['file_type']         = $fileType;
+            $datos['presentacion_json'] = null; // el módulo deja de ser una presentación
         }
 
         if ($request->hasFile('imagen')) {
@@ -178,6 +179,35 @@ class ModuloController extends Controller
         $modulo->delete();
 
         return response()->json(['message' => 'Módulo eliminado exitosamente.'], 200);
+    }
+
+    public function guardarPresentacion(Request $request, $id)
+    {
+        if (!$this->esAdmin()) {
+            return response()->json(['message' => 'Acceso denegado.'], 403);
+        }
+
+        $modulo = Modulo::findOrFail($id);
+
+        $request->validate([
+            'contenido' => 'required|json',
+        ], [
+            'contenido.required' => 'No hay contenido de presentación para guardar.',
+            'contenido.json'     => 'El contenido de la presentación no es válido.',
+        ]);
+
+        $this->eliminarArchivoFisico($modulo->file_path);
+
+        $modulo->update([
+            'file_path'         => null,
+            'file_type'         => 'presentacion',
+            'presentacion_json' => $request->input('contenido'),
+        ]);
+
+        return response()->json([
+            'message' => 'Presentación guardada exitosamente.',
+            'modulo'  => $modulo->load('creator:id,name'),
+        ], 200);
     }
 
     private function guardarArchivo($file): array

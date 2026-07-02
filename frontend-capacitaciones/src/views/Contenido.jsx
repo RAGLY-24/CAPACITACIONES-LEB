@@ -1,6 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
+
+// Carga diferida: tldraw es pesado y solo se necesita al crear/editar presentaciones.
+const EditorPresentacion = lazy(() =>
+  import("../components/PresentacionTldraw").then(m => ({ default: m.EditorPresentacion }))
+);
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -90,7 +95,9 @@ function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
 }
 
 // ─── Modal Módulo ──────────────────────────────────────────────────────────────
-function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
+// contentKind: "archivo" muestra el campo de subida de PDF/Video; "presentacion"
+// lo oculta porque ese contenido se diseña aparte en el lienzo de tldraw.
+function ModalModulo({ tipo, seccionId, datos, contentKind = "archivo", onGuardar, onCerrar }) {
   const [form, setForm] = useState({
     nombre:      datos?.nombre || "",
     descripcion: datos?.descripcion || "",
@@ -101,6 +108,7 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
   const [preview, setPreview] = useState(datos?.imagen ? `/modulos/${datos.imagen}` : null);
   const [errs, setErrs]       = useState({});
   const [saving, setSaving]   = useState(false);
+  const mostrarArchivo = !(tipo === "crear" && contentKind === "presentacion");
 
   const handle = e => {
     const { name, value, files } = e.target;
@@ -135,12 +143,13 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
     if (form.imagen)  fd.append("imagen", form.imagen);
 
     try {
+      let data;
       if (tipo === "crear") {
-        await axios.post(`${API}/api/modulos`, fd);
+        ({ data } = await axios.post(`${API}/api/modulos`, fd));
       } else {
-        await axios.post(`${API}/api/modulos/${datos.id}/update`, fd);
+        ({ data } = await axios.post(`${API}/api/modulos/${datos.id}/update`, fd));
       }
-      onGuardar();
+      onGuardar(data.modulo);
     } catch (err) {
       const back = err.response?.data?.errors || {};
       const mapped = {};
@@ -154,10 +163,19 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
-          <h3 className="font-bold text-gray-800">{tipo === "crear" ? "Nuevo Módulo" : "Editar Módulo"}</h3>
+          <h3 className="font-bold text-gray-800">
+            {tipo === "crear"
+              ? contentKind === "presentacion" ? "Nuevo Módulo — Presentación" : "Nuevo Módulo — Archivo"
+              : "Editar Módulo"}
+          </h3>
           <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl">✕</button>
         </div>
         <form onSubmit={submit} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {tipo === "crear" && contentKind === "presentacion" && (
+            <div className="rounded-lg bg-purple-50 border border-purple-200 p-3 text-xs text-purple-700">
+              Primero guarda los datos del módulo; después se abrirá el lienzo para diseñar la presentación.
+            </div>
+          )}
           {/* Imagen portada */}
           <div>
             <label className="text-sm font-semibold text-gray-700">Imagen de portada</label>
@@ -196,7 +214,7 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
             {errs.descripcion && <p className="text-xs text-red-500 mt-1">{errs.descripcion}</p>}
             <p className="text-xs text-gray-400 mt-0.5">{form.descripcion.length}/2000</p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${mostrarArchivo ? "grid-cols-2" : "grid-cols-1"}`}>
             <div>
               <label className="text-sm font-semibold text-gray-700">Estado</label>
               <select name="estado" value={form.estado} onChange={handle}
@@ -205,21 +223,23 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onCerrar }) {
                 <option value="Inactivo">Inactivo</option>
               </select>
             </div>
-            <div>
-              <label className="text-sm font-semibold text-gray-700">Archivo (PDF / MP4)</label>
-              <input type="file" name="archivo" accept=".pdf,.mp4,.webm" onChange={handle}
-                className="mt-1 block w-full text-xs text-gray-500 file:rounded file:border-0 file:bg-[#802907] file:px-3 file:py-1.5 file:text-white hover:file:bg-[#5a1b04] cursor-pointer" />
-              {tipo === "editar" && datos?.file_path && !form.archivo && (
-                <p className="text-xs text-gray-400 mt-0.5">Actual: <strong>{datos.file_type?.toUpperCase()}</strong></p>
-              )}
-              {errs.archivo && <p className="text-xs text-red-500 mt-1">{errs.archivo}</p>}
-            </div>
+            {mostrarArchivo && (
+              <div>
+                <label className="text-sm font-semibold text-gray-700">Archivo (PDF / MP4)</label>
+                <input type="file" name="archivo" accept=".pdf,.mp4,.webm" onChange={handle}
+                  className="mt-1 block w-full text-xs text-gray-500 file:rounded file:border-0 file:bg-[#802907] file:px-3 file:py-1.5 file:text-white hover:file:bg-[#5a1b04] cursor-pointer" />
+                {tipo === "editar" && datos?.file_path && !form.archivo && (
+                  <p className="text-xs text-gray-400 mt-0.5">Actual: <strong>{datos.file_type?.toUpperCase()}</strong></p>
+                )}
+                {errs.archivo && <p className="text-xs text-red-500 mt-1">{errs.archivo}</p>}
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-3 pt-2 border-t">
             <button type="button" onClick={onCerrar} className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancelar</button>
             <button type="submit" disabled={saving}
               className="rounded bg-[#802907] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
-              {saving ? "Guardando..." : tipo === "crear" ? "Crear Módulo" : "Guardar"}
+              {saving ? "Guardando..." : tipo === "crear" ? (contentKind === "presentacion" ? "Crear y abrir lienzo" : "Crear Módulo") : "Guardar"}
             </button>
           </div>
         </form>
@@ -415,7 +435,7 @@ function PanelExamen({ modulo, onCerrar }) {
 }
 
 // ─── Tarjeta de módulo (con imagen) ────────────────────────────────────────────
-function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiada }) {
+function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiada, onEditarPresentacion }) {
   const inputRef    = useRef(null);
   const [subiendo, setSubiendo] = useState(false);
 
@@ -466,10 +486,14 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
             {subiendo ? "Subiendo..." : imgSrc ? "Cambiar imagen" : "Subir imagen"}
           </span>
         </div>
-        {/* Badge tipo archivo */}
+        {/* Badge tipo de contenido */}
         {modulo.file_type && (
-          <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${modulo.file_type === "pdf" ? "bg-red-600 text-white" : "bg-blue-600 text-white"}`}>
-            {modulo.file_type.toUpperCase()}
+          <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${
+            modulo.file_type === "pdf" ? "bg-red-600 text-white"
+              : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
+              : "bg-blue-600 text-white"
+          }`}>
+            {modulo.file_type === "presentacion" ? "PRESENTACIÓN" : modulo.file_type.toUpperCase()}
           </span>
         )}
         {/* Badge estado */}
@@ -497,6 +521,12 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
             className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100">
             {Ico.edit} Editar
           </button>
+          {modulo.file_type === "presentacion" && (
+            <button onClick={() => onEditarPresentacion(modulo)} title="Editar lienzo de la presentación"
+              className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-purple-200 bg-purple-50 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100">
+              {Ico.img} Lienzo
+            </button>
+          )}
           <button onClick={() => onExamen(modulo)} title="Gestionar examen"
             className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-purple-200 bg-purple-50 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100">
             {Ico.qa} Examen
@@ -513,9 +543,10 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
 
 // ─── Vista: módulos de una sección ─────────────────────────────────────────────
 function VistaModulos({ seccion, onVolver, onRefrescar }) {
-  const [modalMod, setModalMod]   = useState(null);
-  const [examenMod, setExamenMod] = useState(null);
-  const [editSec, setEditSec]     = useState(false);
+  const [modalMod, setModalMod]             = useState(null);
+  const [examenMod, setExamenMod]           = useState(null);
+  const [editSec, setEditSec]               = useState(false);
+  const [presentacionMod, setPresentacionMod] = useState(null);
 
   const eliminarModulo = async m => {
     const ok = await Swal.fire({
@@ -534,10 +565,15 @@ function VistaModulos({ seccion, onVolver, onRefrescar }) {
     }
   };
 
-  const alGuardar = () => {
+  const alGuardar = moduloGuardado => {
+    const esNuevaPresentacion = modalMod?.tipo === "crear" && modalMod?.contentKind === "presentacion";
     setModalMod(null);
     onRefrescar();
-    Swal.fire({ icon: "success", title: "Módulo guardado.", confirmButtonColor: "#802907" });
+    if (esNuevaPresentacion && moduloGuardado) {
+      setPresentacionMod(moduloGuardado);
+    } else {
+      Swal.fire({ icon: "success", title: "Módulo guardado.", confirmButtonColor: "#802907" });
+    }
   };
 
   return (
@@ -560,9 +596,13 @@ function VistaModulos({ seccion, onVolver, onRefrescar }) {
             className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
             {Ico.edit} Editar sección
           </button>
-          <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
+          <button onClick={() => setModalMod({ tipo: "crear", datos: null, contentKind: "archivo" })}
             className="flex items-center gap-2 rounded-lg bg-[#802907] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-            {Ico.plus} Nuevo módulo
+            {Ico.plus} Subir PDF / Video
+          </button>
+          <button onClick={() => setModalMod({ tipo: "crear", datos: null, contentKind: "presentacion" })}
+            className="flex items-center gap-2 rounded-lg border border-purple-300 bg-purple-50 px-4 py-1.5 text-sm font-semibold text-purple-700 hover:bg-purple-100">
+            {Ico.plus} Crear presentación
           </button>
         </div>
       </div>
@@ -575,10 +615,16 @@ function VistaModulos({ seccion, onVolver, onRefrescar }) {
       {(seccion.modulos || []).length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
           <p className="text-gray-400 text-sm mb-4">Esta sección no tiene módulos todavía.</p>
-          <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
-            className="rounded-lg bg-[#802907] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-            Crear primer módulo
-          </button>
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={() => setModalMod({ tipo: "crear", datos: null, contentKind: "archivo" })}
+              className="rounded-lg bg-[#802907] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
+              Subir PDF / Video
+            </button>
+            <button onClick={() => setModalMod({ tipo: "crear", datos: null, contentKind: "presentacion" })}
+              className="rounded-lg border border-purple-300 bg-purple-50 px-5 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-100">
+              Crear presentación
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -586,21 +632,32 @@ function VistaModulos({ seccion, onVolver, onRefrescar }) {
             <TarjetaModulo
               key={m.id}
               modulo={m}
-              onEditar={mod => setModalMod({ tipo: "editar", datos: mod })}
+              onEditar={mod => setModalMod({ tipo: "editar", datos: mod, contentKind: "archivo" })}
               onExamen={mod => setExamenMod(mod)}
               onEliminar={eliminarModulo}
               onImagenCambiada={onRefrescar}
+              onEditarPresentacion={mod => setPresentacionMod(mod)}
             />
           ))}
         </div>
       )}
 
       {modalMod && (
-        <ModalModulo tipo={modalMod.tipo} seccionId={seccion.id} datos={modalMod.datos}
+        <ModalModulo tipo={modalMod.tipo} seccionId={seccion.id} datos={modalMod.datos} contentKind={modalMod.contentKind}
           onGuardar={alGuardar} onCerrar={() => setModalMod(null)} />
       )}
       {examenMod && (
         <PanelExamen modulo={examenMod} onCerrar={() => { setExamenMod(null); onRefrescar(); }} />
+      )}
+      {presentacionMod && (
+        <Suspense fallback={
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+            <p className="text-sm text-gray-400">Cargando lienzo...</p>
+          </div>
+        }>
+          <EditorPresentacion modulo={presentacionMod} onCerrar={() => { setPresentacionMod(null); onRefrescar(); }}
+            onGuardado={() => onRefrescar()} />
+        </Suspense>
       )}
       {editSec && (
         <ModalSeccion tipo="editar" datos={seccion}

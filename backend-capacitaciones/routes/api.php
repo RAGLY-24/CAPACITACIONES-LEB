@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/modulos/{id}', [ModuloController::class, 'show']);
     Route::post('/modulos', [ModuloController::class, 'store']);
     Route::post('/modulos/{id}/update', [ModuloController::class, 'update']); // POST+_method por multipart/form-data
+    Route::put('/modulos/{id}/presentacion', [ModuloController::class, 'guardarPresentacion']);
     Route::delete('/modulos/{id}', [ModuloController::class, 'destroy']);
 
     // --- PREGUNTAS DE EXAMEN (solo admin) ---

@@ -1,7 +1,12 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
+
+// Carga diferida: tldraw es pesado y solo se necesita al ver módulos tipo presentación.
+const VisorPresentacion = lazy(() =>
+  import("../components/PresentacionTldraw").then(m => ({ default: m.VisorPresentacion }))
+);
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -116,10 +121,11 @@ function SinArchivo() {
   );
 }
 
-function VisorArchivo({ filePath, fileType }) {
+function VisorArchivo({ filePath, fileType, presentacionJson }) {
   const [estado, setEstado] = useState("verificando"); // "verificando" | "ok" | "error"
 
   useEffect(() => {
+    if (fileType === "presentacion") return; // se valida dentro de VisorPresentacion
     if (!filePath) { setEstado("error"); return; }
     setEstado("verificando");
     fetch(`/modulos/${filePath}`, { method: "HEAD" })
@@ -131,7 +137,15 @@ function VisorArchivo({ filePath, fileType }) {
         setEstado(esArchivoReal ? "ok" : "error");
       })
       .catch(() => setEstado("error"));
-  }, [filePath]);
+  }, [filePath, fileType]);
+
+  if (fileType === "presentacion") {
+    return (
+      <Suspense fallback={<p className="text-center text-sm text-gray-400 py-12">Cargando presentación...</p>}>
+        <VisorPresentacion presentacionJson={presentacionJson} />
+      </Suspense>
+    );
+  }
 
   if (!filePath || estado === "error") return <SinArchivo />;
 
@@ -317,7 +331,7 @@ function ModalTomarModulo({ item, onCerrar }) {
         <div className="flex-1 overflow-y-auto p-6">
           {tab === "contenido" ? (
             <div className="space-y-4">
-              <VisorArchivo filePath={modulo.file_path} fileType={modulo.file_type} />
+              <VisorArchivo filePath={modulo.file_path} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json} />
               <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
                 <p className="text-sm text-blue-800 font-medium">¿Ya revisaste el contenido?</p>
                 <p className="text-xs text-blue-600 mt-1">Ve a la pestaña <strong>Examen</strong> cuando estés listo.</p>
@@ -663,7 +677,11 @@ function VistaEmpleado() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{modulo.nombre}</p>
                         <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
-                          {modulo.file_type && <span>{modulo.file_type === "pdf" ? "📄 PDF" : "🎬 Video"}</span>}
+                          {modulo.file_type && (
+                            <span>
+                              {modulo.file_type === "pdf" ? "📄 PDF" : modulo.file_type === "presentacion" ? "🖼️ Presentación" : "🎬 Video"}
+                            </span>
+                          )}
                           {tiene_examen && <span>📝 Examen</span>}
                           {intentos > 0 && <span>🔁 {intentos} intento(s)</span>}
                         </div>
