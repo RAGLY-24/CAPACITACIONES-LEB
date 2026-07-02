@@ -71,6 +71,8 @@ export function EditorPresentacion({ modulo, onCerrar, onGuardado }) {
 }
 
 // ─── Visor de presentación (empleado, solo lectura) ───────────────────────────
+// El caso sin contenido (presentacionJson vacío) lo resuelve VisorArchivo antes
+// de montar este componente, mostrando el mismo aviso que el resto de módulos.
 export function VisorPresentacion({ presentacionJson }) {
   const [error, setError] = useState(false);
 
@@ -84,14 +86,6 @@ export function VisorPresentacion({ presentacionJson }) {
     editor.updateInstanceState({ isReadonly: true });
     requestAnimationFrame(() => editor.zoomToFit());
   };
-
-  if (!presentacionJson) {
-    return (
-      <div className="flex items-center justify-center py-12 text-sm text-gray-400">
-        Esta presentación todavía no tiene contenido.
-      </div>
-    );
-  }
 
   return (
     <div className="relative h-full min-h-[70vh] rounded-lg overflow-hidden border border-gray-200">
