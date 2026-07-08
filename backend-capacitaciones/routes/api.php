@@ -12,6 +12,7 @@ use App\Http\Controllers\PreguntaController;
 use App\Http\Controllers\ExamenController;
 use App\Http\Controllers\ProgresoController;
 use App\Http\Controllers\SeccionController;
+use App\Http\Controllers\PerfilController;
 use App\Http\Middleware\CheckSistemasAdmin;
 
 /*
@@ -24,6 +25,9 @@ Route::post('login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'me']);
+
+    // Perfil propio del usuario autenticado
+    Route::post('/perfil', [PerfilController::class, 'update']); // POST+_method por multipart/form-data
 
     // Noticias accesibles a usuarios con permisos
     Route::get('/noticias', [NoticiaController::class, 'index']);

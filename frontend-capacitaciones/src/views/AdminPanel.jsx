@@ -4,16 +4,27 @@ import Swal from "sweetalert2";
 import axios from 'axios';
 import logoEmpresa from '../assets/leb_logotipo.png';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 function AdminPanel() {
   // 1. CONDICIÓN INICIAL: Abierto en PC (>768px), Cerrado en móviles
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
+  const [perfilForm, setPerfilForm] = useState({ name: '', lastname: '', descripcion: '' });
+  const [fotoFile, setFotoFile] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState(null);
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+  // Forzamos un refresco de vista cuando actualizamos el usuario en sessionStorage
+  const [perfilVersion, setPerfilVersion] = useState(0);
 
   // Referencia para detectar clics fuera del menú de usuario
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
 
   // 1. Obtenemos el usuario real que inició sesión desde el almacenamiento del navegador
+  // (perfilVersion se usa solo para forzar la relectura de sessionStorage tras editar el perfil)
+  void perfilVersion;
   const datosUsuario = sessionStorage.getItem('user');
   const usuarioLogueado = datosUsuario ? JSON.parse(datosUsuario) : {};
   const esAdmin = usuarioLogueado.puesto?.nombre === 'SistemasAdmin';
@@ -92,6 +103,68 @@ function AdminPanel() {
     navigate('/');
   };
 
+  // --- Abrir el modal de edición de perfil precargado con los datos actuales ---
+  const abrirModalPerfil = () => {
+    setPerfilForm({
+      name: usuarioLogueado.name || '',
+      lastname: usuarioLogueado.lastname || '',
+      descripcion: usuarioLogueado.descripcion || '',
+    });
+    setFotoFile(null);
+    setFotoPreview(usuarioLogueado.foto ? `/perfiles/${usuarioLogueado.foto}` : null);
+    setIsUserMenuOpen(false);
+    setIsPerfilModalOpen(true);
+  };
+
+  const handlePerfilChange = (e) => {
+    const { name, value } = e.target;
+    setPerfilForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFotoFile(file);
+    setFotoPreview(URL.createObjectURL(file));
+  };
+
+  const guardarPerfil = async (e) => {
+    e.preventDefault();
+    setGuardandoPerfil(true);
+
+    const formData = new FormData();
+    formData.append('name', perfilForm.name);
+    formData.append('lastname', perfilForm.lastname || '');
+    formData.append('descripcion', perfilForm.descripcion || '');
+    if (fotoFile) formData.append('foto', fotoFile);
+
+    try {
+      const response = await axios.post(`${API_URL}/api/perfil`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      // Actualizamos el usuario guardado localmente para reflejar los cambios al instante
+      const usuarioActualizado = { ...usuarioLogueado, ...response.data.user };
+      sessionStorage.setItem('user', JSON.stringify(usuarioActualizado));
+      setPerfilVersion((v) => v + 1);
+      setIsPerfilModalOpen(false);
+
+      Swal.fire({
+        icon: 'success',
+        title: '¡Perfil actualizado!',
+        text: 'Tus cambios se guardaron correctamente.',
+        confirmButtonColor: '#802907',
+      });
+    } catch (err) {
+      const mensaje = err.response?.data?.message
+        || Object.values(err.response?.data?.errors || {})[0]?.[0]
+        || 'No se pudo actualizar el perfil.';
+      Swal.fire({ icon: 'error', title: 'Error', text: mensaje, confirmButtonColor: '#802907' });
+    } finally {
+      setGuardandoPerfil(false);
+    }
+  };
+
   const irA = (ruta) => {
     navigate(ruta);
     // Solo cerramos la barra automáticamente si estamos en celular
@@ -130,17 +203,28 @@ function AdminPanel() {
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#802907] text-white transition-transform hover:scale-105 focus:outline-none shadow-md"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#802907] text-white transition-transform hover:scale-105 focus:outline-none shadow-md"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-              </svg>
+              {usuarioLogueado.foto ? (
+                <img
+                  src={`/perfiles/${usuarioLogueado.foto}`}
+                  alt="Foto de perfil"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+              )}
             </button>
 
             {/* Menú Desplegable (Cierra con clic afuera o a los 15s) */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-3 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-xl z-50">
-                <button className="block w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={abrirModalPerfil}
+                  className="block w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
                   Editar Perfil
                 </button>
                 <button
@@ -200,6 +284,87 @@ function AdminPanel() {
         </main>
 
       </div>
+
+      {/* --- MODAL EDITAR PERFIL --- */}
+      {isPerfilModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-2xl">
+            <h2 className="mb-6 text-2xl font-bold text-gray-800">Editar Perfil</h2>
+
+            <form onSubmit={guardarPerfil} className="space-y-5">
+              {/* Foto de perfil */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#802907] text-white shadow-md">
+                  {fotoPreview ? (
+                    <img src={fotoPreview} alt="Vista previa" className="h-full w-full object-cover" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-12 w-12">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                  )}
+                </div>
+                <label className="cursor-pointer text-sm font-semibold text-[#802907] hover:underline">
+                  Cambiar foto
+                  <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFotoChange} className="hidden" />
+                </label>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  name="name"
+                  value={perfilForm.name}
+                  onChange={handlePerfilChange}
+                  required
+                  className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Apellido</label>
+                <input
+                  type="text"
+                  name="lastname"
+                  value={perfilForm.lastname}
+                  onChange={handlePerfilChange}
+                  className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Descripción</label>
+                <textarea
+                  name="descripcion"
+                  value={perfilForm.descripcion}
+                  onChange={handlePerfilChange}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Cuéntanos algo sobre ti..."
+                  className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none"
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setIsPerfilModalOpen(false)}
+                  className="rounded-md px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={guardandoPerfil}
+                  className={`rounded-md px-6 py-2 font-semibold text-white shadow-sm ${guardandoPerfil ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#802907] hover:bg-[#4e1802]'}`}
+                >
+                  {guardandoPerfil ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

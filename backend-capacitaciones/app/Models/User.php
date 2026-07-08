@@ -27,6 +27,8 @@ class User extends Authenticatable
         'estado',
         'puesto_id',
         'permissions',
+        'descripcion',
+        'foto',
     ];
 
     /**

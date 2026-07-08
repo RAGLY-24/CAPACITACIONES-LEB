@@ -227,13 +227,6 @@ function IconoEstadoModulo({ estado, desbloqueado }) {
 function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizado }) {
   const [activoId, setActivoId] = useState(moduloInicialId);
   const [tab, setTab] = useState("contenido");
-  const [abiertos, setAbiertos] = useState(() => {
-    const open = {};
-    secciones.forEach(s => {
-      open[s.seccion.id] = s.modulos.some(m => m.modulo.id === moduloInicialId);
-    });
-    return open;
-  });
 
   const activo = useMemo(() => {
     for (const s of secciones) {
@@ -243,9 +236,14 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
     return null;
   }, [secciones, activoId]);
 
+  // Solo la sección que contiene el módulo activo se muestra en el esquema del curso
+  const seccionActiva = useMemo(() => (
+    secciones.find(s => s.modulos.some(m => m.modulo.id === activoId))
+  ), [secciones, activoId]);
+
   useEffect(() => {
     if (activo && activo.estado === "pendiente") {
-      axios.post(`${API}/api/modulos/${activo.modulo.id}/iniciar`).catch(() => {});
+      axios.post(`${API}/api/modulos/${activo.modulo.id}/iniciar`).catch(() => { });
     }
   }, [activo?.modulo.id]);
 
@@ -259,8 +257,6 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
     setTab("contenido");
   };
 
-  const toggleSeccion = id => setAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       <div className="flex items-center justify-between border-b px-6 py-3 shrink-0 bg-gray-50 shadow-sm">
@@ -272,24 +268,18 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
       </div>
 
       <div className="flex flex-1 min-h-0">
-        {/* Esquema de curso */}
+        {/* Esquema de curso: solo la sección que se está cursando actualmente */}
         <aside className="w-72 shrink-0 border-r border-gray-200 bg-gray-50 overflow-y-auto hidden md:block">
-          {secciones.map(secData => {
-            const { seccion, modulos } = secData;
-            if (!modulos?.length) return null;
+          {seccionActiva && (() => {
+            const { seccion, modulos } = seccionActiva;
             const completados = modulos.filter(m => m.estado === "completado").length;
-            const expandido = !!abiertos[seccion.id];
             return (
-              <div key={seccion.id} className="border-b border-gray-200">
-                <button onClick={() => toggleSeccion(seccion.id)}
-                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-100">
+              <div className="border-b border-gray-200">
+                <div className="w-full flex items-center justify-between gap-2 px-4 py-3">
                   <span className="text-sm font-semibold text-gray-800">{seccion.nombre}</span>
-                  <span className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] text-gray-400">{completados}/{modulos.length}</span>
-                    <span className="text-gray-400 text-xs">{expandido ? "▲" : "▼"}</span>
-                  </span>
-                </button>
-                {expandido && modulos.map(item => {
+                  <span className="text-[10px] text-gray-400 shrink-0">{completados}/{modulos.length}</span>
+                </div>
+                {modulos.map(item => {
                   const esActivo = item.modulo.id === activoId;
                   const bloqueado = !item.desbloqueado;
                   return (
@@ -297,11 +287,10 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                       onClick={() => seleccionar(item)}
                       disabled={bloqueado}
                       title={bloqueado ? "Aprueba el examen del módulo anterior (mínimo 70%) para desbloquearlo" : undefined}
-                      className={`w-full flex items-center gap-2 pl-6 pr-4 py-2.5 text-left text-xs border-l-4 transition-colors ${
-                        esActivo ? "border-[#802907] bg-white font-semibold text-[#802907]"
+                      className={`w-full flex items-center gap-2 pl-6 pr-4 py-2.5 text-left text-xs border-l-4 transition-colors ${esActivo ? "border-[#802907] bg-white font-semibold text-[#802907]"
                           : bloqueado ? "border-transparent text-gray-400 cursor-not-allowed"
-                          : "border-transparent text-gray-600 hover:bg-gray-100"
-                      }`}>
+                            : "border-transparent text-gray-600 hover:bg-gray-100"
+                        }`}>
                       <IconoEstadoModulo estado={item.estado} desbloqueado={item.desbloqueado} />
                       <span className="truncate flex-1">{item.modulo.nombre}</span>
                     </button>
@@ -309,7 +298,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                 })}
               </div>
             );
-          })}
+          })()}
         </aside>
 
         {/* Contenido del módulo activo */}
@@ -661,11 +650,10 @@ function TarjetaModuloEmpleado({ item, onAbrir }) {
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-3xl">🔒</div>
         )}
         {modulo.file_type && (
-          <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${
-            modulo.file_type === "pdf" ? "bg-red-600 text-white"
+          <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${modulo.file_type === "pdf" ? "bg-red-600 text-white"
               : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
-              : "bg-blue-600 text-white"
-          }`}>
+                : "bg-blue-600 text-white"
+            }`}>
             {modulo.file_type === "presentacion" ? "PRESENTACIÓN" : modulo.file_type.toUpperCase()}
           </span>
         )}
@@ -763,7 +751,7 @@ function VistaEmpleado() {
           )}
         </>
       ) : (
-        // ── Lista de secciones, en tarjetas ──
+        // ── Lista de secciones, en tarjetas ─
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {secciones.map(secData => {
             if (!secData.modulos?.length) return null;
