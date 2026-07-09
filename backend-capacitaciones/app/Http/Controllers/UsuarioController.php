@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Puesto;
+use App\Models\Socio;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -25,7 +26,7 @@ class UsuarioController extends Controller
             ], 403);
         }
 
-        $usuarios = User::with('puesto')->get();
+        $usuarios = User::with(['puesto', 'socio'])->get();
         return response()->json($usuarios, 200);
     }
 
@@ -47,6 +48,7 @@ class UsuarioController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'usuario' => 'required|string|max:255|unique:users',
             'puesto_id' => 'required|exists:puestos,id',
+            'socio_id' => 'nullable|exists:socios,id',
             'estado' => 'required|in:Activo,Inactivo',
             // El regex exige: min 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 símbolo
             'password' => [
@@ -74,6 +76,8 @@ class UsuarioController extends Controller
                 'create_users' => true,
                 'delete_users' => true,
                 'assign_permissions' => true,
+                'view_reports' => true,
+                'manage_content' => true,
             ];
         } elseif ($puesto && $puesto->nombre === 'Gerente') {
             $defaultPermissions = [
@@ -84,6 +88,8 @@ class UsuarioController extends Controller
                 'create_users' => true,
                 'delete_users' => false,
                 'assign_permissions' => false,
+                'view_reports' => true,
+                'manage_content' => true,
             ];
         } else {
             // Usuarios normales: no pueden publicar noticias ni editar capacitaciones por defecto
@@ -91,6 +97,8 @@ class UsuarioController extends Controller
                 'manage_news' => false,
                 'news_access' => true,
                 'edit_capacitaciones_course' => false,
+                'view_reports' => false,
+                'manage_content' => false,
             ];
         }
 
@@ -105,6 +113,7 @@ class UsuarioController extends Controller
             'email' => $request->email,
             'usuario' => $request->usuario,
             'puesto_id' => $request->puesto_id,
+            'socio_id' => $request->socio_id,
             'estado' => $request->estado,
             'password' => $request->password,
             'permissions' => array_merge($defaultPermissions, $requestedPermissions),
@@ -152,6 +161,7 @@ class UsuarioController extends Controller
                 Rule::unique('users')->ignore($usuario->id),
             ],
             'puesto_id' => 'required|exists:puestos,id',
+            'socio_id' => 'nullable|exists:socios,id',
             'estado' => 'required|in:Activo,Inactivo',
             'password' => [
                 'nullable',
@@ -168,6 +178,7 @@ class UsuarioController extends Controller
             'email' => $request->email,
             'usuario' => $request->usuario,
             'puesto_id' => $request->puesto_id,
+            'socio_id' => $request->socio_id,
             'estado' => $request->estado,
         ];
 

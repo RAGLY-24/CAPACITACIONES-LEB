@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react"
 import axios from "axios";
 import Swal from "sweetalert2";
 import { VisorArchivo } from "../components/VisorArchivo";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 // Carga diferida: tldraw es pesado y solo se necesita al crear/editar presentaciones.
 const EditorPresentacion = lazy(() =>
@@ -24,8 +25,9 @@ const Ico = {
 };
 
 // ─── Modal Sección ─────────────────────────────────────────────────────────────
-function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
-  const [form, setForm]     = useState({ nombre: datos?.nombre || "", descripcion: datos?.descripcion || "", estado: datos?.estado || "Activo" });
+function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
+  useLockBodyScroll();
+  const [form, setForm]     = useState({ nombre: datos?.nombre || "", descripcion: datos?.descripcion || "", estado: datos?.estado || "Activo", seccion_requerida_id: datos?.seccion_requerida_id || "" });
   const [errs, setErrs]     = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -82,6 +84,17 @@ function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
               <option value="Inactivo">Inactivo</option>
             </select>
           </div>
+          <div>
+            <label className="text-sm font-semibold text-gray-700">Sección requerida antes de esta</label>
+            <select name="seccion_requerida_id" value={form.seccion_requerida_id || ""} onChange={handle}
+              className="mt-1 w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]">
+              <option value="">Ninguna (no depende de otra)</option>
+              {secciones.filter(s => s.id !== datos?.id).map(sec => (
+                <option key={sec.id} value={sec.id}>{sec.nombre}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-400">Esto ayuda a indicar qué contenido debe completarse antes.</p>
+          </div>
           <div className="flex justify-end gap-3 pt-2 border-t">
             <button type="button" onClick={onCerrar} className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancelar</button>
             <button type="submit" disabled={saving}
@@ -99,15 +112,17 @@ function ModalSeccion({ tipo, datos, onGuardar, onCerrar }) {
 // El contenido de un módulo se resuelve con una de dos alternativas: subir un
 // archivo (PDF/MP4) o diseñar una presentación en el lienzo de tldraw. Ambas
 // opciones viven juntas en la sección "Contenido del módulo" del formulario.
-function ModalModulo({ tipo, seccionId, datos, onGuardar, onAbrirLienzo, onCerrar }) {
+function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo, onCerrar }) {
+  useLockBodyScroll();
   const [form, setForm] = useState({
     nombre:      datos?.nombre || "",
     descripcion: datos?.descripcion || "",
     estado:      datos?.estado || "Activo",
+    prerequisite_module_id: datos?.prerequisite_module_id || "",
     archivo:     null,
     imagen:      null,
   });
-  const [preview, setPreview] = useState(datos?.imagen ? `/modulos/${datos.imagen}` : null);
+  const [preview, setPreview] = useState(datos?.imagen_url || null);
   const [errs, setErrs]       = useState({});
   const [saving, setSaving]   = useState(false);
   const tienePresentacion = datos?.file_type === "presentacion";
@@ -142,6 +157,7 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onAbrirLienzo, onCerra
     fd.append("nombre",      form.nombre);
     fd.append("descripcion", form.descripcion);
     fd.append("estado",      form.estado);
+    if (form.prerequisite_module_id) fd.append("prerequisite_module_id", form.prerequisite_module_id);
     if (form.archivo) fd.append("archivo", form.archivo);
     if (form.imagen)  fd.append("imagen", form.imagen);
 
@@ -240,6 +256,17 @@ function ModalModulo({ tipo, seccionId, datos, onGuardar, onAbrirLienzo, onCerra
               <option value="Inactivo">Inactivo</option>
             </select>
           </div>
+          <div>
+            <label className="text-sm font-semibold text-gray-700">Módulo requerido antes de este</label>
+            <select name="prerequisite_module_id" value={form.prerequisite_module_id || ""} onChange={handle}
+              className="mt-1 w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]">
+              <option value="">Ninguno</option>
+              {(modulos || []).filter(m => m.id !== datos?.id).map(mod => (
+                <option key={mod.id} value={mod.id}>{mod.nombre}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-400">Indica qué contenido debe completarse previamente.</p>
+          </div>
 
           {/* Contenido: subir archivo o crear presentación son alternativas */}
           <div>
@@ -335,6 +362,7 @@ function EditorOpciones({ ops, setOps, setCorrecta }) {
 
 // ─── Constructor de examen ─────────────────────────────────────────────────────
 function PanelExamen({ modulo, onCerrar }) {
+  useLockBodyScroll();
   const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando]   = useState(true);
   const [nueva, setNueva]         = useState(false);
@@ -474,6 +502,7 @@ function PanelExamen({ modulo, onCerrar }) {
 
 // ─── Vista previa del contenido de un módulo (misma vista que ve el empleado) ──
 function ModalVistaPrevia({ modulo, onCerrar, onEditar }) {
+  useLockBodyScroll();
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       <div className="flex items-center justify-between border-b px-6 py-4 shrink-0 bg-gray-50 shadow-sm">
@@ -490,7 +519,7 @@ function ModalVistaPrevia({ modulo, onCerrar, onEditar }) {
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col">
-        <VisorArchivo filePath={modulo.file_path} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json} />
+        <VisorArchivo fileUrl={modulo.file_url} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json} />
       </div>
     </div>
   );
@@ -524,7 +553,7 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
     } finally { setSubiendo(false); }
   };
 
-  const imgSrc = modulo.imagen ? `/modulos/${modulo.imagen}` : null;
+  const imgSrc = modulo.imagen_url || null;
 
   return (
     <div
@@ -602,12 +631,14 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
 }
 
 // ─── Vista: módulos de una sección ─────────────────────────────────────────────
-function VistaModulos({ seccion, onVolver, onRefrescar }) {
+function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
   const [modalMod, setModalMod]             = useState(null);
   const [examenMod, setExamenMod]           = useState(null);
   const [editSec, setEditSec]               = useState(false);
   const [presentacionMod, setPresentacionMod] = useState(null);
   const [previewMod, setPreviewMod]         = useState(null);
+
+  useLockBodyScroll(!!presentacionMod);
 
   const eliminarModulo = async m => {
     const ok = await Swal.fire({
@@ -703,7 +734,7 @@ function VistaModulos({ seccion, onVolver, onRefrescar }) {
       )}
 
       {modalMod && (
-        <ModalModulo tipo={modalMod.tipo} seccionId={seccion.id} datos={modalMod.datos}
+        <ModalModulo tipo={modalMod.tipo} seccionId={seccion.id} datos={modalMod.datos} modulos={seccion.modulos || []}
           onGuardar={alGuardar} onAbrirLienzo={alAbrirLienzo} onCerrar={() => setModalMod(null)} />
       )}
       {examenMod && (
@@ -720,7 +751,7 @@ function VistaModulos({ seccion, onVolver, onRefrescar }) {
         </Suspense>
       )}
       {editSec && (
-        <ModalSeccion tipo="editar" datos={seccion}
+        <ModalSeccion tipo="editar" datos={seccion} secciones={secciones}
           onGuardar={() => { setEditSec(false); onRefrescar(); Swal.fire({ icon: "success", title: "Sección actualizada.", confirmButtonColor: "#802907" }); }}
           onCerrar={() => setEditSec(false)} />
       )}
@@ -844,6 +875,7 @@ function Contenido() {
       <div className="p-6">
         <VistaModulos
           seccion={seccionActiva}
+          secciones={secciones}
           onVolver={() => setActiva(null)}
           onRefrescar={refrescar}
         />
@@ -896,6 +928,7 @@ function Contenido() {
         <ModalSeccion
           tipo={modalSec.tipo}
           datos={modalSec.datos}
+          secciones={secciones}
           onGuardar={() => {
             setModalSec(null);
             cargar();

@@ -26,7 +26,11 @@ class ExamenController extends Controller
             return response()->json(['message' => 'Este módulo no está disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {
-            return response()->json(['message' => 'Debes aprobar el examen del módulo anterior primero.'], 403);
+            $requerido = $modulo->moduloRequeridoPara();
+            $mensaje = $requerido
+                ? "Debes aprobar el examen de \"{$requerido->nombre}\" primero."
+                : 'Debes aprobar el módulo requerido primero.';
+            return response()->json(['message' => $mensaje], 403);
         }
 
         if ($modulo->preguntas->isEmpty()) {
@@ -67,7 +71,11 @@ class ExamenController extends Controller
             return response()->json(['message' => 'Este módulo no está disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {
-            return response()->json(['message' => 'Debes aprobar el examen del módulo anterior primero.'], 403);
+            $requerido = $modulo->moduloRequeridoPara();
+            $mensaje = $requerido
+                ? "Debes aprobar el examen de \"{$requerido->nombre}\" primero."
+                : 'Debes aprobar el módulo requerido primero.';
+            return response()->json(['message' => $mensaje], 403);
         }
 
         $request->validate([

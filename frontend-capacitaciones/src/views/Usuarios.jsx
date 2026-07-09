@@ -2,12 +2,18 @@ import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 function Usuarios() {
   // --- ESTADOS PRINCIPALES ---
   const [usuarios, setUsuarios] = useState([]);
   const [puestos, setPuestos] = useState([]);
+  const [socios, setSocios] = useState([]);
   const [nuevoPuesto, setNuevoPuesto] = useState("");
+  const [nuevoSocio, setNuevoSocio] = useState({ nombre: "", telefono: "", correo: "", estado: "Activo" });
+  const [socioError, setSocioError] = useState("");
+  const [socioModal, setSocioModal] = useState(null);
+  const [socioSeleccionado, setSocioSeleccionado] = useState(null);
   const [errorPuesto, setErrorPuesto] = useState("");
   const [editarPuestoId, setEditarPuestoId] = useState(null);
   const [editarPuestoNombre, setEditarPuestoNombre] = useState("");
@@ -35,14 +41,16 @@ function Usuarios() {
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const [erroresForm, setErroresForm] = useState({});
   const [isDirty, setIsDirty] = useState(false);
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
 
   const estadoInicialForm = {
     name: "", lastname: "", email: "", usuario: "",
-    password: "", confirmPassword: "", puesto_id: "", estado: "Activo",
+    password: "", confirmPassword: "", puesto_id: "", socio_id: "", estado: "Activo",
     permissions: {
       create_users: false, delete_users: false, manage_news: false,
       edit_capacitaciones_course: false, manage_passwords: false,
-      assign_permissions: false, news_access: true,
+      assign_permissions: false, news_access: true, view_reports: false,
+      manage_content: false,
     }
   };
   const [formData, setFormData] = useState(estadoInicialForm);
@@ -50,7 +58,10 @@ function Usuarios() {
   useEffect(() => {
     obtenerUsuarios();
     obtenerPuestos();
+    obtenerSocios();
   }, []);
+
+  useLockBodyScroll(!!(modalType || socioModal));
 
   const obtenerUsuarios = async () => {
     try {
@@ -73,6 +84,15 @@ function Usuarios() {
     }
   };
 
+  const obtenerSocios = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/socios`);
+      setSocios(response.data);
+    } catch (err) {
+      console.error("Error al obtener socios:", err);
+    }
+  };
+
   // --- CONTROLADORES DE ENTRADA Y DIRTY STATE ---
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -92,6 +112,12 @@ function Usuarios() {
     if (errorPuesto) setErrorPuesto("");
   };
 
+  const handleSocioChange = (e) => {
+    const { name, value } = e.target;
+    setNuevoSocio({ ...nuevoSocio, [name]: value });
+    if (socioError) setSocioError("");
+  };
+
   const crearPuesto = async () => {
     if (!nuevoPuesto.trim()) {
       setErrorPuesto("Ingrese un nombre de puesto.");
@@ -108,6 +134,37 @@ function Usuarios() {
       } else {
         setErrorPuesto("No se pudo crear el puesto. Revise la consola.");
       }
+    }
+  };
+
+  const crearSocio = async () => {
+    if (!nuevoSocio.nombre.trim()) {
+      setSocioError("Ingrese un nombre para el socio.");
+      return;
+    }
+    if (!nuevoSocio.telefono.trim()) {
+      setSocioError("Ingrese un número de contacto para el socio.");
+      return;
+    }
+    if (!nuevoSocio.correo.trim()) {
+      setSocioError("Ingrese un correo para el socio.");
+      return;
+    }
+
+    try {
+      await axios.post(`${API_URL}/api/socios`, {
+        nombre: nuevoSocio.nombre.trim(),
+        telefono: nuevoSocio.telefono.trim(),
+        correo: nuevoSocio.correo.trim(),
+        estado: nuevoSocio.estado,
+      });
+      setNuevoSocio({ nombre: "", telefono: "", correo: "", estado: "Activo" });
+      setSocioModal(null);
+      obtenerSocios();
+      Swal.fire({ icon: 'success', title: '¡Socio agregado!', text: 'Se registró correctamente.', confirmButtonColor: '#802907' });
+    } catch (err) {
+      const message = err.response?.data?.message || 'No se pudo crear el socio.';
+      setSocioError(message);
     }
   };
 
@@ -188,15 +245,17 @@ function Usuarios() {
     setFormData(estadoInicialForm);
     setErroresForm({});
     setIsDirty(false);
+    setPermissionsOpen(false);
     setModalType('crear');
   };
 
   const abrirModalEditar = (user) => {
     if (!puedeEditarUsuarios) return alert("No tienes permisos para editar usuarios.");
     if (user.puesto?.nombre === 'SistemasAdmin' && !esAdmin) return alert("No tienes permisos para editar a un Administrador.");
-    setFormData({ ...user, password: "", confirmPassword: "", permissions: { ...estadoInicialForm.permissions, ...user.permissions } });
+    setFormData({ ...user, password: "", confirmPassword: "", socio_id: user.socio_id || "", permissions: { ...estadoInicialForm.permissions, ...user.permissions } });
     setErroresForm({});
     setIsDirty(false);
+    setPermissionsOpen(false);
     setModalType('editar');
   };
 
@@ -204,6 +263,23 @@ function Usuarios() {
     if (user.id === usuarioLogueado.id) return alert("Acción denegada: No puedes eliminar tu propia cuenta.");
     setUsuarioSeleccionado(user);
     setModalType('eliminar');
+  };
+
+  const abrirModalSocio = () => {
+    setNuevoSocio({ nombre: "", telefono: "", correo: "", estado: "Activo" });
+    setSocioError("");
+    setSocioModal('crear');
+  };
+
+  const abrirModalDetalleSocio = (socio) => {
+    setSocioSeleccionado(socio);
+    setSocioModal('detalle');
+  };
+
+  const cerrarModalSocio = () => {
+    setSocioModal(null);
+    setSocioSeleccionado(null);
+    setSocioError("");
   };
 
   const cerrarModal = () => {
@@ -245,6 +321,7 @@ function Usuarios() {
         await axios.put(`${API_URL}/api/usuarios/${formData.id}`, payload);
       }
       obtenerUsuarios();
+      obtenerSocios();
       setIsDirty(false);
       setModalType(null);
       Swal.fire({ icon: 'success', title: '¡Éxito!', text: modalType === 'crear' ? 'El usuario fue creado correctamente.' : 'Los cambios fueron guardados.', confirmButtonColor: '#802907' });
@@ -532,6 +609,16 @@ function Usuarios() {
                 </select>
               </div>
 
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Socio / Empresa</label>
+                <select name="socio_id" value={formData.socio_id || ""} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
+                  <option value="">Sin asociación</option>
+                  {socios.map((socio) => (
+                    <option key={socio.id} value={socio.id}>{socio.nombre} {socio.empresa ? `- ${socio.empresa}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="col-span-2 grid grid-cols-2 gap-6 rounded-md bg-gray-50 p-4 border border-gray-200">
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-700">
@@ -549,26 +636,32 @@ function Usuarios() {
 
               {puedeAsignarPermisos && (
                 <div className="col-span-2 rounded-md bg-white p-4 border border-gray-200">
-                  <h3 className="mb-3 text-sm font-semibold text-gray-800">Permisos del usuario</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {[
-                      { key: 'create_users', label: 'Crear usuarios' }, { key: 'delete_users', label: 'Eliminar usuarios' },
-                      { key: 'manage_news', label: 'Publicar noticias' }, { key: 'news_access', label: 'Acceso a noticias' },
-                      { key: 'edit_capacitaciones_course', label: 'Editar capacitaciones' }, { key: 'manage_passwords', label: 'Administrar contraseñas' },
-                      { key: 'assign_permissions', label: 'Asignar permisos' },
-                    ].map(permission => (
-                      <label key={permission.key} className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-                        <input
-                          type="checkbox"
-                          name={permission.key}
-                          checked={formData.permissions?.[permission.key] || false}
-                          onChange={handlePermissionChange}
-                          className="h-4 w-4 rounded border-gray-300 text-[#802907] focus:ring-[#802907]"
-                        />
-                        {permission.label}
-                      </label>
-                    ))}
-                  </div>
+                  <button type="button" onClick={() => setPermissionsOpen(!permissionsOpen)} className="flex w-full items-center justify-between text-left text-sm font-semibold text-gray-800">
+                    <span>Permisos del usuario</span>
+                    <span className="text-xs text-gray-500">{permissionsOpen ? 'Ocultar' : 'Mostrar'}</span>
+                  </button>
+                  {permissionsOpen && (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        { key: 'create_users', label: 'Crear usuarios' }, { key: 'delete_users', label: 'Eliminar usuarios' },
+                        { key: 'manage_news', label: 'Publicar noticias' }, { key: 'news_access', label: 'Acceso a noticias' },
+                        { key: 'edit_capacitaciones_course', label: 'Editar capacitaciones' }, { key: 'manage_passwords', label: 'Administrar contraseñas' },
+                        { key: 'assign_permissions', label: 'Asignar permisos' }, { key: 'view_reports', label: 'Ver reportes' },
+                        { key: 'manage_content', label: 'Gestionar contenido' },
+                      ].map(permission => (
+                        <label key={permission.key} className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                          <input
+                            type="checkbox"
+                            name={permission.key}
+                            checked={formData.permissions?.[permission.key] || false}
+                            onChange={handlePermissionChange}
+                            className="h-4 w-4 rounded border-gray-300 text-[#802907] focus:ring-[#802907]"
+                          />
+                          {permission.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -580,6 +673,41 @@ function Usuarios() {
           </div>
         </div>
       )}
+
+      {/* SECCIÓN DE SOCIOS */}
+      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800">Directorio de Socios</h3>
+            <p className="text-sm text-gray-500">Asocia a un operador con su socio y revisa los usuarios vinculados.</p>
+          </div>
+          <button onClick={abrirModalSocio} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
+            + Agregar socio
+          </button>
+        </div>
+
+        {socioError && <p className="mt-2 text-xs text-red-500">{socioError}</p>}
+        <div className="mt-4 rounded-lg border border-gray-200 p-4 bg-white">
+          <div className="grid gap-2 text-sm text-gray-700">
+            {socios.length === 0 ? (
+              <p className="text-gray-500">No hay socios registrados.</p>
+            ) : socios.map((socio) => (
+              <button
+                key={socio.id}
+                type="button"
+                onClick={() => abrirModalDetalleSocio(socio)}
+                className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-3 text-left transition hover:border-[#802907] hover:bg-[#fdf7f3]"
+              >
+                <div>
+                  <p className="font-semibold text-gray-800">{socio.nombre}</p>
+                  <p className="text-xs text-gray-500">{socio.telefono || 'Sin teléfono'} · {socio.correo || 'Sin correo'} · {socio.estado}</p>
+                </div>
+                <span className="text-xs font-semibold text-gray-600">{socio.usuarios_count ?? socio.usuarios?.length ?? 0} asignado(s)</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* SECCIÓN DE PUESTOS */}
       <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
@@ -622,6 +750,68 @@ function Usuarios() {
           />
         </div>
       </div>
+
+      {socioModal === 'crear' && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-800">Agregar nuevo socio</h3>
+            <p className="mt-1 text-sm text-gray-500">Completa estos datos para registrar el socio.</p>
+            <div className="mt-5 grid gap-4">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
+                <input type="text" name="nombre" value={nuevoSocio.nombre} onChange={handleSocioChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Número <span className="text-red-500">*</span></label>
+                <input type="text" name="telefono" value={nuevoSocio.telefono} onChange={handleSocioChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Correo <span className="text-red-500">*</span></label>
+                <input type="email" name="correo" value={nuevoSocio.correo} onChange={handleSocioChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Estado</label>
+                <select name="estado" value={nuevoSocio.estado} onChange={handleSocioChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={cerrarModalSocio} className="rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
+              <button type="button" onClick={crearSocio} className="rounded-md bg-[#802907] px-5 py-2 font-semibold text-white hover:bg-[#4e1802]">Guardar socio</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {socioModal === 'detalle' && socioSeleccionado && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-xl rounded-lg bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800">{socioSeleccionado.nombre}</h3>
+                <p className="text-sm text-gray-500">{socioSeleccionado.telefono || 'Sin teléfono'} · {socioSeleccionado.correo || 'Sin correo'}</p>
+              </div>
+              <button type="button" onClick={cerrarModalSocio} className="text-sm font-semibold text-gray-500 hover:text-gray-700">Cerrar</button>
+            </div>
+            <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="text-sm font-semibold text-gray-700">Operadores asignados</p>
+              <p className="text-xs text-gray-500">{socioSeleccionado.usuarios_count ?? socioSeleccionado.usuarios?.length ?? 0} registrado(s)</p>
+              <div className="mt-3 space-y-2">
+                {(socioSeleccionado.usuarios || []).length === 0 ? (
+                  <p className="text-sm text-gray-500">No hay operadores asignados todavía.</p>
+                ) : socioSeleccionado.usuarios.map((usuario) => (
+                  <div key={usuario.id} className="rounded-md border border-gray-200 bg-white px-3 py-2">
+                    <p className="text-sm font-semibold text-gray-800">{usuario.name} {usuario.lastname}</p>
+                    <p className="text-xs text-gray-500">{usuario.puesto?.nombre || 'Sin puesto'}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL ELIMINAR */}
       {modalType === 'eliminar' && (

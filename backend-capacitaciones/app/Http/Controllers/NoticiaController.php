@@ -5,13 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Noticia;
 use App\Models\User;
+use App\Services\ArchivoStorageService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class NoticiaController extends Controller
 {
+    private ArchivoStorageService $archivos;
+
+    public function __construct(ArchivoStorageService $archivos)
+    {
+        $this->archivos = $archivos;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -42,16 +47,11 @@ class NoticiaController extends Controller
         ]);
 
         $paths = []; // Aquí guardaremos solo el nombre del archivo
-        $frontendDir = base_path('../frontend-capacitaciones/public/noticias');
-        File::ensureDirectoryExists($frontendDir);
 
         // Si enviaron múltiples archivos, los recorremos y guardamos uno por uno
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $filename = time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
-                $storedPath = $file->storeAs('noticias', $filename, 'public');
-                $paths[] = $filename;
-                copy(storage_path('app/public/' . $storedPath), $frontendDir . '/' . $filename);
+                $paths[] = $this->archivos->guardar($file, 'noticias');
             }
         }
 
@@ -89,27 +89,18 @@ class NoticiaController extends Controller
             'evidence' => $request->evidence,
         ];
 
-        $frontendDir = base_path('../frontend-capacitaciones/public/noticias');
-        File::ensureDirectoryExists($frontendDir);
-
         // Si subieron nuevos archivos, reemplazamos el álbum viejo
         if ($request->hasFile('files')) {
 
-            // 1. Borramos todas las fotos viejas del servidor y del frontend
-            if (!empty($noticia->file_paths)) {
-                foreach ($noticia->file_paths as $oldPath) {
-                    Storage::disk('public')->delete('noticias/' . $oldPath);
-                    File::delete($frontendDir . '/' . $oldPath);
-                }
+            // 1. Borramos todas las fotos viejas
+            foreach ($noticia->file_paths ?? [] as $oldPath) {
+                $this->archivos->eliminar($oldPath, 'noticias');
             }
 
             // 2. Guardamos las nuevas fotos
             $paths = [];
             foreach ($request->file('files') as $file) {
-                $filename = time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
-                $storedPath = $file->storeAs('noticias', $filename, 'public');
-                $paths[] = $filename;
-                copy(storage_path('app/public/' . $storedPath), $frontendDir . '/' . $filename);
+                $paths[] = $this->archivos->guardar($file, 'noticias');
             }
             $dataToUpdate['file_paths'] = $paths;
         }
@@ -129,13 +120,9 @@ class NoticiaController extends Controller
 
         $noticia = Noticia::findOrFail($id);
 
-        // Si la noticia tenía una galería de fotos, borramos todas físicamente del servidor y del frontend
-        if (!empty($noticia->file_paths)) {
-            $frontendDir = base_path('../frontend-capacitaciones/public/noticias');
-            foreach ($noticia->file_paths as $path) {
-                Storage::disk('public')->delete('noticias/' . $path);
-                File::delete($frontendDir . '/' . $path);
-            }
+        // Si la noticia tenía una galería de fotos, borramos todas físicamente
+        foreach ($noticia->file_paths ?? [] as $path) {
+            $this->archivos->eliminar($path, 'noticias');
         }
 
         $noticia->delete();

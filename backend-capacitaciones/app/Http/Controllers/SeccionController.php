@@ -24,12 +24,12 @@ class SeccionController extends Controller
         }
 
         if ($this->esAdmin()) {
-            $secciones = Seccion::with(['modulos' => fn($q) => $q->withCount('preguntas')])
+            $secciones = Seccion::with(['modulos' => fn($q) => $q->withCount('preguntas'), 'requiere'])
                 ->orderBy('orden')
                 ->get();
         } else {
             $secciones = Seccion::where('estado', 'Activo')
-                ->with(['modulos' => fn($q) => $q->where('estado', 'Activo')->withCount('preguntas')->orderBy('orden')])
+                ->with(['modulos' => fn($q) => $q->where('estado', 'Activo')->withCount('preguntas')->orderBy('orden'), 'requiere'])
                 ->orderBy('orden')
                 ->get();
         }
@@ -48,6 +48,7 @@ class SeccionController extends Controller
             'nombre'      => 'required|string|min:3|max:150|unique:secciones,nombre',
             'descripcion' => 'nullable|string|max:1000',
             'estado'      => 'required|in:Activo,Inactivo',
+            'seccion_requerida_id' => 'nullable|exists:secciones,id',
         ], [
             'nombre.unique' => 'Ya existe una sección con ese nombre.',
         ]);
@@ -59,6 +60,7 @@ class SeccionController extends Controller
             'descripcion' => $request->descripcion,
             'orden'       => $orden,
             'estado'      => $request->estado,
+            'seccion_requerida_id' => $request->seccion_requerida_id,
             'created_by'  => Auth::id(),
         ]);
 
@@ -78,6 +80,7 @@ class SeccionController extends Controller
             'nombre'      => "required|string|min:3|max:150|unique:secciones,nombre,{$id}",
             'descripcion' => 'nullable|string|max:1000',
             'estado'      => 'required|in:Activo,Inactivo',
+            'seccion_requerida_id' => 'nullable|exists:secciones,id',
         ], [
             'nombre.unique' => 'Ya existe una sección con ese nombre.',
         ]);
@@ -86,6 +89,7 @@ class SeccionController extends Controller
             'nombre'      => $request->nombre,
             'descripcion' => $request->descripcion,
             'estado'      => $request->estado,
+            'seccion_requerida_id' => $request->seccion_requerida_id,
         ]);
 
         return response()->json(['message' => 'Sección actualizada.', 'seccion' => $seccion], 200);

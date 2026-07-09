@@ -1,4 +1,5 @@
 import { useState, useEffect, Suspense, lazy } from "react";
+import { VisorPDF } from "./VisorPDF";
 
 const VisorPresentacion = lazy(() =>
   import("./PresentacionTldraw").then(m => ({ default: m.VisorPresentacion }))
@@ -17,21 +18,27 @@ function SinArchivo() {
   );
 }
 
-export function VisorArchivo({ filePath, fileType, presentacionJson }) {
+// El examen solo debe desbloquearse cuando el empleado revisó el contenido:
+// hizo scroll hasta el final del PDF o dejó que el video terminara. Los
+// demás tipos de contenido (presentación, o si no hay archivo) no soportan
+// esa detección, así que no bloquean el examen.
+export function VisorArchivo({ fileUrl, fileType, presentacionJson, onCompletado }) {
   const [estado, setEstado] = useState("verificando");
 
   useEffect(() => {
-    if (fileType === "presentacion") return;
-    if (!filePath) { setEstado("error"); return; }
+    if (fileType === "presentacion") { onCompletado?.(); return; }
+    if (!fileUrl) { setEstado("error"); onCompletado?.(); return; }
     setEstado("verificando");
-    fetch(`/modulos/${filePath}`, { method: "HEAD" })
+    fetch(fileUrl, { method: "HEAD" })
       .then(r => {
         const ct = r.headers.get("content-type") || "";
         const esArchivoReal = r.ok && !ct.includes("text/html");
         setEstado(esArchivoReal ? "ok" : "error");
+        if (!esArchivoReal) onCompletado?.();
       })
-      .catch(() => setEstado("error"));
-  }, [filePath, fileType]);
+      .catch(() => { setEstado("error"); onCompletado?.(); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileUrl, fileType]);
 
   if (fileType === "presentacion") {
     if (!presentacionJson) return <SinArchivo />;
@@ -44,7 +51,7 @@ export function VisorArchivo({ filePath, fileType, presentacionJson }) {
     );
   }
 
-  if (!filePath || estado === "error") return <SinArchivo />;
+  if (!fileUrl || estado === "error") return <SinArchivo />;
 
   if (estado === "verificando") {
     return (
@@ -54,7 +61,7 @@ export function VisorArchivo({ filePath, fileType, presentacionJson }) {
     );
   }
 
-  const src = `/modulos/${filePath}`;
+  const src = fileUrl;
 
   if (fileType === "video") {
     return (
@@ -64,20 +71,11 @@ export function VisorArchivo({ filePath, fileType, presentacionJson }) {
           controls
           className="w-full h-full object-contain"
           onError={() => setEstado("error")}
+          onEnded={() => onCompletado?.()}
         />
       </div>
     );
   }
 
-  return (
-    <div className="flex-1 min-h-0 flex flex-col rounded-lg overflow-hidden border border-gray-200">
-      <embed src={src} type="application/pdf" className="w-full flex-1 min-h-0" />
-      <p className="text-xs text-center text-gray-400 py-1 shrink-0">
-        Si el PDF no se muestra,{" "}
-        <a href={src} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-          ábrelo aquí
-        </a>.
-      </p>
-    </div>
-  );
+  return <VisorPDF src={src} onScrollFinal={onCompletado} />;
 }

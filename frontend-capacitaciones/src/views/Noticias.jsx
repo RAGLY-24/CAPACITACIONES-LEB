@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import fondodeinterfaz from '../assets/fondodeinterfaz.jpg';
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 function Noticias() {
     const [noticias, setNoticias] = useState([]);
     const [modalType, setModalType] = useState(null); // 'crear', 'editar', o 'ver'
     const [selectedNoticia, setSelectedNoticia] = useState(null);
+
+    useLockBodyScroll(!!modalType);
 
     // Cambiamos 'file' por 'files' (arreglo) para soportar múltiples
     const [formData, setFormData] = useState({ title: '', body: '', evidence: '', files: [] });
@@ -136,24 +139,7 @@ function Noticias() {
         }
     };
 
-    const obtenerImagenes = (noticia) => {
-        if (noticia.file_paths && noticia.file_paths.length > 0) {
-            return noticia.file_paths.map((p) => {
-                if (p.startsWith('http://') || p.startsWith('https://')) {
-                    return p;
-                }
-                return `/noticias/${p}`;
-            });
-        }
-        if (noticia.file_path) {
-            const p = noticia.file_path;
-            if (p.startsWith('http://') || p.startsWith('https://')) {
-                return [p];
-            }
-            return [`/noticias/${p}`];
-        }
-        return [];
-    };
+    const obtenerImagenes = (noticia) => noticia.file_urls || [];
 
     const CarouselTile = ({ images }) => {
         const [idx, setIdx] = useState(0);
@@ -246,7 +232,6 @@ function Noticias() {
                     /* --- NUEVO GRID: 2 Columnas para mejor proporción --- */
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {noticias.map((noticia, index) => {
-                            const authorInitial = (noticia.author?.name || 'U').charAt(0).toUpperCase();
                             const imagenes = obtenerImagenes(noticia);
                             const imgUrl = imagenes[0];
                             const esVideo = imgUrl && imgUrl.match(/\.(mp4|webm|ogg)$/i);
@@ -273,7 +258,7 @@ function Noticias() {
                                             )
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900">
-                                                <span className="text-6xl font-bold text-gray-500 opacity-20">{authorInitial}</span>
+                                                <span className="text-sm font-semibold uppercase tracking-[0.3em] text-gray-400">Sin imagen</span>
                                             </div>
                                         )}
                                     </div>
@@ -298,9 +283,11 @@ function Noticias() {
                                             </div>
                                         )}
 
-                                        <span className="mb-3 w-max rounded bg-blue-600 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
-                                            {noticia.author?.name || 'Interno'}
-                                        </span>
+                                        {isFeatured && (
+                                            <span className="mb-3 w-max rounded bg-blue-600 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
+                                                Contenido destacado
+                                            </span>
+                                        )}
 
                                         <h3 className={`font-bold leading-tight text-white group-hover:underline decoration-2 underline-offset-4 ${isFeatured ? 'text-3xl md:text-5xl line-clamp-3 mb-4' : 'text-xl md:text-2xl line-clamp-2 mb-2'}`}>
                                             {noticia.title}
@@ -351,7 +338,9 @@ function Noticias() {
                         <div className="p-8 md:p-10">
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{selectedNoticia.title}</h2>
                             <div className="flex items-center gap-3 text-sm text-gray-400 mb-8 border-b border-gray-700 pb-5">
-                                <span className="bg-[#802907] text-white px-3 py-1 rounded-md font-semibold">{selectedNoticia.author?.name}</span>
+                                {noticias[0]?.id === selectedNoticia.id && (
+                                    <span className="bg-[#802907] text-white px-3 py-1 rounded-md font-semibold">Contenido destacado</span>
+                                )}
                                 <span>Publicado recientemente</span>
                             </div>
 
@@ -366,13 +355,13 @@ function Noticias() {
                                 </div>
                             )}
 
-                            {selectedNoticia.file_paths && selectedNoticia.file_paths.length > 1 && (
+                            {selectedNoticia.file_urls && selectedNoticia.file_urls.length > 1 && (
                                 <div className="mt-10">
                                     <h4 className="text-gray-400 font-bold mb-4">Galería adjunta</h4>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        {selectedNoticia.file_paths.slice(1).map((ruta, i) => (
-                                            <a key={i} href={`/noticias/${ruta}`} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
-                                                <img src={`/noticias/${ruta}`} className="w-full h-32 object-cover hover:scale-110 hover:opacity-80 transition duration-300" alt="Evidencia adjunta" />
+                                        {selectedNoticia.file_urls.slice(1).map((url, i) => (
+                                            <a key={i} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
+                                                <img src={url} className="w-full h-32 object-cover hover:scale-110 hover:opacity-80 transition duration-300" alt="Evidencia adjunta" />
                                             </a>
                                         ))}
                                     </div>

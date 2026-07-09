@@ -8,7 +8,7 @@ class Seccion extends Model
 {
     protected $table = 'secciones'; // Laravel pluralizaría "Seccion" → "seccions" (incorrecto)
 
-    protected $fillable = ['nombre', 'descripcion', 'orden', 'estado', 'created_by'];
+    protected $fillable = ['nombre', 'descripcion', 'orden', 'estado', 'created_by', 'seccion_requerida_id'];
 
     public function modulos()
     {
@@ -18,5 +18,15 @@ class Seccion extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function requiere()
+    {
+        return $this->belongsTo(Seccion::class, 'seccion_requerida_id');
+    }
+
+    public function dependientes()
+    {
+        return $this->hasMany(Seccion::class, 'seccion_requerida_id');
     }
 }

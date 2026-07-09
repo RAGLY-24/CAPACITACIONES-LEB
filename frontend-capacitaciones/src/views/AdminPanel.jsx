@@ -111,7 +111,7 @@ function AdminPanel() {
       descripcion: usuarioLogueado.descripcion || '',
     });
     setFotoFile(null);
-    setFotoPreview(usuarioLogueado.foto ? `/perfiles/${usuarioLogueado.foto}` : null);
+    setFotoPreview(usuarioLogueado.foto_url || null);
     setIsUserMenuOpen(false);
     setIsPerfilModalOpen(true);
   };
@@ -205,9 +205,9 @@ function AdminPanel() {
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#802907] text-white transition-transform hover:scale-105 focus:outline-none shadow-md"
             >
-              {usuarioLogueado.foto ? (
+              {usuarioLogueado.foto_url ? (
                 <img
-                  src={`/perfiles/${usuarioLogueado.foto}`}
+                  src={usuarioLogueado.foto_url}
                   alt="Foto de perfil"
                   className="h-full w-full object-cover"
                 />

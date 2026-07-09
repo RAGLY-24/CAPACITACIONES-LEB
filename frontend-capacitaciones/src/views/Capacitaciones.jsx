@@ -3,6 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { VisorArchivo } from "../components/VisorArchivo";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -225,8 +226,13 @@ function IconoEstadoModulo({ estado, desbloqueado }) {
 
 // VISTA ESTILO CISCO
 function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizado }) {
+  useLockBodyScroll();
   const [activoId, setActivoId] = useState(moduloInicialId);
   const [tab, setTab] = useState("contenido");
+  // El examen se desbloquea solo tras revisar el contenido (scroll al final
+  // del PDF o video terminado). Si el módulo ya fue aprobado antes, no se
+  // vuelve a exigir para permitir repasar el examen libremente.
+  const [contenidoListo, setContenidoListo] = useState(false);
 
   const activo = useMemo(() => {
     for (const s of secciones) {
@@ -235,6 +241,10 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
     }
     return null;
   }, [secciones, activoId]);
+
+  useEffect(() => {
+    setContenidoListo(activo?.estado === "completado");
+  }, [activoId, activo?.estado]);
 
   // Solo la sección que contiene el módulo activo se muestra en el esquema del curso
   const seccionActiva = useMemo(() => (
@@ -309,20 +319,39 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
               📄 Contenido
             </button>
             {tiene_examen && (
-              <button onClick={() => setTab("examen")}
-                className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === "examen" ? "border-b-2 border-[#802907] text-[#802907] bg-white" : "text-gray-500 hover:text-gray-700"}`}>
-                📝 Examen
+              <button onClick={() => contenidoListo && setTab("examen")}
+                disabled={!contenidoListo}
+                title={!contenidoListo ? "Revisa todo el contenido (PDF hasta el final o video completo) para desbloquear el examen" : undefined}
+                className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === "examen" ? "border-b-2 border-[#802907] text-[#802907] bg-white"
+                    : !contenidoListo ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}>
+                {contenidoListo ? "📝 Examen" : "🔒 Examen"}
               </button>
             )}
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto p-6">
             {tab === "contenido" ? (
               <div className="h-full flex flex-col gap-4">
-                <VisorArchivo filePath={modulo.file_path} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json} />
+                <VisorArchivo fileUrl={modulo.file_url} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json}
+                  onCompletado={() => setContenidoListo(true)} />
                 {tiene_examen && (
-                  <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 shrink-0">
-                    <p className="text-sm text-blue-800 font-medium">¿Ya revisaste el contenido?</p>
-                    <p className="text-xs text-blue-600 mt-1">Ve a la pestaña <strong>Examen</strong> cuando estés listo.</p>
+                  <div className={`rounded-lg border p-4 shrink-0 ${contenidoListo ? "bg-blue-50 border-blue-200" : "bg-amber-50 border-amber-200"}`}>
+                    {contenidoListo ? (
+                      <>
+                        <p className="text-sm text-blue-800 font-medium">¿Ya revisaste el contenido?</p>
+                        <p className="text-xs text-blue-600 mt-1">Ve a la pestaña <strong>Examen</strong> cuando estés listo.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-amber-800 font-medium">🔒 El examen está bloqueado</p>
+                        <p className="text-xs text-amber-700 mt-1">
+                          {modulo.file_type === "video"
+                            ? "Deja que el video termine para desbloquearlo."
+                            : "Desplázate hasta el final del contenido para desbloquearlo."}
+                        </p>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -584,33 +613,40 @@ function VistaAdmin() {
 }
 
 // VISTA DE EMPLEADO 
-function TarjetaSeccionEmpleado({ seccion, modulos, onClick }) {
+function TarjetaSeccionEmpleado({ seccion, modulos, desbloqueada, seccionRequerida, onClick }) {
   const completados = modulos.filter(m => m.estado === "completado").length;
   const pct = modulos.length ? Math.round((completados / modulos.length) * 100) : 0;
 
   return (
     <div
       onClick={onClick}
-      className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 cursor-pointer hover:border-[#802907] hover:shadow-md transition-all group relative"
+      className={`rounded-xl border border-gray-200 bg-white shadow-sm p-6 cursor-pointer transition-all group relative ${desbloqueada ? "hover:border-[#802907] hover:shadow-md" : "opacity-70"}`}
     >
       <div className="flex items-center gap-2 mb-1">
         <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${pct === 100 ? "bg-green-500" : "bg-gray-300"}`} />
         <h3 className="font-bold text-gray-800 truncate group-hover:text-[#802907] transition-colors">
           {seccion.nombre}
         </h3>
+        {!desbloqueada && <span className="text-base shrink-0">🔒</span>}
       </div>
       {seccion.descripcion && (
         <p className="text-xs text-gray-400 line-clamp-2 mt-1">{seccion.descripcion}</p>
       )}
-      <p className="text-xs text-gray-500 mt-3 font-medium">{modulos.length} módulo(s)</p>
 
-      {/* Barra de progreso */}
-      <div className="mt-3 flex items-center gap-2">
-        <div className="flex-1 rounded-full bg-gray-200 h-1.5 overflow-hidden">
-          <div className="h-1.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pct}%` }} />
-        </div>
-        <span className="text-xs text-gray-500 shrink-0">{completados}/{modulos.length} completados</span>
-      </div>
+      {desbloqueada ? (
+        <>
+          <p className="text-xs text-gray-500 mt-3 font-medium">{modulos.length} módulo(s)</p>
+          {/* Barra de progreso */}
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex-1 rounded-full bg-gray-200 h-1.5 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-xs text-gray-500 shrink-0">{completados}/{modulos.length} completados</span>
+          </div>
+        </>
+      ) : (
+        <p className="text-xs text-amber-600 mt-3 font-medium">🔒 Necesitas completar "{seccionRequerida}" primero.</p>
+      )}
 
       <div className="absolute bottom-4 right-4 text-gray-200 group-hover:text-[#802907] transition-colors text-lg">
         →
@@ -623,7 +659,7 @@ function TarjetaSeccionEmpleado({ seccion, modulos, onClick }) {
 function TarjetaModuloEmpleado({ item, onAbrir }) {
   const { modulo, estado, puntaje, intentos, tiene_examen } = item;
   const desbloqueado = item.desbloqueado !== false;
-  const imgSrc = modulo.imagen ? `/modulos/${modulo.imagen}` : null;
+  const imgSrc = modulo.imagen_url || null;
 
   const botonLabel = () => {
     if (!desbloqueado) return "Bloqueado";
@@ -672,13 +708,13 @@ function TarjetaModuloEmpleado({ item, onAbrir }) {
           {puntaje !== null && (
             <span className={`font-bold ${puntaje >= 70 ? "text-green-600" : "text-red-500"}`}>{puntaje}%</span>
           )}
-          {!desbloqueado && <span className="text-gray-400">🔒 Requiere aprobar el módulo anterior</span>}
+          {!desbloqueado && <span className="text-gray-400">🔒 Requiere aprobar: {item.requiere_modulo || "el módulo anterior"}</span>}
         </div>
 
         <button
           onClick={e => { e.stopPropagation(); if (desbloqueado) onAbrir(modulo.id); }}
           disabled={!desbloqueado}
-          title={!desbloqueado ? "Aprueba el examen del módulo anterior (mínimo 70%) para desbloquearlo" : undefined}
+          title={!desbloqueado ? `Aprueba el examen de "${item.requiere_modulo || "el módulo anterior"}" (mínimo 70%) para desbloquearlo` : undefined}
           className={`mt-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${desbloqueado ? "bg-[#802907] text-white hover:bg-[#5a1b04]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
           {botonLabel()}
         </button>
@@ -755,12 +791,26 @@ function VistaEmpleado() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {secciones.map(secData => {
             if (!secData.modulos?.length) return null;
+            const desbloqueada = secData.desbloqueada !== false;
             return (
               <TarjetaSeccionEmpleado
                 key={secData.seccion.id}
                 seccion={secData.seccion}
                 modulos={secData.modulos}
-                onClick={() => setSeccionActivaId(secData.seccion.id)}
+                desbloqueada={desbloqueada}
+                seccionRequerida={secData.seccion_requerida}
+                onClick={() => {
+                  if (!desbloqueada) {
+                    Swal.fire({
+                      icon: "warning",
+                      title: "Sección bloqueada",
+                      text: `Debes completar la sección "${secData.seccion_requerida}" antes de acceder a esta.`,
+                      confirmButtonColor: "#802907",
+                    });
+                    return;
+                  }
+                  setSeccionActivaId(secData.seccion.id);
+                }}
               />
             );
           })}

@@ -3,16 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Modulo;
+use App\Models\Seccion;
 use App\Models\User;
 use App\Models\ProgresoModulo;
+use App\Services\ArchivoStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class ModuloController extends Controller
 {
+    private ArchivoStorageService $archivos;
+
+    public function __construct(ArchivoStorageService $archivos)
+    {
+        $this->archivos = $archivos;
+    }
+
     private function esAdmin(): bool
     {
         $user = Auth::user();
@@ -74,6 +80,7 @@ class ModuloController extends Controller
             'nombre'      => 'required|string|min:5|max:150',
             'descripcion' => 'required|string|min:10|max:2000',
             'estado'      => 'required|in:Activo,Inactivo',
+            'prerequisite_module_id' => 'nullable|exists:modulos,id',
             'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:102400',
             'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
         ], [
@@ -90,12 +97,13 @@ class ModuloController extends Controller
         $filePath = null;
         $fileType = null;
         $imagenPath = null;
+        $carpeta = $this->carpetaParaSeccion($request->seccion_id);
 
         if ($request->hasFile('archivo')) {
-            [$filePath, $fileType] = $this->guardarArchivo($request->file('archivo'));
+            [$filePath, $fileType] = $this->guardarArchivo($request->file('archivo'), $carpeta);
         }
         if ($request->hasFile('imagen')) {
-            $imagenPath = $this->guardarImagen($request->file('imagen'));
+            $imagenPath = $this->guardarImagen($request->file('imagen'), $carpeta);
         }
 
         $modulo = Modulo::create([
@@ -103,6 +111,7 @@ class ModuloController extends Controller
             'nombre'      => $request->nombre,
             'descripcion' => $request->descripcion,
             'estado'      => $request->estado,
+            'prerequisite_module_id' => $request->prerequisite_module_id,
             'file_path'   => $filePath,
             'file_type'   => $fileType,
             'imagen'      => $imagenPath,
@@ -127,6 +136,7 @@ class ModuloController extends Controller
             'nombre'      => 'required|string|min:5|max:150',
             'descripcion' => 'required|string|min:10|max:2000',
             'estado'      => 'required|in:Activo,Inactivo',
+            'prerequisite_module_id' => 'nullable|exists:modulos,id',
             'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:102400',
             'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
         ], [
@@ -140,23 +150,35 @@ class ModuloController extends Controller
             'imagen.max'      => 'La imagen no puede superar los 5 MB.',
         ]);
 
+        $carpetaAnterior = $modulo->carpeta();
+        $seccionNueva    = $request->seccion_id ?? $modulo->seccion_id;
+
         $datos = [
             'nombre'      => $request->nombre,
             'descripcion' => $request->descripcion,
             'estado'      => $request->estado,
+            'prerequisite_module_id' => $request->prerequisite_module_id,
+            'seccion_id'  => $seccionNueva,
         ];
 
+        $carpetaNueva = $this->carpetaParaSeccion($seccionNueva);
+
         if ($request->hasFile('archivo')) {
-            $this->eliminarArchivoFisico($modulo->file_path);
-            [$filePath, $fileType] = $this->guardarArchivo($request->file('archivo'));
+            $this->eliminarArchivoFisico($modulo->file_path, $carpetaAnterior);
+            [$filePath, $fileType] = $this->guardarArchivo($request->file('archivo'), $carpetaNueva);
             $datos['file_path']         = $filePath;
             $datos['file_type']         = $fileType;
             $datos['presentacion_json'] = null; // el módulo deja de ser una presentación
+        } elseif ($carpetaAnterior !== $carpetaNueva) {
+            // Cambió de sección pero no subieron un archivo nuevo: reubicamos el existente.
+            $this->archivos->mover($modulo->file_path, $carpetaAnterior, $carpetaNueva);
         }
 
         if ($request->hasFile('imagen')) {
-            $this->eliminarImagenFisica($modulo->imagen);
-            $datos['imagen'] = $this->guardarImagen($request->file('imagen'));
+            $this->eliminarImagenFisica($modulo->imagen, $carpetaAnterior);
+            $datos['imagen'] = $this->guardarImagen($request->file('imagen'), $carpetaNueva);
+        } elseif ($carpetaAnterior !== $carpetaNueva) {
+            $this->archivos->mover($modulo->imagen, $carpetaAnterior, $carpetaNueva);
         }
 
         $modulo->update($datos);
@@ -174,8 +196,9 @@ class ModuloController extends Controller
         }
 
         $modulo = Modulo::findOrFail($id);
-        $this->eliminarArchivoFisico($modulo->file_path);
-        $this->eliminarImagenFisica($modulo->imagen);
+        $carpeta = $modulo->carpeta();
+        $this->eliminarArchivoFisico($modulo->file_path, $carpeta);
+        $this->eliminarImagenFisica($modulo->imagen, $carpeta);
         $modulo->delete();
 
         return response()->json(['message' => 'Módulo eliminado exitosamente.'], 200);
@@ -196,7 +219,7 @@ class ModuloController extends Controller
             'contenido.json'     => 'El contenido de la presentación no es válido.',
         ]);
 
-        $this->eliminarArchivoFisico($modulo->file_path);
+        $this->eliminarArchivoFisico($modulo->file_path, $modulo->carpeta());
 
         $modulo->update([
             'file_path'         => null,
@@ -210,48 +233,35 @@ class ModuloController extends Controller
         ], 200);
     }
 
-    private function guardarArchivo($file): array
+    // Carpeta "modulos/{id}-{nombre-sección}" (o "modulos/sin-seccion") para
+    // una sección que todavía puede no estar guardada en un Modulo existente.
+    private function carpetaParaSeccion(?int $seccionId): string
+    {
+        $nombre = $seccionId ? Seccion::find($seccionId)?->nombre : null;
+        return 'modulos/' . $this->archivos->carpetaSeccion($seccionId, $nombre);
+    }
+
+    private function guardarArchivo($file, string $carpeta): array
     {
         $ext      = $file->getClientOriginalExtension();
         $fileType = $ext === 'pdf' ? 'pdf' : 'video';
-        $filename = time() . '_' . Str::random(8) . '.' . $ext;
-
-        $storedPath  = $file->storeAs('modulos', $filename, 'public');
-        $frontendDir = base_path('../frontend-capacitaciones/public/modulos');
-        File::ensureDirectoryExists($frontendDir);
-        copy(storage_path('app/public/' . $storedPath), $frontendDir . '/' . $filename);
+        $filename = $this->archivos->guardar($file, $carpeta);
 
         return [$filename, $fileType];
     }
 
-    private function eliminarArchivoFisico(?string $filename): void
+    private function eliminarArchivoFisico(?string $filename, string $carpeta): void
     {
-        if (!$filename) return;
-
-        Storage::disk('public')->delete('modulos/' . $filename);
-        $frontendPath = base_path('../frontend-capacitaciones/public/modulos/' . $filename);
-        File::delete($frontendPath);
+        $this->archivos->eliminar($filename, $carpeta);
     }
 
-    private function guardarImagen($file): string
+    private function guardarImagen($file, string $carpeta): string
     {
-        $ext      = $file->getClientOriginalExtension();
-        $filename = 'img_' . time() . '_' . Str::random(8) . '.' . $ext;
-
-        $storedPath  = $file->storeAs('modulos', $filename, 'public');
-        $frontendDir = base_path('../frontend-capacitaciones/public/modulos');
-        File::ensureDirectoryExists($frontendDir);
-        copy(storage_path('app/public/' . $storedPath), $frontendDir . '/' . $filename);
-
-        return $filename;
+        return $this->archivos->guardar($file, $carpeta, 'img_');
     }
 
-    private function eliminarImagenFisica(?string $filename): void
+    private function eliminarImagenFisica(?string $filename, string $carpeta): void
     {
-        if (!$filename) return;
-
-        Storage::disk('public')->delete('modulos/' . $filename);
-        $frontendPath = base_path('../frontend-capacitaciones/public/modulos/' . $filename);
-        File::delete($frontendPath);
+        $this->archivos->eliminar($filename, $carpeta);
     }
 }

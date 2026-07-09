@@ -29,7 +29,11 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'Módulo no disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {
-            return response()->json(['message' => 'Debes aprobar el examen del módulo anterior primero.'], 403);
+            $requerido = $modulo->moduloRequeridoPara();
+            $mensaje = $requerido
+                ? "Debes aprobar el examen de \"{$requerido->nombre}\" primero."
+                : 'Debes aprobar el módulo requerido primero.';
+            return response()->json(['message' => $mensaje], 403);
         }
 
         $progreso = ProgresoModulo::firstOrCreate(
@@ -49,7 +53,7 @@ class ProgresoController extends Controller
         }
 
         $secciones = Seccion::where('estado', 'Activo')
-            ->with(['modulos' => fn($q) => $q->where('estado', 'Activo')->withCount('preguntas')->orderBy('orden')])
+            ->with(['modulos' => fn($q) => $q->where('estado', 'Activo')->withCount('preguntas')->orderBy('orden'), 'requiere:id,nombre'])
             ->orderBy('orden')
             ->get();
 
@@ -60,40 +64,61 @@ class ProgresoController extends Controller
         // $secciones ya viene ordenado por seccion.orden y modulo.orden, así que aplanarlo
         // reproduce el mismo criterio que Modulo::ordenGlobal() sin volver a consultar la BD.
         $modulosOrdenados = $secciones->flatMap(fn($s) => $s->modulos)->values();
+        $modulosPorId = $modulosOrdenados->keyBy('id');
 
+        // Un módulo requiere el prerrequisito explícito del admin si se definió uno,
+        // o si no, el anterior en el orden del curso (mismo criterio que Modulo::moduloRequeridoPara()).
         $bloqueado = [];
+        $requeridoNombre = [];
         foreach ($modulosOrdenados as $idx => $modulo) {
-            if ($idx === 0) {
+            $requerido = $modulo->prerequisite_module_id
+                ? $modulosPorId->get($modulo->prerequisite_module_id)
+                : ($idx > 0 ? $modulosOrdenados[$idx - 1] : null);
+
+            if (!$requerido || $requerido->preguntas_count === 0) {
                 $bloqueado[$modulo->id] = false;
                 continue;
             }
-            $anterior = $modulosOrdenados[$idx - 1];
-            if ($anterior->preguntas_count === 0) {
-                $bloqueado[$modulo->id] = false;
-                continue;
+
+            $progresoRequerido = $progresosMap->get($requerido->id);
+            $bloqueado[$modulo->id] = !($progresoRequerido && $progresoRequerido->estado === 'completado');
+            if ($bloqueado[$modulo->id]) {
+                $requeridoNombre[$modulo->id] = $requerido->nombre;
             }
-            $progresoAnterior = $progresosMap->get($anterior->id);
-            $bloqueado[$modulo->id] = !($progresoAnterior && $progresoAnterior->estado === 'completado');
         }
 
-        $resultado = $secciones->map(function ($seccion) use ($progresosMap, $bloqueado) {
-            $modulos = $seccion->modulos->map(function ($modulo) use ($progresosMap, $bloqueado) {
+        // Una sección se considera aprobada si todos sus módulos con examen fueron completados.
+        $seccionCompletada = $secciones->mapWithKeys(function ($seccion) use ($progresosMap) {
+            $completada = $seccion->modulos
+                ->where('preguntas_count', '>', 0)
+                ->every(fn($m) => optional($progresosMap->get($m->id))->estado === 'completado');
+            return [$seccion->id => $completada];
+        });
+
+        $resultado = $secciones->map(function ($seccion) use ($progresosMap, $bloqueado, $requeridoNombre, $seccionCompletada) {
+            $seccionBloqueada = $seccion->seccion_requerida_id
+                && !($seccionCompletada[$seccion->seccion_requerida_id] ?? true);
+
+            $modulos = $seccion->modulos->map(function ($modulo) use ($progresosMap, $bloqueado, $requeridoNombre) {
                 $progreso = $progresosMap->get($modulo->id);
                 return [
-                    'modulo'       => $modulo,
-                    'estado'       => $progreso?->estado ?? 'pendiente',
-                    'puntaje'      => $progreso?->puntaje,
-                    'intentos'     => $progreso?->intentos ?? 0,
-                    'started_at'   => $progreso?->started_at,
-                    'completed_at' => $progreso?->completed_at,
-                    'tiene_examen' => $modulo->preguntas_count > 0,
-                    'desbloqueado' => !$bloqueado[$modulo->id],
+                    'modulo'          => $modulo,
+                    'estado'          => $progreso?->estado ?? 'pendiente',
+                    'puntaje'         => $progreso?->puntaje,
+                    'intentos'        => $progreso?->intentos ?? 0,
+                    'started_at'      => $progreso?->started_at,
+                    'completed_at'    => $progreso?->completed_at,
+                    'tiene_examen'    => $modulo->preguntas_count > 0,
+                    'desbloqueado'    => !$bloqueado[$modulo->id],
+                    'requiere_modulo' => $requeridoNombre[$modulo->id] ?? null,
                 ];
             });
 
             return [
-                'seccion' => $seccion,
-                'modulos' => $modulos,
+                'seccion'            => $seccion,
+                'modulos'            => $modulos,
+                'desbloqueada'       => !$seccionBloqueada,
+                'seccion_requerida'  => $seccionBloqueada ? $seccion->requiere?->nombre : null,
             ];
         });
 

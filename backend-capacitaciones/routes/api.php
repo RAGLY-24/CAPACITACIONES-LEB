@@ -13,6 +13,7 @@ use App\Http\Controllers\ExamenController;
 use App\Http\Controllers\ProgresoController;
 use App\Http\Controllers\SeccionController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\SocioController;
 use App\Http\Middleware\CheckSistemasAdmin;
 
 /*
@@ -53,6 +54,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Eliminar usuario: requiere permiso para eliminar usuarios
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
+
+    // --- SOCIOS ---
+    Route::get('/socios', [SocioController::class, 'index']);
+    Route::post('/socios', [SocioController::class, 'store']);
+    Route::put('/socios/{id}', [SocioController::class, 'update']);
+    Route::delete('/socios/{id}', [SocioController::class, 'destroy']);
 
     // --- SECCIONES ---
     Route::get('/secciones', [SeccionController::class, 'index']);

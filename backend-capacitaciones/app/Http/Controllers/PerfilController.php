@@ -3,14 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ArchivoStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class PerfilController extends Controller
 {
+    private ArchivoStorageService $archivos;
+
+    public function __construct(ArchivoStorageService $archivos)
+    {
+        $this->archivos = $archivos;
+    }
+
     // --- Actualizar el perfil del usuario autenticado ---
     public function update(Request $request)
     {
@@ -54,23 +59,11 @@ class PerfilController extends Controller
 
     private function guardarFoto($file): string
     {
-        $ext      = $file->getClientOriginalExtension();
-        $filename = 'perfil_' . time() . '_' . Str::random(8) . '.' . $ext;
-
-        $storedPath  = $file->storeAs('perfiles', $filename, 'public');
-        $frontendDir = base_path('../frontend-capacitaciones/public/perfiles');
-        File::ensureDirectoryExists($frontendDir);
-        copy(storage_path('app/public/' . $storedPath), $frontendDir . '/' . $filename);
-
-        return $filename;
+        return $this->archivos->guardar($file, 'perfiles', 'perfil_');
     }
 
     private function eliminarFotoFisica(?string $filename): void
     {
-        if (!$filename) return;
-
-        Storage::disk('public')->delete('perfiles/' . $filename);
-        $frontendPath = base_path('../frontend-capacitaciones/public/perfiles/' . $filename);
-        File::delete($frontendPath);
+        $this->archivos->eliminar($filename, 'perfiles');
     }
 }

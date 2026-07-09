@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\ArchivoStorageService;
 use Laravel\Sanctum\HasApiTokens;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -26,6 +28,7 @@ class User extends Authenticatable
         'usuario',
         'estado',
         'puesto_id',
+        'socio_id',
         'permissions',
         'descripcion',
         'foto',
@@ -51,6 +54,15 @@ class User extends Authenticatable
         'password' => 'hashed',
         'permissions' => 'array',
     ];
+
+    // foto en la BD es solo el nombre del archivo; el frontend debe usar
+    // esta URL calculada para mostrarla.
+    protected $appends = ['foto_url'];
+
+    protected function fotoUrl(): Attribute
+    {
+        return Attribute::get(fn () => (new ArchivoStorageService())->urlPublica($this->foto, 'perfiles'));
+    }
 
     public function hasPermission(string $permission): bool
     {
@@ -91,5 +103,10 @@ class User extends Authenticatable
     public function puesto()
     {
         return $this->belongsTo(Puesto::class);
+    }
+
+    public function socio()
+    {
+        return $this->belongsTo(Socio::class);
     }
 }
