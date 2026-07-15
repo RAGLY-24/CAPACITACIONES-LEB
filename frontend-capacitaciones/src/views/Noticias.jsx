@@ -9,6 +9,14 @@ function Noticias() {
     const [modalType, setModalType] = useState(null); // 'crear', 'editar', o 'ver'
     const [selectedNoticia, setSelectedNoticia] = useState(null);
 
+    // Aviso de emergencia fijo: se colapsa/expande a demanda, pero siempre
+    // debe iniciar expandido en cada login (ver Login.jsx, que limpia esta
+    // clave de sessionStorage al iniciar sesión).
+    const [aviso, setAviso] = useState(null);
+    const [avisoColapsado, setAvisoColapsado] = useState(
+        () => typeof window !== 'undefined' && sessionStorage.getItem('aviso_colapsado') === '1'
+    );
+
     useLockBodyScroll(!!modalType);
 
     // Cambiamos 'file' por 'files' (arreglo) para soportar múltiples
@@ -26,6 +34,7 @@ function Noticias() {
     useEffect(() => {
         if (puedeVerNoticias) {
             obtenerNoticias();
+            obtenerAviso();
         }
     }, [puedeVerNoticias]);
 
@@ -36,6 +45,49 @@ function Noticias() {
         } catch (err) {
             console.error(err);
             Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudieron cargar las noticias.', confirmButtonColor: '#802907' });
+        }
+    };
+
+    const obtenerAviso = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/aviso-emergencia`);
+            setAviso(response.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const toggleAviso = () => {
+        setAvisoColapsado(prev => {
+            const nuevo = !prev;
+            sessionStorage.setItem('aviso_colapsado', nuevo ? '1' : '0');
+            return nuevo;
+        });
+    };
+
+    const editarAviso = async () => {
+        const { value: mensaje, isConfirmed } = await Swal.fire({
+            title: 'Editar aviso de emergencia',
+            input: 'textarea',
+            inputValue: aviso?.mensaje || '',
+            inputPlaceholder: 'Ej. En caso de emergencia llamar a: 5555-5555',
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            confirmButtonColor: '#802907',
+            cancelButtonText: 'Cancelar',
+            inputValidator: (v) => !v ? 'Escribe un mensaje.' : undefined,
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            const response = await axios.put(`${API_URL}/api/aviso-emergencia`, { mensaje });
+            setAviso(response.data);
+            setAvisoColapsado(false);
+            sessionStorage.setItem('aviso_colapsado', '0');
+            Swal.fire({ icon: 'success', title: 'Aviso actualizado', confirmButtonColor: '#802907' });
+        } catch {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar el aviso.', confirmButtonColor: '#802907' });
         }
     };
 
@@ -309,6 +361,38 @@ function Noticias() {
                     </div>
                 )}
             </div>
+
+            {/* --- AVISO DE EMERGENCIA: fijo en la parte inferior, se mueve con el scroll --- */}
+            {puedeVerNoticias && (aviso?.mensaje || puedeAdministrarNoticias) && (
+                <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4 pointer-events-none">
+                    {avisoColapsado ? (
+                        <button
+                            onClick={toggleAviso}
+                            className="pointer-events-auto flex items-center gap-2 rounded-full bg-red-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-red-800 transition-colors"
+                            title="Mostrar aviso de emergencia"
+                        >
+                            🚨 Aviso de emergencia
+                        </button>
+                    ) : (
+                        <div className="pointer-events-auto flex w-full max-w-3xl items-start gap-3 rounded-xl border border-red-800 bg-red-900/95 backdrop-blur-sm px-5 py-4 text-white shadow-2xl">
+                            <span className="text-xl leading-none shrink-0">🚨</span>
+                            <p className="flex-1 text-sm leading-snug whitespace-pre-wrap self-center">
+                                {aviso?.mensaje || (puedeAdministrarNoticias ? 'Aún no has configurado el aviso de emergencia.' : '')}
+                            </p>
+                            <div className="flex items-center gap-1 shrink-0">
+                                {puedeAdministrarNoticias && (
+                                    <button onClick={editarAviso} className="rounded-full p-1.5 hover:bg-white/10" title="Editar aviso">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                )}
+                                <button onClick={toggleAviso} className="rounded-full p-1.5 hover:bg-white/10" title="Minimizar aviso">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* --- MODAL DE LECTURA COMPLETA --- */}
             {modalType === 'ver' && selectedNoticia && (

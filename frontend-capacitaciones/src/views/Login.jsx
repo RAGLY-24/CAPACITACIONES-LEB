@@ -52,6 +52,8 @@ function Login() {
         // Guardamos el token en sessionStorage para forzar login al cerrar pestaña
         sessionStorage.setItem("token", response.data.token);
         sessionStorage.setItem("user", JSON.stringify(usuarioLogueado));
+        // El aviso de emergencia siempre debe iniciar expandido en cada login.
+        sessionStorage.removeItem("aviso_colapsado");
 
         Swal.close();
 
