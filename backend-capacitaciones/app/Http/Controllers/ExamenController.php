@@ -7,11 +7,15 @@ use App\Models\Pregunta;
 use App\Models\Opcion;
 use App\Models\ProgresoModulo;
 use App\Models\User;
+use App\Services\ExamenCalificadorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ExamenController extends Controller
 {
+    public function __construct(private ExamenCalificadorService $calificador)
+    {
+    }
     // GET /modulos/{id}/examen  — devuelve preguntas SIN marcar cuál es correcta
     public function getExamen($moduloId)
     {
@@ -91,31 +95,8 @@ class ExamenController extends Controller
         }
 
         $respuestasEnviadas = $request->respuestas; // [pregunta_id => opcion_id]
-        $aciertos = 0;
-        $resultados = [];
-
-        foreach ($modulo->preguntas as $pregunta) {
-            $opcionSeleccionadaId = $respuestasEnviadas[$pregunta->id] ?? null;
-            $opcionCorrecta       = $pregunta->opciones->firstWhere('es_correcta', true);
-            $acertada             = $opcionSeleccionadaId && $opcionCorrecta
-                                     && (int) $opcionSeleccionadaId === $opcionCorrecta->id;
-
-            if ($acertada) $aciertos++;
-
-            $resultados[] = [
-                'pregunta_id'        => $pregunta->id,
-                'texto'              => $pregunta->texto,
-                'opcion_seleccionada'=> $opcionSeleccionadaId,
-                'opcion_correcta_id' => $opcionCorrecta?->id,
-                'opcion_correcta'    => $opcionCorrecta?->texto,
-                'acertada'           => $acertada,
-                'opciones'           => $pregunta->opciones->map(fn($op) => [
-                    'id'          => $op->id,
-                    'texto'       => $op->texto,
-                    'es_correcta' => $op->es_correcta,
-                ]),
-            ];
-        }
+        ['aciertos' => $aciertos, 'total' => $total, 'resultados' => $resultados] =
+            $this->calificador->calificar($modulo, $respuestasEnviadas);
 
         $puntaje   = round(($aciertos / $totalPreguntas) * 100, 2);
         $aprobado  = $puntaje >= 70;
@@ -129,6 +110,7 @@ class ExamenController extends Controller
         $progreso->estado      = $estadoNuevo;
         $progreso->puntaje     = $puntaje;
         $progreso->intentos    = ($progreso->intentos ?? 0) + 1;
+        $progreso->respuestas  = $respuestasEnviadas;
         $progreso->completed_at = now();
         if (!$progreso->started_at) {
             $progreso->started_at = now();
@@ -140,7 +122,38 @@ class ExamenController extends Controller
             'aprobado'   => $aprobado,
             'estado'     => $estadoNuevo,
             'aciertos'   => $aciertos,
-            'total'      => $totalPreguntas,
+            'total'      => $total,
+            'resultados' => $resultados,
+        ], 200);
+    }
+
+    // GET /modulos/{id}/examen/retroalimentacion — recupera lo que el usuario
+    // respondió en su último intento, sin necesidad de volver a presentarlo.
+    public function retroalimentacion($moduloId)
+    {
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            return response()->json(['message' => 'No autenticado.'], 401);
+        }
+
+        $progreso = ProgresoModulo::where('user_id', $user->id)
+            ->where('modulo_id', $moduloId)
+            ->first();
+
+        if (!$progreso || !$progreso->respuestas) {
+            return response()->json(['message' => 'Aún no has contestado este examen.'], 404);
+        }
+
+        $modulo = Modulo::with('preguntas.opciones')->findOrFail($moduloId);
+        ['aciertos' => $aciertos, 'total' => $total, 'resultados' => $resultados] =
+            $this->calificador->calificar($modulo, $progreso->respuestas);
+
+        return response()->json([
+            'puntaje'    => $progreso->puntaje,
+            'aprobado'   => $progreso->estado === 'completado',
+            'estado'     => $progreso->estado,
+            'aciertos'   => $aciertos,
+            'total'      => $total,
             'resultados' => $resultados,
         ], 200);
     }

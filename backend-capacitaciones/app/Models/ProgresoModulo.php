@@ -8,9 +8,10 @@ class ProgresoModulo extends Model
 {
     protected $table = 'progreso_modulos';
 
-    protected $fillable = ['user_id', 'modulo_id', 'estado', 'puntaje', 'intentos', 'started_at', 'completed_at'];
+    protected $fillable = ['user_id', 'modulo_id', 'estado', 'puntaje', 'intentos', 'respuestas', 'started_at', 'completed_at'];
 
     protected $casts = [
+        'respuestas' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];

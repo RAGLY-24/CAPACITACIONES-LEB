@@ -6,10 +6,15 @@ use App\Models\Modulo;
 use App\Models\Seccion;
 use App\Models\ProgresoModulo;
 use App\Models\User;
+use App\Services\ExamenCalificadorService;
 use Illuminate\Support\Facades\Auth;
 
 class ProgresoController extends Controller
 {
+    public function __construct(private ExamenCalificadorService $calificador)
+    {
+    }
+
     private function esAdmin(): bool
     {
         $user = Auth::user();
@@ -134,7 +139,7 @@ class ProgresoController extends Controller
 
         $progresos = ProgresoModulo::with([
             'user:id,name,lastname,usuario',
-            'modulo:id,nombre,estado,seccion_id',
+            'modulo' => fn($q) => $q->select('id', 'nombre', 'estado', 'seccion_id')->withCount('preguntas'),
             'modulo.seccion:id,nombre',
         ])
         ->orderByDesc('updated_at')
@@ -149,6 +154,7 @@ class ProgresoController extends Controller
             'estado'        => $p->estado,
             'puntaje'       => $p->puntaje,
             'intentos'      => $p->intentos,
+            'tiene_examen'  => $p->modulo?->preguntas_count > 0,
             'started_at'    => $p->started_at,
             'completed_at'  => $p->completed_at,
         ]);
@@ -236,5 +242,42 @@ class ProgresoController extends Controller
         });
 
         return response()->json($resultado, 200);
+    }
+
+    // GET /progreso/{id}/retroalimentacion — detalle pregunta por pregunta de
+    // un intento ya calificado. El dueño del progreso puede ver el suyo; el
+    // admin puede ver el de cualquier operador.
+    public function retroalimentacionAdmin(int $progresoId)
+    {
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            return response()->json(['message' => 'No autenticado.'], 401);
+        }
+
+        $progreso = ProgresoModulo::with(['user:id,name,lastname,usuario', 'modulo.preguntas.opciones'])
+            ->findOrFail($progresoId);
+
+        if ($progreso->user_id !== $user->id && !$this->esAdmin()) {
+            return response()->json(['message' => 'Acceso denegado.'], 403);
+        }
+
+        if (!$progreso->respuestas) {
+            return response()->json(['message' => 'Este operador aún no ha contestado este examen.'], 404);
+        }
+
+        ['aciertos' => $aciertos, 'total' => $total, 'resultados' => $resultados] =
+            $this->calificador->calificar($progreso->modulo, $progreso->respuestas);
+
+        return response()->json([
+            'usuario'       => trim($progreso->user?->name . ' ' . $progreso->user?->lastname),
+            'usuario_login' => $progreso->user?->usuario,
+            'modulo'        => $progreso->modulo?->nombre,
+            'puntaje'       => $progreso->puntaje,
+            'aprobado'      => $progreso->estado === 'completado',
+            'estado'        => $progreso->estado,
+            'aciertos'      => $aciertos,
+            'total'         => $total,
+            'resultados'    => $resultados,
+        ], 200);
     }
 }

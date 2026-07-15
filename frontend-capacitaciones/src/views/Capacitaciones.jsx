@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
@@ -104,7 +104,59 @@ function LeyendaPastel({ datos }) {
   );
 }
 
-function SeccionExamen({ moduloId, onCalificado }) {
+// Detalle pregunta por pregunta de un examen ya calificado (aprobado o no).
+// La usan tanto el empleado (al reabrir un módulo ya contestado) como el
+// admin (al revisar las respuestas de un operador).
+function RetroalimentacionExamen({ resultado, onReintentar }) {
+  return (
+    <div className="space-y-4">
+      <div className={`rounded-xl p-5 text-center ${resultado.aprobado ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+        <p className={`text-3xl font-bold mb-1 ${resultado.aprobado ? "text-green-700" : "text-red-600"}`}>
+          {resultado.puntaje}%
+        </p>
+        <p className={`text-lg font-semibold ${resultado.aprobado ? "text-green-700" : "text-red-600"}`}>
+          {resultado.aprobado ? "¡Aprobado!" : "Reprobado"}
+        </p>
+        <p className="text-sm text-gray-500 mt-1">{resultado.aciertos} de {resultado.total} respuestas correctas</p>
+        {onReintentar && (
+          <button onClick={onReintentar} className="mt-3 rounded-lg border px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-100">
+            Volver a intentar
+          </button>
+        )}
+      </div>
+      <div className="space-y-3">
+        {resultado.resultados.map((r, i) => (
+          <div key={r.pregunta_id} className={`rounded-lg p-4 border ${r.acertada ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+            <p className="text-sm font-semibold text-gray-800 mb-2">
+              {i + 1}. {r.texto}
+              <span className={`ml-2 text-xs font-bold ${r.acertada ? "text-green-700" : "text-red-600"}`}>
+                {r.acertada ? "✓ Correcto" : "✗ Incorrecto"}
+              </span>
+            </p>
+            <ul className="space-y-1 pl-2">
+              {r.opciones.map(op => {
+                const sel = op.id === r.opcion_seleccionada;
+                const cor = op.es_correcta;
+                let cls = "text-gray-600";
+                if (cor) cls = "text-green-700 font-semibold";
+                if (sel && !cor) cls = "text-red-600 font-semibold line-through";
+                return (
+                  <li key={op.id} className={`text-xs flex items-center gap-2 ${cls}`}>
+                    <span>{sel ? "●" : "○"}</span>
+                    {op.texto}
+                    {cor && <span className="text-[10px] bg-green-100 rounded px-1">Correcta</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SeccionExamen({ moduloId, estadoInicial, onCalificado }) {
   const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [respuestas, setRespuestas] = useState({});
@@ -112,7 +164,9 @@ function SeccionExamen({ moduloId, onCalificado }) {
   const [resultado, setResultado] = useState(null);
   const [sinExamen, setSinExamen] = useState(false);
 
-  const cargarExamen = useCallback(async () => {
+  // Examen en blanco para responder (o reintentar). No consulta la
+  // retroalimentación guardada: se usa explícitamente para un intento nuevo.
+  const cargarExamenBlanco = useCallback(async () => {
     setCargando(true); setSinExamen(false); setResultado(null); setRespuestas({});
     try {
       const res = await axios.get(`${API}/api/modulos/${moduloId}/examen`);
@@ -123,7 +177,38 @@ function SeccionExamen({ moduloId, onCalificado }) {
     } finally { setCargando(false); }
   }, [moduloId]);
 
-  useEffect(() => { cargarExamen(); }, [cargarExamen]);
+  // Se captura el estado con el que se abrió el módulo una sola vez: tras
+  // calificar un examen nuevo, el padre refresca el progreso y estadoInicial
+  // cambia, pero eso no debe disparar de nuevo esta carga inicial.
+  const estadoAlAbrir = useRef(estadoInicial);
+
+  // Al abrir un módulo ya contestado, se muestra directamente lo que el
+  // usuario respondió la última vez, en vez de un examen en blanco.
+  useEffect(() => {
+    let cancelado = false;
+    (async () => {
+      if (estadoAlAbrir.current === "completado" || estadoAlAbrir.current === "reprobado") {
+        setCargando(true);
+        try {
+          const res = await axios.get(`${API}/api/modulos/${moduloId}/examen/retroalimentacion`);
+          if (!cancelado) setResultado(res.data);
+          if (!cancelado) setCargando(false);
+          return;
+        } catch (err) {
+          if (cancelado) return;
+          if (err.response?.status !== 404) {
+            Swal.fire({ icon: "error", title: "Error al cargar la retroalimentación.", confirmButtonColor: "#802907" });
+            setCargando(false);
+            return;
+          }
+          // Sin respuestas guardadas todavía (no debería pasar si el estado
+          // ya indica que se contestó): cae al examen en blanco.
+        }
+      }
+      if (!cancelado) await cargarExamenBlanco();
+    })();
+    return () => { cancelado = true; };
+  }, [moduloId, cargarExamenBlanco]);
 
   const enviar = async () => {
     const faltantes = preguntas.filter(p => !respuestas[p.id]);
@@ -145,50 +230,7 @@ function SeccionExamen({ moduloId, onCalificado }) {
   if (sinExamen) return <p className="text-center text-sm text-gray-400 py-6">Este módulo aún no tiene examen configurado.</p>;
 
   if (resultado) {
-    return (
-      <div className="space-y-4">
-        <div className={`rounded-xl p-5 text-center ${resultado.aprobado ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
-          <p className={`text-3xl font-bold mb-1 ${resultado.aprobado ? "text-green-700" : "text-red-600"}`}>
-            {resultado.puntaje}%
-          </p>
-          <p className={`text-lg font-semibold ${resultado.aprobado ? "text-green-700" : "text-red-600"}`}>
-            {resultado.aprobado ? "¡Aprobado!" : "Reprobado"}
-          </p>
-          <p className="text-sm text-gray-500 mt-1">{resultado.aciertos} de {resultado.total} respuestas correctas</p>
-          <button onClick={cargarExamen} className="mt-3 rounded-lg border px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-100">
-            Volver a intentar
-          </button>
-        </div>
-        <div className="space-y-3">
-          {resultado.resultados.map((r, i) => (
-            <div key={r.pregunta_id} className={`rounded-lg p-4 border ${r.acertada ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-              <p className="text-sm font-semibold text-gray-800 mb-2">
-                {i + 1}. {r.texto}
-                <span className={`ml-2 text-xs font-bold ${r.acertada ? "text-green-700" : "text-red-600"}`}>
-                  {r.acertada ? "✓ Correcto" : "✗ Incorrecto"}
-                </span>
-              </p>
-              <ul className="space-y-1 pl-2">
-                {r.opciones.map(op => {
-                  const sel = op.id === r.opcion_seleccionada;
-                  const cor = op.es_correcta;
-                  let cls = "text-gray-600";
-                  if (cor) cls = "text-green-700 font-semibold";
-                  if (sel && !cor) cls = "text-red-600 font-semibold line-through";
-                  return (
-                    <li key={op.id} className={`text-xs flex items-center gap-2 ${cls}`}>
-                      <span>{sel ? "●" : "○"}</span>
-                      {op.texto}
-                      {cor && <span className="text-[10px] bg-green-100 rounded px-1">Correcta</span>}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <RetroalimentacionExamen resultado={resultado} onReintentar={cargarExamenBlanco} />;
   }
 
   return (
@@ -283,11 +325,17 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
           {seccionActiva && (() => {
             const { seccion, modulos } = seccionActiva;
             const completados = modulos.filter(m => m.estado === "completado").length;
+            const pct = modulos.length ? Math.round((completados / modulos.length) * 100) : 0;
             return (
               <div className="border-b border-gray-200">
                 <div className="w-full flex items-center justify-between gap-2 px-4 py-3">
                   <span className="text-sm font-semibold text-gray-800">{seccion.nombre}</span>
                   <span className="text-[10px] text-gray-400 shrink-0">{completados}/{modulos.length}</span>
+                </div>
+                <div className="px-4 pb-3 -mt-1">
+                  <div className="rounded-full bg-gray-200 h-1.5 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
                 {modulos.map(item => {
                   const esActivo = item.modulo.id === activoId;
@@ -357,7 +405,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
               </div>
             ) : (
               <div className="max-w-2xl mx-auto">
-                <SeccionExamen moduloId={modulo.id} onCalificado={onProgresoActualizado} />
+                <SeccionExamen moduloId={modulo.id} estadoInicial={activo.estado} onCalificado={onProgresoActualizado} />
               </div>
             )}
           </div>
@@ -369,8 +417,49 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
 
 // ─── Vista Admin ─────────────────────────────────────────────────────────────
 
+// Modal con el detalle pregunta por pregunta de lo que contestó un operador.
+function ModalRetroalimentacion({ progresoId, onCerrar }) {
+  useLockBodyScroll();
+  const [datos, setDatos] = useState(null);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    let cancelado = false;
+    axios.get(`${API}/api/progreso/${progresoId}/retroalimentacion`)
+      .then(res => { if (!cancelado) setDatos(res.data); })
+      .catch(() => { if (!cancelado) Swal.fire({ icon: "error", title: "Error al cargar las respuestas.", confirmButtonColor: "#802907" }); })
+      .finally(() => { if (!cancelado) setCargando(false); });
+    return () => { cancelado = true; };
+  }, [progresoId]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b px-5 py-3 sticky top-0 bg-white">
+          <div>
+            <h3 className="font-bold text-gray-800">{datos ? datos.modulo : "Respuestas del examen"}</h3>
+            {datos && <p className="text-xs text-gray-400">{datos.usuario} · @{datos.usuario_login}</p>}
+          </div>
+          <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold ml-4 shrink-0">✕</button>
+        </div>
+        <div className="p-5">
+          {cargando ? (
+            <p className="text-center text-sm text-gray-400 py-6">Cargando respuestas...</p>
+          ) : datos ? (
+            <RetroalimentacionExamen resultado={datos} />
+          ) : (
+            <p className="text-center text-sm text-gray-400 py-6">No se pudieron cargar las respuestas.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Componente para expandir filas (Muestra los cursos de un operador)
 const CursosExpandidos = ({ data }) => {
+  const [verRespuestasId, setVerRespuestasId] = useState(null);
+
   return (
     <div className="p-6 bg-slate-50 border-b border-gray-200">
       <h4 className="font-bold text-gray-700 mb-3 text-sm">Historial de Módulos de {data.usuario}</h4>
@@ -384,6 +473,7 @@ const CursosExpandidos = ({ data }) => {
               <th className="px-4 py-3 text-center">Puntaje</th>
               <th className="px-4 py-3 text-center">Intentos</th>
               <th className="px-4 py-3 text-center">Actividad</th>
+              <th className="px-4 py-3 text-center">Respuestas</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -405,11 +495,23 @@ const CursosExpandidos = ({ data }) => {
                       ? new Date(curso.started_at).toLocaleDateString("es-GT")
                       : "—"}
                 </td>
+                <td className="px-4 py-3 text-center">
+                  {curso.tiene_examen && (curso.estado === "completado" || curso.estado === "reprobado") ? (
+                    <button onClick={() => setVerRespuestasId(curso.id)}
+                      className="text-xs font-semibold text-[#802907] hover:underline">
+                      Ver respuestas
+                    </button>
+                  ) : "—"}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {verRespuestasId && (
+        <ModalRetroalimentacion progresoId={verRespuestasId} onCerrar={() => setVerRespuestasId(null)} />
+      )}
     </div>
   );
 };
@@ -788,33 +890,52 @@ function VistaEmpleado() {
         </>
       ) : (
         // ── Lista de secciones, en tarjetas ─
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {secciones.map(secData => {
-            if (!secData.modulos?.length) return null;
-            const desbloqueada = secData.desbloqueada !== false;
+        <>
+          {(() => {
+            const todosLosModulos = secciones.flatMap(s => s.modulos || []);
+            const completadosTotal = todosLosModulos.filter(m => m.estado === "completado").length;
+            const pctTotal = todosLosModulos.length ? Math.round((completadosTotal / todosLosModulos.length) * 100) : 0;
             return (
-              <TarjetaSeccionEmpleado
-                key={secData.seccion.id}
-                seccion={secData.seccion}
-                modulos={secData.modulos}
-                desbloqueada={desbloqueada}
-                seccionRequerida={secData.seccion_requerida}
-                onClick={() => {
-                  if (!desbloqueada) {
-                    Swal.fire({
-                      icon: "warning",
-                      title: "Sección bloqueada",
-                      text: `Debes completar la sección "${secData.seccion_requerida}" antes de acceder a esta.`,
-                      confirmButtonColor: "#802907",
-                    });
-                    return;
-                  }
-                  setSeccionActivaId(secData.seccion.id);
-                }}
-              />
+              <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-bold text-gray-700">Tu avance general</h3>
+                  <span className="text-sm font-bold text-[#802907]">{pctTotal}%</span>
+                </div>
+                <div className="rounded-full bg-gray-200 h-2.5 overflow-hidden">
+                  <div className="h-2.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pctTotal}%` }} />
+                </div>
+                <p className="text-xs text-gray-400 mt-2">{completadosTotal} de {todosLosModulos.length} módulo(s) completados</p>
+              </div>
             );
-          })}
-        </div>
+          })()}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {secciones.map(secData => {
+              if (!secData.modulos?.length) return null;
+              const desbloqueada = secData.desbloqueada !== false;
+              return (
+                <TarjetaSeccionEmpleado
+                  key={secData.seccion.id}
+                  seccion={secData.seccion}
+                  modulos={secData.modulos}
+                  desbloqueada={desbloqueada}
+                  seccionRequerida={secData.seccion_requerida}
+                  onClick={() => {
+                    if (!desbloqueada) {
+                      Swal.fire({
+                        icon: "warning",
+                        title: "Sección bloqueada",
+                        text: `Debes completar la sección "${secData.seccion_requerida}" antes de acceder a esta.`,
+                        confirmButtonColor: "#802907",
+                      });
+                      return;
+                    }
+                    setSeccionActivaId(secData.seccion.id);
+                  }}
+                />
+              );
+            })}
+          </div>
+        </>
       )}
 
       {cursoModuloId && (
