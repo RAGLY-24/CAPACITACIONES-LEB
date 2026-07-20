@@ -57,6 +57,24 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
+        return response()->json($this->progresoAgrupadoPorSeccion($user), 200);
+    }
+
+    // GET /progreso/usuario/{id} — mismo formato que miProgreso, pero para que
+    // el admin revise el avance de un operador específico en forma de tarjetas.
+    public function progresoDeUsuario(int $userId)
+    {
+        if (!$this->esAdmin()) {
+            return response()->json(['message' => 'Acceso denegado.'], 403);
+        }
+
+        $usuario = User::findOrFail($userId);
+
+        return response()->json($this->progresoAgrupadoPorSeccion($usuario), 200);
+    }
+
+    private function progresoAgrupadoPorSeccion(User $user): array
+    {
         $secciones = Seccion::where('estado', 'Activo')
             ->with(['modulos' => fn($q) => $q->where('estado', 'Activo')->withCount('preguntas')->orderBy('orden'), 'requiere:id,nombre'])
             ->orderBy('orden')
@@ -107,6 +125,7 @@ class ProgresoController extends Controller
             $modulos = $seccion->modulos->map(function ($modulo) use ($progresosMap, $bloqueado, $requeridoNombre) {
                 $progreso = $progresosMap->get($modulo->id);
                 return [
+                    'progreso_id'     => $progreso?->id,
                     'modulo'          => $modulo,
                     'estado'          => $progreso?->estado ?? 'pendiente',
                     'puntaje'         => $progreso?->puntaje,
@@ -127,7 +146,7 @@ class ProgresoController extends Controller
             ];
         });
 
-        return response()->json($resultado, 200);
+        return $resultado->all();
     }
 
     // GET /progreso/admin — reporte completo para el administrador
@@ -138,7 +157,8 @@ class ProgresoController extends Controller
         }
 
         $progresos = ProgresoModulo::with([
-            'user:id,name,lastname,usuario',
+            'user:id,name,lastname,usuario,socio_id',
+            'user.socio:id,nombre',
             'modulo' => fn($q) => $q->select('id', 'nombre', 'estado', 'seccion_id')->withCount('preguntas'),
             'modulo.seccion:id,nombre',
         ])
@@ -146,9 +166,12 @@ class ProgresoController extends Controller
         ->get()
         ->map(fn($p) => [
             'id'            => $p->id,
+            'user_id'       => $p->user_id,
             'usuario'       => trim($p->user?->name . ' ' . $p->user?->lastname),
             'usuario_login' => $p->user?->usuario,
+            'socio'         => $p->user?->socio?->nombre,
             'modulo'        => $p->modulo?->nombre,
+            'modulo_id'     => $p->modulo_id,
             'seccion'       => $p->modulo?->seccion?->nombre ?? 'Sin sección',
             'seccion_id'    => $p->modulo?->seccion_id,
             'estado'        => $p->estado,

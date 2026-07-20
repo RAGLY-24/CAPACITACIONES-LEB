@@ -417,104 +417,201 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
 
 // ─── Vista Admin ─────────────────────────────────────────────────────────────
 
-// Modal con el detalle pregunta por pregunta de lo que contestó un operador.
-function ModalRetroalimentacion({ progresoId, onCerrar }) {
-  useLockBodyScroll();
-  const [datos, setDatos] = useState(null);
-  const [cargando, setCargando] = useState(true);
-
-  useEffect(() => {
-    let cancelado = false;
-    axios.get(`${API}/api/progreso/${progresoId}/retroalimentacion`)
-      .then(res => { if (!cancelado) setDatos(res.data); })
-      .catch(() => { if (!cancelado) Swal.fire({ icon: "error", title: "Error al cargar las respuestas.", confirmButtonColor: "#802907" }); })
-      .finally(() => { if (!cancelado) setCargando(false); });
-    return () => { cancelado = true; };
-  }, [progresoId]);
+// Tarjeta de módulo para el visor de progreso del admin: en vez de "Iniciar" /
+// "Continuar" muestra "Ver respuestas" cuando el operador ya contestó el examen.
+function TarjetaModuloOperador({ item, onVer }) {
+  const { modulo, estado, puntaje, intentos, tiene_examen } = item;
+  const desbloqueado = item.desbloqueado !== false;
+  const imgSrc = modulo.imagen_url || null;
+  const puedeVer = tiene_examen && (estado === "completado" || estado === "reprobado");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b px-5 py-3 sticky top-0 bg-white">
-          <div>
-            <h3 className="font-bold text-gray-800">{datos ? datos.modulo : "Respuestas del examen"}</h3>
-            {datos && <p className="text-xs text-gray-400">{datos.usuario} · @{datos.usuario_login}</p>}
+    <div
+      onClick={() => puedeVer && onVer(item)}
+      className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col group transition-shadow ${puedeVer ? "cursor-pointer hover:shadow-md" : ""}`}
+    >
+      <div className="relative h-36 bg-gray-100 overflow-hidden">
+        {imgSrc ? (
+          <img src={imgSrc} alt={modulo.nombre} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-300 text-3xl">
+            {modulo.file_type === "pdf" ? "📄" : modulo.file_type === "presentacion" ? "🖼️" : modulo.file_type === "video" ? "🎬" : "📦"}
           </div>
-          <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold ml-4 shrink-0">✕</button>
+        )}
+        {!desbloqueado && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-3xl">🔒</div>
+        )}
+        <span className="absolute top-2 right-2"><Badge estado={estado} /></span>
+      </div>
+
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        <div>
+          <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{modulo.nombre}</h4>
+          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{modulo.descripcion}</p>
         </div>
-        <div className="p-5">
-          {cargando ? (
-            <p className="text-center text-sm text-gray-400 py-6">Cargando respuestas...</p>
-          ) : datos ? (
-            <RetroalimentacionExamen resultado={datos} />
-          ) : (
-            <p className="text-center text-sm text-gray-400 py-6">No se pudieron cargar las respuestas.</p>
+        <div className="flex items-center gap-2 flex-wrap text-[10px]">
+          {tiene_examen && <span className="font-bold rounded-full px-2 py-0.5 bg-purple-100 text-purple-700">📝 Examen</span>}
+          {intentos > 0 && <span className="text-gray-400">🔁 {intentos} intento(s)</span>}
+          {puntaje !== null && (
+            <span className={`font-bold ${puntaje >= 70 ? "text-green-600" : "text-red-500"}`}>{puntaje}%</span>
           )}
         </div>
+
+        <button
+          onClick={e => { e.stopPropagation(); if (puedeVer) onVer(item); }}
+          disabled={!puedeVer}
+          className={`mt-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${puedeVer ? "bg-[#802907] text-white hover:bg-[#5a1b04]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+          {puedeVer ? "Ver respuestas" : tiene_examen ? "Aún sin contestar" : "Sin examen"}
+        </button>
       </div>
     </div>
   );
 }
 
-// Componente para expandir filas (Muestra los cursos de un operador)
-const CursosExpandidos = ({ data }) => {
-  const [verRespuestasId, setVerRespuestasId] = useState(null);
+// Visor de progreso de un operador para el admin: navega por tarjetas de
+// secciones y módulos igual que la vista del empleado (con su barra de
+// avance), y al entrar a un módulo ya contestado muestra la retroalimentación
+// pregunta por pregunta en vez de dejarlo rendir el examen.
+function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialId, onCerrar }) {
+  useLockBodyScroll();
+  const [secciones, setSecciones] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [seccionActivaId, setSeccionActivaId] = useState(null);
+  const [moduloActivo, setModuloActivo] = useState(null);
+  const [retro, setRetro] = useState(null);
+  const [cargandoRetro, setCargandoRetro] = useState(false);
+
+  const abrirRetro = useCallback((item) => {
+    if (!item.progreso_id) return;
+    setModuloActivo(item);
+    setRetro(null);
+    setCargandoRetro(true);
+    axios.get(`${API}/api/progreso/${item.progreso_id}/retroalimentacion`)
+      .then(res => setRetro(res.data))
+      .catch(() => Swal.fire({ icon: "error", title: "Error al cargar las respuestas.", confirmButtonColor: "#802907" }))
+      .finally(() => setCargandoRetro(false));
+  }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+    axios.get(`${API}/api/progreso/usuario/${usuarioId}`)
+      .then(res => {
+        if (cancelado) return;
+        setSecciones(res.data);
+        if (moduloInicialId) {
+          const sec = res.data.find(s => s.modulos.some(m => m.modulo.id === moduloInicialId));
+          const item = sec?.modulos.find(m => m.modulo.id === moduloInicialId);
+          if (sec) setSeccionActivaId(sec.seccion.id);
+          if (item) abrirRetro(item);
+        }
+      })
+      .catch(() => Swal.fire({ icon: "error", title: "Error al cargar el progreso.", confirmButtonColor: "#802907" }))
+      .finally(() => { if (!cancelado) setCargando(false); });
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuarioId]);
+
+  const seccionActiva = secciones.find(s => s.seccion.id === seccionActivaId);
 
   return (
-    <div className="p-6 bg-slate-50 border-b border-gray-200">
-      <h4 className="font-bold text-gray-700 mb-3 text-sm">Historial de Módulos de {data.usuario}</h4>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-100 text-xs uppercase text-gray-600 font-semibold border-b">
-            <tr>
-              <th className="px-4 py-3">Módulo</th>
-              <th className="px-4 py-3">Sección</th>
-              <th className="px-4 py-3 text-center">Estado</th>
-              <th className="px-4 py-3 text-center">Puntaje</th>
-              <th className="px-4 py-3 text-center">Intentos</th>
-              <th className="px-4 py-3 text-center">Actividad</th>
-              <th className="px-4 py-3 text-center">Respuestas</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {data.cursos.map(curso => (
-              <tr key={curso.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-800">{curso.modulo}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">{curso.seccion || "—"}</td>
-                <td className="px-4 py-3 text-center"><Badge estado={curso.estado} /></td>
-                <td className="px-4 py-3 text-center">
-                  {curso.puntaje !== null
-                    ? <span className={`font-bold ${curso.puntaje >= 70 ? "text-green-600" : "text-red-500"}`}>{curso.puntaje}%</span>
-                    : "—"}
-                </td>
-                <td className="px-4 py-3 text-center text-gray-600">{curso.intentos}</td>
-                <td className="px-4 py-3 text-center text-xs text-gray-500">
-                  {curso.completed_at
-                    ? new Date(curso.completed_at).toLocaleDateString("es-GT")
-                    : curso.started_at
-                      ? new Date(curso.started_at).toLocaleDateString("es-GT")
-                      : "—"}
-                </td>
-                <td className="px-4 py-3 text-center">
-                  {curso.tiene_examen && (curso.estado === "completado" || curso.estado === "reprobado") ? (
-                    <button onClick={() => setVerRespuestasId(curso.id)}
-                      className="text-xs font-semibold text-[#802907] hover:underline">
-                      Ver respuestas
-                    </button>
-                  ) : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+      <div className="flex items-center justify-between border-b px-6 py-3 shrink-0 bg-gray-50 shadow-sm">
+        <div className="min-w-0 flex items-center gap-2 flex-wrap text-sm">
+          <span className="font-bold text-gray-800">Capacitaciones de {usuarioNombre}</span>
+          {seccionActiva && (
+            <>
+              <span className="text-gray-400">/</span>
+              <button onClick={() => { setSeccionActivaId(null); setModuloActivo(null); setRetro(null); }}
+                className="text-gray-600 hover:text-[#802907] hover:underline">
+                {seccionActiva.seccion.nombre}
+              </button>
+            </>
+          )}
+          {moduloActivo && (
+            <>
+              <span className="text-gray-400">/</span>
+              <span className="text-gray-800 font-semibold">{moduloActivo.modulo.nombre}</span>
+            </>
+          )}
+        </div>
+        <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold ml-4 shrink-0">✕</button>
       </div>
 
-      {verRespuestasId && (
-        <ModalRetroalimentacion progresoId={verRespuestasId} onCerrar={() => setVerRespuestasId(null)} />
-      )}
+      <div className="flex-1 overflow-y-auto p-6">
+        {cargando ? (
+          <p className="text-center text-sm text-gray-400 py-12">Cargando progreso...</p>
+        ) : moduloActivo ? (
+          <div className="max-w-2xl mx-auto space-y-4">
+            <button onClick={() => { setModuloActivo(null); setRetro(null); }}
+              className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
+              ← Módulos
+            </button>
+            {cargandoRetro ? (
+              <p className="text-center text-sm text-gray-400 py-6">Cargando respuestas...</p>
+            ) : retro ? (
+              <RetroalimentacionExamen resultado={retro} />
+            ) : (
+              <p className="text-center text-sm text-gray-400 py-6">No se pudieron cargar las respuestas.</p>
+            )}
+          </div>
+        ) : seccionActiva ? (
+          <div className="space-y-5">
+            <button onClick={() => setSeccionActivaId(null)}
+              className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
+              ← Secciones
+            </button>
+            {seccionActiva.modulos.length === 0 ? (
+              <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
+                <p className="text-gray-400 text-sm">Esta sección no tiene módulos todavía.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {seccionActiva.modulos.map(item => (
+                  <TarjetaModuloOperador key={item.modulo.id} item={item} onVer={abrirRetro} />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {(() => {
+              const todosLosModulos = secciones.flatMap(s => s.modulos || []);
+              const completadosTotal = todosLosModulos.filter(m => m.estado === "completado").length;
+              const pctTotal = todosLosModulos.length ? Math.round((completadosTotal / todosLosModulos.length) * 100) : 0;
+              return (
+                <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-gray-700">Avance general</h3>
+                    <span className="text-sm font-bold text-[#802907]">{pctTotal}%</span>
+                  </div>
+                  <div className="rounded-full bg-gray-200 h-2.5 overflow-hidden">
+                    <div className="h-2.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pctTotal}%` }} />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">{completadosTotal} de {todosLosModulos.length} módulo(s) completados</p>
+                </div>
+              );
+            })()}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {secciones.map(secData => {
+                if (!secData.modulos?.length) return null;
+                return (
+                  <TarjetaSeccionEmpleado
+                    key={secData.seccion.id}
+                    seccion={secData.seccion}
+                    modulos={secData.modulos}
+                    desbloqueada={secData.desbloqueada !== false}
+                    seccionRequerida={secData.seccion_requerida}
+                    onClick={() => setSeccionActivaId(secData.seccion.id)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
+}
 
 function VistaAdmin() {
   const [datos, setDatos] = useState({ progresos: [], resumen_modulos: [] });
@@ -523,6 +620,7 @@ function VistaAdmin() {
   const [buscarUser, setBuscarUser] = useState("");
   const [filtroSec, setFiltroSec] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
+  const [operadorSeleccionado, setOperadorSeleccionado] = useState(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -558,7 +656,7 @@ function VistaAdmin() {
   const usuariosAgrupados = Object.values(cursosFiltrados.reduce((acc, p) => {
     const key = p.usuario_login;
     if (!acc[key]) {
-      acc[key] = { usuario: p.usuario, usuario_login: p.usuario_login, cursos: [] };
+      acc[key] = { usuario: p.usuario, usuario_login: p.usuario_login, user_id: p.user_id, socio: p.socio, cursos: [] };
     }
     acc[key].cursos.push(p);
     return acc;
@@ -596,6 +694,14 @@ function VistaAdmin() {
           <p className="text-xs text-gray-500">@{row.usuario_login}</p>
         </div>
       )
+    },
+    {
+      name: 'Socio',
+      selector: row => row.socio || '',
+      sortable: true,
+      cell: row => row.socio
+        ? <span className="text-sm text-gray-700">{row.socio}</span>
+        : <span className="text-xs text-gray-400">Sin socio</span>
     },
     {
       name: 'Cursos Asignados (Filtrados)',
@@ -692,13 +798,13 @@ function VistaAdmin() {
         )}
       </div>
 
-      {/* Tabla Expandible de Operadores */}
+      {/* Tabla de Operadores: al hacer clic en una fila se abre su progreso en tarjetas */}
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <DataTable
           columns={columnas}
           data={dataTableData}
-          expandableRows
-          expandableRowsComponent={CursosExpandidos}
+          onRowClicked={row => setOperadorSeleccionado(row)}
+          pointerOnHover
           pagination
           paginationPerPage={10}
           paginationRowsPerPageOptions={[10, 25, 50]}
@@ -710,6 +816,15 @@ function VistaAdmin() {
           noDataComponent={<div className="p-8 text-gray-500 text-center">No se encontraron operadores con estos filtros.</div>}
         />
       </div>
+
+      {operadorSeleccionado && (
+        <VisorProgresoOperador
+          usuarioId={operadorSeleccionado.user_id}
+          usuarioNombre={operadorSeleccionado.usuario}
+          moduloInicialId={null}
+          onCerrar={() => setOperadorSeleccionado(null)}
+        />
+      )}
     </div>
   );
 }
