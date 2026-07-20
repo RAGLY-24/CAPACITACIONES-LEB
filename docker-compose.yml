@@ -1,0 +1,60 @@
+services:
+  web:
+    build:
+      context: ./frontend-capacitaciones
+      dockerfile: dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend-capacitaciones:/app
+      - /app/node_modules    
+  
+  app:
+    build:
+      context: ./backend-capacitaciones
+      dockerfile: Dockerfile
+    container_name: laravel_api_app
+    restart: unless-stopped
+    working_dir: /var/www
+    # Aquí se monta tu código en tiempo real para desarrollo
+    volumes:
+      - ./backend-capacitaciones:/var/www
+    networks:
+      - laravel_network
+
+  laravel:
+    image: nginx:alpine
+    container_name: laravel_api_web
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend-capacitaciones:/var/www
+      - ./backend-capacitaciones/docker/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - laravel_network
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: laravel_api_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_USER: ${DB_USERNAME:-laravel}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - laravel_network
+
+networks:
+  laravel_network:
+    driver: bridge
+
+volumes:
+  db_data:
