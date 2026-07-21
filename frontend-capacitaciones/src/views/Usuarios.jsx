@@ -10,10 +10,13 @@ function Usuarios() {
   const [puestos, setPuestos] = useState([]);
   const [socios, setSocios] = useState([]);
   const [nuevoPuesto, setNuevoPuesto] = useState("");
-  const [nuevoSocio, setNuevoSocio] = useState({ nombre: "", telefono: "", correo: "", estado: "Activo" });
+  const estadoInicialSocio = { nombre: "", telefono: "", correo: "", estado: "Activo" };
+  const [nuevoSocio, setNuevoSocio] = useState(estadoInicialSocio);
   const [socioError, setSocioError] = useState("");
   const [socioModal, setSocioModal] = useState(null);
   const [socioSeleccionado, setSocioSeleccionado] = useState(null);
+  const [socioEditandoId, setSocioEditandoId] = useState(null);
+  const [guardandoSocio, setGuardandoSocio] = useState(false);
   const [errorPuesto, setErrorPuesto] = useState("");
   const [editarPuestoId, setEditarPuestoId] = useState(null);
   const [editarPuestoNombre, setEditarPuestoNombre] = useState("");
@@ -137,7 +140,8 @@ function Usuarios() {
     }
   };
 
-  const crearSocio = async () => {
+  const guardarSocio = async () => {
+    if (guardandoSocio) return;
     if (!nuevoSocio.nombre.trim()) {
       setSocioError("Ingrese un nombre para el socio.");
       return;
@@ -151,21 +155,70 @@ function Usuarios() {
       return;
     }
 
+    const payload = {
+      nombre: nuevoSocio.nombre.trim(),
+      telefono: nuevoSocio.telefono.trim(),
+      correo: nuevoSocio.correo.trim(),
+      estado: nuevoSocio.estado,
+    };
+
+    setGuardandoSocio(true);
     try {
-      await axios.post(`${API_URL}/api/socios`, {
-        nombre: nuevoSocio.nombre.trim(),
-        telefono: nuevoSocio.telefono.trim(),
-        correo: nuevoSocio.correo.trim(),
-        estado: nuevoSocio.estado,
-      });
-      setNuevoSocio({ nombre: "", telefono: "", correo: "", estado: "Activo" });
+      if (socioModal === 'editar') {
+        await axios.put(`${API_URL}/api/socios/${socioEditandoId}`, payload);
+      } else {
+        await axios.post(`${API_URL}/api/socios`, payload);
+      }
+      setNuevoSocio(estadoInicialSocio);
+      setSocioEditandoId(null);
       setSocioModal(null);
       obtenerSocios();
-      Swal.fire({ icon: 'success', title: '¡Socio agregado!', text: 'Se registró correctamente.', confirmButtonColor: '#802907' });
+      Swal.fire({
+        icon: 'success',
+        title: socioModal === 'editar' ? '¡Socio actualizado!' : '¡Socio agregado!',
+        text: socioModal === 'editar' ? 'Los cambios fueron guardados.' : 'Se registró correctamente.',
+        confirmButtonColor: '#802907',
+      });
     } catch (err) {
-      const message = err.response?.data?.message || 'No se pudo crear el socio.';
+      const message = err.response?.data?.message || 'No se pudo guardar el socio.';
       setSocioError(message);
+    } finally {
+      setGuardandoSocio(false);
     }
+  };
+
+  const abrirModalEditarSocio = (socio) => {
+    setNuevoSocio({ nombre: socio.nombre || "", telefono: socio.telefono || "", correo: socio.correo || "", estado: socio.estado || "Activo" });
+    setSocioEditandoId(socio.id);
+    setSocioError("");
+    setSocioModal('editar');
+  };
+
+  const eliminarSocio = (socio) => {
+    Swal.fire({
+      title: `¿Eliminar a ${socio.nombre}?`,
+      text: "Esta acción no se puede deshacer.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      try {
+        await axios.delete(`${API_URL}/api/socios/${socio.id}`);
+        obtenerSocios();
+        Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El socio fue eliminado correctamente.', confirmButtonColor: '#802907' });
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'No se pudo eliminar',
+          text: err.response?.data?.message || 'Ocurrió un problema al eliminar el socio.',
+          confirmButtonColor: '#802907',
+        });
+      }
+    });
   };
 
   const editarPuesto = (puesto) => {
@@ -266,7 +319,8 @@ function Usuarios() {
   };
 
   const abrirModalSocio = () => {
-    setNuevoSocio({ nombre: "", telefono: "", correo: "", estado: "Activo" });
+    setNuevoSocio(estadoInicialSocio);
+    setSocioEditandoId(null);
     setSocioError("");
     setSocioModal('crear');
   };
@@ -279,6 +333,7 @@ function Usuarios() {
   const cerrarModalSocio = () => {
     setSocioModal(null);
     setSocioSeleccionado(null);
+    setSocioEditandoId(null);
     setSocioError("");
   };
 
@@ -692,18 +747,24 @@ function Usuarios() {
             {socios.length === 0 ? (
               <p className="text-gray-500">No hay socios registrados.</p>
             ) : socios.map((socio) => (
-              <button
+              <div
                 key={socio.id}
-                type="button"
-                onClick={() => abrirModalDetalleSocio(socio)}
-                className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-3 text-left transition hover:border-[#802907] hover:bg-[#fdf7f3]"
+                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-[#802907] hover:bg-[#fdf7f3]"
               >
-                <div>
+                <button
+                  type="button"
+                  onClick={() => abrirModalDetalleSocio(socio)}
+                  className="flex-1 text-left"
+                >
                   <p className="font-semibold text-gray-800">{socio.nombre}</p>
                   <p className="text-xs text-gray-500">{socio.telefono || 'Sin teléfono'} · {socio.correo || 'Sin correo'} · {socio.estado}</p>
+                </button>
+                <span className="text-xs font-semibold text-gray-600 whitespace-nowrap">{socio.usuarios_count ?? socio.usuarios?.length ?? 0} asignado(s)</span>
+                <div className="flex gap-3 shrink-0">
+                  <button type="button" onClick={() => abrirModalEditarSocio(socio)} className="text-xs font-semibold text-blue-600 hover:underline">Editar</button>
+                  <button type="button" onClick={() => eliminarSocio(socio)} className="text-xs font-semibold text-red-600 hover:underline">Eliminar</button>
                 </div>
-                <span className="text-xs font-semibold text-gray-600">{socio.usuarios_count ?? socio.usuarios?.length ?? 0} asignado(s)</span>
-              </button>
+              </div>
             ))}
           </div>
         </div>
@@ -751,11 +812,11 @@ function Usuarios() {
         </div>
       </div>
 
-      {socioModal === 'crear' && (
+      {(socioModal === 'crear' || socioModal === 'editar') && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-800">Agregar nuevo socio</h3>
-            <p className="mt-1 text-sm text-gray-500">Completa estos datos para registrar el socio.</p>
+            <h3 className="text-xl font-bold text-gray-800">{socioModal === 'editar' ? 'Editar socio' : 'Agregar nuevo socio'}</h3>
+            <p className="mt-1 text-sm text-gray-500">{socioModal === 'editar' ? 'Actualiza los datos del socio.' : 'Completa estos datos para registrar el socio.'}</p>
             <div className="mt-5 grid gap-4">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
@@ -778,8 +839,10 @@ function Usuarios() {
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={cerrarModalSocio} className="rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
-              <button type="button" onClick={crearSocio} className="rounded-md bg-[#802907] px-5 py-2 font-semibold text-white hover:bg-[#4e1802]">Guardar socio</button>
+              <button type="button" onClick={cerrarModalSocio} disabled={guardandoSocio} className="rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50">Cancelar</button>
+              <button type="button" onClick={guardarSocio} disabled={guardandoSocio} className="rounded-md bg-[#802907] px-5 py-2 font-semibold text-white hover:bg-[#4e1802] disabled:opacity-60 disabled:cursor-not-allowed">
+                {guardandoSocio ? 'Guardando...' : socioModal === 'editar' ? 'Guardar cambios' : 'Guardar socio'}
+              </button>
             </div>
           </div>
         </div>

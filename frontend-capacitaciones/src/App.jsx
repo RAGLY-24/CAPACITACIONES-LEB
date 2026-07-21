@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./views/Login";
+import Registro from "./views/Registro";
 import AdminPanel from "./views/AdminPanel";
 import Noticias from "./views/Noticias";
 import Contenido from "./views/Contenido";
@@ -16,6 +17,7 @@ function App() {
       <Routes>
         {/* Ruta raíz (localhost:5173/) muestra el Login */}
         <Route path="/" element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
 
         {/* Ruta /admin (localhost:5173/admin) muestra el Panel */}
         <Route path="/admin" element={<AdminPanel />}>

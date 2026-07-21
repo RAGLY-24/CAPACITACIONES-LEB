@@ -15,6 +15,17 @@ class SocioController extends Controller
         return $user instanceof User && ($user->puesto?->nombre === 'SistemasAdmin' || $user->hasPermission('create_users'));
     }
 
+    // Lista mínima (id + nombre) para el select de la pantalla pública de
+    // registro: no requiere sesión y no expone teléfono/correo del socio.
+    public function listaPublica()
+    {
+        $socios = Socio::where('estado', 'Activo')
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
+        return response()->json($socios, 200);
+    }
+
     public function index()
     {
         if (!$this->esAdmin()) {

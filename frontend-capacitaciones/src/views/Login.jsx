@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import logoEmpresa from '../assets/leb_logotipo.png';
@@ -131,6 +131,10 @@ function Login() {
             </button>
           </div>
         </form>
+
+        <p className="mt-6 text-center text-sm text-gray-500">
+          ¿No tienes cuenta? <Link to="/registro" className="font-semibold text-[#802907] hover:underline">Regístrate</Link>
+        </p>
       </div>
     </div>
   );
