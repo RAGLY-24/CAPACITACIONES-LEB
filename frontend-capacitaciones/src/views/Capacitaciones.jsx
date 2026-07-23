@@ -107,7 +107,11 @@ function LeyendaPastel({ datos }) {
 // Detalle pregunta por pregunta de un examen ya calificado (aprobado o no).
 // La usan tanto el empleado (al reabrir un módulo ya contestado) como el
 // admin (al revisar las respuestas de un operador).
-function RetroalimentacionExamen({ resultado, onReintentar }) {
+function RetroalimentacionExamen({ resultado, onReintentar, intentosRestantes, onRepasarContenido }) {
+  // Con intentosRestantes sin definir (ej. la vista del admin) se ignora el
+  // límite de 2 intentos: solo aplica a la propia vista del empleado.
+  const sinIntentos = !resultado.aprobado && intentosRestantes !== undefined && intentosRestantes <= 0;
+
   return (
     <div className="space-y-4">
       <div className={`rounded-xl p-5 text-center ${resultado.aprobado ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
@@ -118,10 +122,23 @@ function RetroalimentacionExamen({ resultado, onReintentar }) {
           {resultado.aprobado ? "¡Aprobado!" : "Reprobado"}
         </p>
         <p className="text-sm text-gray-500 mt-1">{resultado.aciertos} de {resultado.total} respuestas correctas</p>
-        {onReintentar && (
-          <button onClick={onReintentar} className="mt-3 rounded-lg border px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-100">
-            Volver a intentar
-          </button>
+        {!resultado.aprobado && intentosRestantes !== undefined && (
+          <p className="text-xs text-gray-500 mt-1">
+            {sinIntentos ? "Agotaste tus 2 intentos." : `Te queda${intentosRestantes === 1 ? "" : "n"} ${intentosRestantes} intento(s).`}
+          </p>
+        )}
+        {sinIntentos ? (
+          onRepasarContenido && (
+            <button onClick={onRepasarContenido} className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-1.5 text-sm text-amber-800 hover:bg-amber-100">
+              🔒 Repasar contenido para volver a intentar
+            </button>
+          )
+        ) : (
+          onReintentar && (
+            <button onClick={onReintentar} className="mt-3 rounded-lg border px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-100">
+              Volver a intentar
+            </button>
+          )
         )}
       </div>
       <div className="space-y-3">
@@ -156,23 +173,26 @@ function RetroalimentacionExamen({ resultado, onReintentar }) {
   );
 }
 
-function SeccionExamen({ moduloId, estadoInicial, onCalificado }) {
+function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarContenido }) {
   const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [respuestas, setRespuestas] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [sinExamen, setSinExamen] = useState(false);
+  const [bloqueado, setBloqueado] = useState(false);
+  const [intentosRestantes, setIntentosRestantes] = useState(undefined);
 
   // Examen en blanco para responder (o reintentar). No consulta la
   // retroalimentación guardada: se usa explícitamente para un intento nuevo.
   const cargarExamenBlanco = useCallback(async () => {
-    setCargando(true); setSinExamen(false); setResultado(null); setRespuestas({});
+    setCargando(true); setSinExamen(false); setBloqueado(false); setResultado(null); setRespuestas({});
     try {
       const res = await axios.get(`${API}/api/modulos/${moduloId}/examen`);
       setPreguntas(res.data.preguntas || []);
     } catch (err) {
       if (err.response?.status === 404) setSinExamen(true);
+      else if (err.response?.status === 403) setBloqueado(true);
       else Swal.fire({ icon: "error", title: "Error al cargar el examen.", confirmButtonColor: "#802907" });
     } finally { setCargando(false); }
   }, [moduloId]);
@@ -191,7 +211,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado }) {
         setCargando(true);
         try {
           const res = await axios.get(`${API}/api/modulos/${moduloId}/examen/retroalimentacion`);
-          if (!cancelado) setResultado(res.data);
+          if (!cancelado) { setResultado(res.data); setIntentosRestantes(res.data.intentos_restantes); }
           if (!cancelado) setCargando(false);
           return;
         } catch (err) {
@@ -220,22 +240,49 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado }) {
     try {
       const res = await axios.post(`${API}/api/modulos/${moduloId}/examen`, { respuestas });
       setResultado(res.data);
+      setIntentosRestantes(res.data.intentos_restantes);
       onCalificado?.();
     } catch (err) {
-      Swal.fire({ icon: "error", title: err.response?.data?.message || "Error al enviar.", confirmButtonColor: "#802907" });
+      if (err.response?.status === 403) {
+        setBloqueado(true);
+        Swal.fire({ icon: "warning", title: err.response.data?.message || "Agotaste tus intentos.", confirmButtonColor: "#802907" });
+      } else {
+        Swal.fire({ icon: "error", title: err.response?.data?.message || "Error al enviar.", confirmButtonColor: "#802907" });
+      }
     } finally { setEnviando(false); }
   };
 
   if (cargando) return <p className="text-center text-sm text-gray-400 py-6">Cargando examen...</p>;
   if (sinExamen) return <p className="text-center text-sm text-gray-400 py-6">Este módulo aún no tiene examen configurado.</p>;
 
+  if (bloqueado) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+        <p className="text-sm font-semibold text-amber-800">🔒 Agotaste tus 2 intentos.</p>
+        <p className="text-xs text-amber-700 mt-1">Repasa el contenido (PDF o video) para desbloquear el examen de nuevo.</p>
+        {onRepasarContenido && (
+          <button onClick={onRepasarContenido} className="mt-3 rounded-lg border border-amber-300 px-4 py-1.5 text-sm text-amber-800 hover:bg-amber-100">
+            Ir al contenido
+          </button>
+        )}
+      </div>
+    );
+  }
+
   if (resultado) {
-    return <RetroalimentacionExamen resultado={resultado} onReintentar={cargarExamenBlanco} />;
+    return (
+      <RetroalimentacionExamen
+        resultado={resultado}
+        intentosRestantes={intentosRestantes}
+        onReintentar={cargarExamenBlanco}
+        onRepasarContenido={onRepasarContenido}
+      />
+    );
   }
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-gray-600 font-medium">{preguntas.length} pregunta(s) — necesitas 70% para aprobar</p>
+      <p className="text-sm text-gray-600 font-medium">{preguntas.length} pregunta(s) — necesitas 70% para aprobar (máx. 2 intentos)</p>
       {preguntas.map((p, i) => (
         <div key={p.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
           <p className="text-sm font-semibold text-gray-800 mb-3">{i + 1}. {p.texto}</p>
@@ -382,7 +429,10 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
             {tab === "contenido" ? (
               <div className="h-full flex flex-col gap-4">
                 <VisorArchivo fileUrl={modulo.file_url} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json}
-                  onCompletado={() => setContenidoListo(true)} />
+                  onCompletado={() => {
+                    setContenidoListo(true);
+                    axios.post(`${API}/api/modulos/${modulo.id}/contenido-visto`).catch(() => { });
+                  }} />
                 {tiene_examen && (
                   <div className={`rounded-lg border p-4 shrink-0 ${contenidoListo ? "bg-blue-50 border-blue-200" : "bg-amber-50 border-amber-200"}`}>
                     {contenidoListo ? (
@@ -405,7 +455,12 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
               </div>
             ) : (
               <div className="max-w-2xl mx-auto">
-                <SeccionExamen moduloId={modulo.id} estadoInicial={activo.estado} onCalificado={onProgresoActualizado} />
+                <SeccionExamen
+                  moduloId={modulo.id}
+                  estadoInicial={activo.estado}
+                  onCalificado={onProgresoActualizado}
+                  onRepasarContenido={() => { setContenidoListo(false); setTab("contenido"); }}
+                />
               </div>
             )}
           </div>
@@ -877,9 +932,11 @@ function TarjetaModuloEmpleado({ item, onAbrir }) {
   const { modulo, estado, puntaje, intentos, tiene_examen } = item;
   const desbloqueado = item.desbloqueado !== false;
   const imgSrc = modulo.imagen_url || null;
+  const necesitaRepaso = estado === "reprobado" && item.intentos_restantes === 0;
 
   const botonLabel = () => {
     if (!desbloqueado) return "Bloqueado";
+    if (necesitaRepaso) return "Repasar contenido";
     if (estado === "pendiente") return "Iniciar";
     if (estado === "en_progreso") return "Continuar";
     return "Reintentar";
@@ -926,6 +983,7 @@ function TarjetaModuloEmpleado({ item, onAbrir }) {
             <span className={`font-bold ${puntaje >= 70 ? "text-green-600" : "text-red-500"}`}>{puntaje}%</span>
           )}
           {!desbloqueado && <span className="text-gray-400">🔒 Requiere aprobar: {item.requiere_modulo || "el módulo anterior"}</span>}
+          {desbloqueado && necesitaRepaso && <span className="font-bold text-amber-600">🔒 Repasa el contenido para reintentar</span>}
         </div>
 
         <button

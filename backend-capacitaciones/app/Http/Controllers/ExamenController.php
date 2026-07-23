@@ -41,6 +41,11 @@ class ExamenController extends Controller
             return response()->json(['message' => 'Este módulo aún no tiene examen configurado.'], 404);
         }
 
+        $progreso = ProgresoModulo::where('user_id', $user->id)->where('modulo_id', $moduloId)->first();
+        if ($progreso && $progreso->estado !== 'completado' && $progreso->intentos_ciclo >= 2) {
+            return response()->json(['message' => 'Agotaste tus 2 intentos. Debes repasar el contenido (PDF o video) antes de volver a intentar el examen.'], 403);
+        }
+
         // Ocultar cuál es correcta para el empleado
         $preguntas = $modulo->preguntas->map(function ($pregunta) {
             return [
@@ -82,6 +87,15 @@ class ExamenController extends Controller
             return response()->json(['message' => $mensaje], 403);
         }
 
+        $progreso = ProgresoModulo::firstOrNew([
+            'user_id'   => $user->id,
+            'modulo_id' => $moduloId,
+        ]);
+
+        if ($progreso->exists && $progreso->estado !== 'completado' && $progreso->intentos_ciclo >= 2) {
+            return response()->json(['message' => 'Agotaste tus 2 intentos. Debes repasar el contenido (PDF o video) antes de volver a intentar el examen.'], 403);
+        }
+
         $request->validate([
             'respuestas'   => 'required|array',
             'respuestas.*' => 'required|integer|exists:opciones,id',
@@ -102,15 +116,11 @@ class ExamenController extends Controller
         $aprobado  = $puntaje >= 70;
         $estadoNuevo = $aprobado ? 'completado' : 'reprobado';
 
-        $progreso = ProgresoModulo::firstOrNew([
-            'user_id'   => $user->id,
-            'modulo_id' => $moduloId,
-        ]);
-
-        $progreso->estado      = $estadoNuevo;
-        $progreso->puntaje     = $puntaje;
-        $progreso->intentos    = ($progreso->intentos ?? 0) + 1;
-        $progreso->respuestas  = $respuestasEnviadas;
+        $progreso->estado       = $estadoNuevo;
+        $progreso->puntaje      = $puntaje;
+        $progreso->intentos     = ($progreso->intentos ?? 0) + 1;
+        $progreso->intentos_ciclo = $aprobado ? 0 : ($progreso->intentos_ciclo ?? 0) + 1;
+        $progreso->respuestas   = $respuestasEnviadas;
         $progreso->completed_at = now();
         if (!$progreso->started_at) {
             $progreso->started_at = now();
@@ -118,12 +128,13 @@ class ExamenController extends Controller
         $progreso->save();
 
         return response()->json([
-            'puntaje'    => $puntaje,
-            'aprobado'   => $aprobado,
-            'estado'     => $estadoNuevo,
-            'aciertos'   => $aciertos,
-            'total'      => $total,
-            'resultados' => $resultados,
+            'puntaje'          => $puntaje,
+            'aprobado'         => $aprobado,
+            'estado'           => $estadoNuevo,
+            'aciertos'         => $aciertos,
+            'total'            => $total,
+            'resultados'       => $resultados,
+            'intentos_restantes' => max(0, 2 - $progreso->intentos_ciclo),
         ], 200);
     }
 
@@ -155,6 +166,7 @@ class ExamenController extends Controller
             'aciertos'   => $aciertos,
             'total'      => $total,
             'resultados' => $resultados,
+            'intentos_restantes' => max(0, 2 - $progreso->intentos_ciclo),
         ], 200);
     }
 }

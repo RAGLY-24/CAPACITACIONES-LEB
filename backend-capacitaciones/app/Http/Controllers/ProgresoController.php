@@ -49,6 +49,27 @@ class ProgresoController extends Controller
         return response()->json(['progreso' => $progreso], 200);
     }
 
+    // POST /modulos/{id}/contenido-visto — el usuario terminó de revisar el
+    // contenido (PDF hasta el final o video completo). Reinicia el contador
+    // de intentos del ciclo actual, dándole 2 intentos nuevos para el examen.
+    public function marcarContenidoVisto(int $moduloId)
+    {
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            return response()->json(['message' => 'No autenticado.'], 401);
+        }
+
+        $progreso = ProgresoModulo::firstOrCreate(
+            ['user_id' => $user->id, 'modulo_id' => $moduloId],
+            ['estado' => 'en_progreso', 'started_at' => now(), 'intentos' => 0]
+        );
+
+        $progreso->intentos_ciclo = 0;
+        $progreso->save();
+
+        return response()->json(['intentos_restantes' => 2], 200);
+    }
+
     // GET /progreso/mio — progreso agrupado por sección para el empleado
     public function miProgreso()
     {
@@ -130,6 +151,7 @@ class ProgresoController extends Controller
                     'estado'          => $progreso?->estado ?? 'pendiente',
                     'puntaje'         => $progreso?->puntaje,
                     'intentos'        => $progreso?->intentos ?? 0,
+                    'intentos_restantes' => max(0, 2 - ($progreso?->intentos_ciclo ?? 0)),
                     'started_at'      => $progreso?->started_at,
                     'completed_at'    => $progreso?->completed_at,
                     'tiene_examen'    => $modulo->preguntas_count > 0,
@@ -301,6 +323,7 @@ class ProgresoController extends Controller
             'aciertos'      => $aciertos,
             'total'         => $total,
             'resultados'    => $resultados,
+            'intentos_restantes' => max(0, 2 - $progreso->intentos_ciclo),
         ], 200);
     }
 }

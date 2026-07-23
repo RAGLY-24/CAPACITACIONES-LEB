@@ -95,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- PROGRESO ---
     Route::post('/modulos/{id}/iniciar', [ProgresoController::class, 'iniciar']);
+    Route::post('/modulos/{id}/contenido-visto', [ProgresoController::class, 'marcarContenidoVisto']);
     Route::get('/progreso/mio', [ProgresoController::class, 'miProgreso']);
     Route::get('/progreso/usuario/{id}', [ProgresoController::class, 'progresoDeUsuario']);
     Route::get('/progreso/admin', [ProgresoController::class, 'resumenAdmin']);
