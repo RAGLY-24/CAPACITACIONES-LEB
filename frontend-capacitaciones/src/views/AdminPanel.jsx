@@ -92,7 +92,7 @@ function AdminPanel() {
     });
 
     try {
-      await axios.post('http://localhost:8000/api/logout');
+      await axios.post(`${API_URL}/api/logout`);
     } catch (err) {
       // Ignoramos errores de logout remoto y procedemos a limpiar local
     }

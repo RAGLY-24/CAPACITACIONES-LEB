@@ -22,8 +22,9 @@ use App\Http\Middleware\CheckSistemasAdmin;
 | RUTAS PÚBLICAS
 |--------------------------------------------------------------------------
 */
-Route::post('login', [AuthController::class, 'login']);
-Route::post('register', [AuthController::class, 'register']);
+// throttle:6,1 -> máximo 6 intentos por minuto por IP
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:6,1');
+Route::post('register', [AuthController::class, 'register'])->middleware('throttle:6,1');
 Route::get('socios-publico', [SocioController::class, 'listaPublica']);
 
 Route::middleware('auth:sanctum')->group(function () {

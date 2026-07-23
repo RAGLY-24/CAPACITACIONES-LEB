@@ -65,6 +65,15 @@ class UsuarioController extends Controller
         ]);
 
         $puesto = Puesto::find($request->input('puesto_id'));
+
+        // Elegir un puesto privilegiado (SistemasAdmin/Gerente) otorga permisos
+        if ($puesto && in_array($puesto->nombre, ['SistemasAdmin', 'Gerente'], true)
+            && (!$authUser instanceof User || !$authUser->hasPermission('assign_permissions'))) {
+            return response()->json([
+                'message' => 'Acceso denegado. No tienes permiso para asignar ese puesto.'
+            ], 403);
+        }
+
         $defaultPermissions = [];
 
         if ($puesto && $puesto->nombre === 'SistemasAdmin') {

@@ -5,6 +5,8 @@ import Swal from "sweetalert2";
 import logoEmpresa from '../assets/leb_logotipo.png';
 import fondoLogin from '../assets/paisaje-fondo-2.jpg';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,7 +43,7 @@ function Login() {
     });
 
     try {
-      const response = await axios.post('http://localhost:8000/api/login', {
+      const response = await axios.post(`${API_URL}/api/login`, {
         usuario: email,
         password: password
       });
