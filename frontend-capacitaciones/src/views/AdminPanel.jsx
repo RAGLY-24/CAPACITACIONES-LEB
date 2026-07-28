@@ -1,12 +1,18 @@
+
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Outlet, Navigate } from "react-router-dom";
+import { useNavigate, Outlet, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from 'axios';
 import logoEmpresa from '../assets/leb_logotipo.png';
+import { Menu, User } from "lucide-react";
+import { useLogout } from "../hooks/auth/useLogout";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-function AdminPanel() {
+function AdminPanel({ user }) {
+  const logout = useLogout();
+
+
   // 1. CONDICIÓN INICIAL: Abierto en PC (>768px), Cerrado en móviles
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -25,8 +31,8 @@ function AdminPanel() {
   // 1. Obtenemos el usuario real que inició sesión desde el almacenamiento del navegador
   // (perfilVersion se usa solo para forzar la relectura de sessionStorage tras editar el perfil)
   void perfilVersion;
-  const datosUsuario = sessionStorage.getItem('user');
-  const usuarioLogueado = datosUsuario ? JSON.parse(datosUsuario) : {};
+
+  const usuarioLogueado = user;
   const esAdmin = usuarioLogueado.puesto?.nombre === 'SistemasAdmin';
   const permisos = usuarioLogueado.permissions || {};
   const muestraNoticias = permisos.news_access !== false;
@@ -34,13 +40,6 @@ function AdminPanel() {
   const muestraContenido = esAdmin || permisos.edit_trainings;
   const muestraCapacitaciones = true; // Todos los empleados pueden tomar módulos de capacitación
 
-  //Para no dejarlo entrar en caso de que no este iniciado sesion
-  const token = sessionStorage.getItem('token');
-  if (!token) {
-    return <Navigate to="/" replace />;
-  }
-
-  // --- EFECTO 1: Cerrar menú de perfil al hacer clic afuera ---
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Si el menú está referenciado y el clic NO fue dentro de él, lo cerramos
@@ -90,17 +89,8 @@ function AdminPanel() {
         Swal.showLoading();
       }
     });
-
-    try {
-      await axios.post(`${API_URL}/api/logout`);
-    } catch (err) {
-      // Ignoramos errores de logout remoto y procedemos a limpiar local
-    }
-
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
+    await logout.mutateAsync()
     Swal.close();
-    navigate('/');
   };
 
   // --- Abrir el modal de edición de perfil precargado con los datos actuales ---
@@ -139,7 +129,7 @@ function AdminPanel() {
     if (fotoFile) formData.append('foto', fotoFile);
 
     try {
-      const response = await axios.post(`${API_URL}/api/perfil`, formData, {
+      const response = await axios.post(`${API_URL}/perfil`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -173,28 +163,50 @@ function AdminPanel() {
     }
   };
 
+  const menuItems = [
+    {
+      label: "Noticias",
+      path: "/noticias",
+      visible: muestraNoticias,
+    },
+    {
+      label: "Capacitaciones",
+      path: "/capacitaciones",
+      visible: muestraCapacitaciones,
+    },
+    {
+      label: "Editar Contenido",
+      path: "/contenido",
+      visible: muestraContenido,
+    },
+    {
+      label: "Usuarios",
+      path: "/usuarios",
+      visible: muestraUsuarios,
+    },
+  ];
+
+
   return (
     <div className="min-h-screen bg-[#f3f2f1] overflow-x-hidden">
 
       {/* --- BARRA SUPERIOR (NAVBAR) Fija arriba --- */}
-      <nav className="fixed top-0 left-0 w-full z-50 flex h-[72px] items-center justify-between bg-white px-8 shadow-sm">
+      <nav className="fixed top-0 left-0 w-full z-50 flex h-14 items-center justify-between bg-white px-8 shadow-sm">
 
         {/* Lado Izquierdo: Logo y Botón de Menú juntos */}
         <div className="flex items-center gap-6">
           <img
             src={logoEmpresa}
             alt="Logotipo LEB"
-            className="h-10 w-auto cursor-pointer object-contain transition-transform hover:scale-105"
-            onClick={() => irA('/admin')}
+            className="h-8 w-auto cursor-pointer object-contain transition-transform hover:scale-105"
+            onClick={() => irA('/')}
           />
 
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 focus:outline-none"
+            className="rounded-md p-2 text-zinc-600 transition-colors hover:bg-gray-100 focus:outline-none"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-7 w-7">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 6h18M3 18h18" />
-            </svg>
+            <Menu />
           </button>
         </div>
 
@@ -203,7 +215,7 @@ function AdminPanel() {
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#802907] text-white transition-transform hover:scale-105 focus:outline-none shadow-md"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-zinc-100 border border-zinc-200 text-white transition-transform hover:scale-105 focus:outline-none "
             >
               {usuarioLogueado.foto_url ? (
                 <img
@@ -212,9 +224,7 @@ function AdminPanel() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                </svg>
+                <User className="text-brand-primary" strokeWidth={1.5} />
               )}
             </button>
 
@@ -241,43 +251,28 @@ function AdminPanel() {
 
       {/* --- BARRA LATERAL (SIDEBAR) A la Izquierda --- */}
       <div
-        className={`fixed left-0 top-[72px] z-40 h-[calc(100vh-72px)] w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed left-0 top-13 z-40 h-[calc(100vh-72px)] w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         <div className="flex flex-col gap-2 p-4 mt-4">
-
-          {/* --- VISIBLES PARA TODOS --- */}
-          {muestraNoticias && (
-            <button onClick={() => irA('/admin/noticias')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
-              Noticias
-            </button>
-          )}
-
-          {muestraCapacitaciones && (
-            <button onClick={() => irA('/admin/capacitaciones')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
-              Capacitaciones
-            </button>
-          )}
-
-          {muestraContenido && (
-            <button onClick={() => irA('/admin/contenido')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
-              Editar Contenido
-            </button>
-          )}
-
-          {muestraUsuarios && (
-            <button onClick={() => irA('/admin/usuarios')} className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-[#802907] hover:text-white">
-              Usuarios
-            </button>
-          )}
-
+          {menuItems
+            .filter((item) => item.visible)
+            .map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-brand-primary hover:text-white"
+              >
+                {item.label}
+              </Link>
+            ))}
         </div>
       </div>
 
       {/* --- CONTENIDO PRINCIPAL DINÁMICO --- */}
       {/* Cambié pt-[90px] a pt-[72px] para que pegue exacto con tu barra de arriba que mide 72px */}
       <div className={`transition-all duration-300 ease-in-out pt-[72px] ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
-        
+
         {/* Dejamos el main completamente libre para que las pantallas decidan su propio tamaño */}
         <main className="w-full">
           <Outlet />
@@ -294,7 +289,7 @@ function AdminPanel() {
             <form onSubmit={guardarPerfil} className="space-y-5">
               {/* Foto de perfil */}
               <div className="flex flex-col items-center gap-3">
-                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#802907] text-white shadow-md">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-brand-primary text-white shadow-md">
                   {fotoPreview ? (
                     <img src={fotoPreview} alt="Vista previa" className="h-full w-full object-cover" />
                   ) : (
@@ -356,7 +351,7 @@ function AdminPanel() {
                 <button
                   type="submit"
                   disabled={guardandoPerfil}
-                  className={`rounded-md px-6 py-2 font-semibold text-white shadow-sm ${guardandoPerfil ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#802907] hover:bg-[#4e1802]'}`}
+                  className={`rounded-md px-6 py-2 font-semibold text-white shadow-sm ${guardandoPerfil ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-primary hover:bg-[#4e1802]'}`}
                 >
                   {guardandoPerfil ? 'Guardando...' : 'Guardar Cambios'}
                 </button>

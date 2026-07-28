@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+@theme {
+    --color-brand-primary: #752323;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    /* Internet Explorer y Edge antiguo */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari y Edge */
+}

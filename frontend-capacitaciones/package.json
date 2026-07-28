@@ -12,8 +12,10 @@
   "dependencies": {
     "@apollo/client": "^4.2.0",
     "@tailwindcss/vite": "^4.3.0",
+    "@tanstack/react-query": "^5.101.4",
     "axios": "^1.16.1",
     "graphql": "^16.14.0",
+    "lucide-react": "^1.27.0",
     "pdfjs-dist": "^6.1.200",
     "react": "^19.2.6",
     "react-data-table-component": "^8.4.0",

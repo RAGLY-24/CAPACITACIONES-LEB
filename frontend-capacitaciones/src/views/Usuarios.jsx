@@ -3,6 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useMe } from "../hooks/auth/useMe";
 
 function Usuarios() {
   // --- ESTADOS PRINCIPALES ---
@@ -28,8 +29,10 @@ function Usuarios() {
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  // --- Usuario autenticado (desde localStorage) ---
-  const storedUser = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('user') || 'null') : null;
+  // --- Usuario autenticado  ---
+  const { data } = useMe();
+
+  const storedUser = typeof window !== 'undefined' ? data : null;
   const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
   const esAdmin = usuarioLogueado.rol === 'SistemasAdmin';
   const permisosUsuario = storedUser?.permissions || {};
@@ -58,18 +61,14 @@ function Usuarios() {
   };
   const [formData, setFormData] = useState(estadoInicialForm);
 
-  useEffect(() => {
-    obtenerUsuarios();
-    obtenerPuestos();
-    obtenerSocios();
-  }, []);
+
 
   useLockBodyScroll(!!(modalType || socioModal));
 
   const obtenerUsuarios = async () => {
     try {
       setCargando(true);
-      const response = await axios.get(`${API_URL}/api/usuarios`);
+      const response = await axios.get(`${API_URL}/usuarios`);
       setUsuarios(response.data);
     } catch (err) {
       console.error("Error:", err);
@@ -80,7 +79,7 @@ function Usuarios() {
 
   const obtenerPuestos = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/puestos`);
+      const response = await axios.get(`${API_URL}/puestos`);
       setPuestos(response.data);
     } catch (err) {
       console.error("Error al obtener puestos:", err);
@@ -89,12 +88,17 @@ function Usuarios() {
 
   const obtenerSocios = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/socios`);
+      const response = await axios.get(`${API_URL}/socios`);
       setSocios(response.data);
     } catch (err) {
       console.error("Error al obtener socios:", err);
     }
   };
+  useEffect(() => {
+    obtenerUsuarios();
+    obtenerPuestos();
+    obtenerSocios();
+  }, []);
 
   // --- CONTROLADORES DE ENTRADA Y DIRTY STATE ---
   const handleChange = (e) => {
@@ -127,7 +131,7 @@ function Usuarios() {
       return;
     }
     try {
-      await axios.post(`${API_URL}/api/puestos`, { nombre: nuevoPuesto.trim() });
+      await axios.post(`${API_URL}/puestos`, { nombre: nuevoPuesto.trim() });
       setNuevoPuesto("");
       obtenerPuestos();
       Swal.fire({ icon: 'success', title: '¡Creado!', text: 'Puesto agregado correctamente.', confirmButtonColor: '#802907' });
@@ -165,9 +169,9 @@ function Usuarios() {
     setGuardandoSocio(true);
     try {
       if (socioModal === 'editar') {
-        await axios.put(`${API_URL}/api/socios/${socioEditandoId}`, payload);
+        await axios.put(`${API_URL}/socios/${socioEditandoId}`, payload);
       } else {
-        await axios.post(`${API_URL}/api/socios`, payload);
+        await axios.post(`${API_URL}/socios`, payload);
       }
       setNuevoSocio(estadoInicialSocio);
       setSocioEditandoId(null);
@@ -207,7 +211,7 @@ function Usuarios() {
     }).then(async (result) => {
       if (!result.isConfirmed) return;
       try {
-        await axios.delete(`${API_URL}/api/socios/${socio.id}`);
+        await axios.delete(`${API_URL}/socios/${socio.id}`);
         obtenerSocios();
         Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El socio fue eliminado correctamente.', confirmButtonColor: '#802907' });
       } catch (err) {
@@ -236,7 +240,7 @@ function Usuarios() {
     Swal.fire({ title: 'Procesando...', text: 'Actualizando el nombre del puesto.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     try {
-      await axios.put(`${API_URL}/api/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
+      await axios.put(`${API_URL}/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
       setEditarPuestoId(null);
       setEditarPuestoNombre("");
       obtenerPuestos();
@@ -257,7 +261,7 @@ function Usuarios() {
     const confirmar = window.confirm("¿Eliminar este puesto? Esto puede dejar usuarios sin puesto.");
     if (!confirmar) return;
     try {
-      await axios.delete(`${API_URL}/api/puestos/${id}`);
+      await axios.delete(`${API_URL}/puestos/${id}`);
       obtenerPuestos();
       Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'Puesto eliminado correctamente.', confirmButtonColor: '#802907' });
     } catch (err) {
@@ -371,9 +375,9 @@ function Usuarios() {
 
     try {
       if (modalType === 'crear') {
-        await axios.post(`${API_URL}/api/usuarios`, payload);
+        await axios.post(`${API_URL}/usuarios`, payload);
       } else {
-        await axios.put(`${API_URL}/api/usuarios/${formData.id}`, payload);
+        await axios.put(`${API_URL}/usuarios/${formData.id}`, payload);
       }
       obtenerUsuarios();
       obtenerSocios();
@@ -396,7 +400,7 @@ function Usuarios() {
   const confirmarEliminacion = async () => {
     Swal.fire({ title: 'Eliminando...', text: 'Dando de baja al usuario', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
     try {
-      await axios.delete(`${API_URL}/api/usuarios/${usuarioSeleccionado.id}`);
+      await axios.delete(`${API_URL}/usuarios/${usuarioSeleccionado.id}`);
       obtenerUsuarios();
       setModalType(null);
       Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El usuario ha sido borrado permanentemente.', confirmButtonColor: '#802907' });
@@ -589,7 +593,7 @@ function Usuarios() {
           <h2 className="text-xl font-bold text-gray-800">Directorio de Usuarios</h2>
         </div>
         {puedeCrearUsuarios && (
-          <button onClick={abrirModalCrear} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm">
+          <button onClick={abrirModalCrear} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm">
             + Crear Nuevo Usuario
           </button>
         )}
@@ -722,7 +726,7 @@ function Usuarios() {
 
               <div className="col-span-2 mt-4 flex justify-end gap-4">
                 <button type="button" onClick={cerrarModal} className="rounded-md px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
-                <button type="submit" disabled={!isDirty} className={`rounded-md px-6 py-2 font-semibold text-white shadow-sm ${!isDirty ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#802907] hover:bg-[#4e1802]'}`}>Guardar Usuario</button>
+                <button type="submit" disabled={!isDirty} className={`rounded-md px-6 py-2 font-semibold text-white shadow-sm ${!isDirty ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-primary hover:bg-[#4e1802]'}`}>Guardar Usuario</button>
               </div>
             </form>
           </div>
@@ -736,7 +740,7 @@ function Usuarios() {
             <h3 className="text-lg font-bold text-gray-800">Directorio de Socios</h3>
             <p className="text-sm text-gray-500">Asocia a un operador con su socio y revisa los usuarios vinculados.</p>
           </div>
-          <button onClick={abrirModalSocio} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
+          <button onClick={abrirModalSocio} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
             + Agregar socio
           </button>
         </div>
@@ -788,7 +792,7 @@ function Usuarios() {
               />
               {errorPuesto && <p className="mt-1 text-xs text-red-500">{errorPuesto}</p>}
             </div>
-            <button onClick={crearPuesto} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
+            <button onClick={crearPuesto} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
               + Agregar
             </button>
           </div>
@@ -840,7 +844,7 @@ function Usuarios() {
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={cerrarModalSocio} disabled={guardandoSocio} className="rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50">Cancelar</button>
-              <button type="button" onClick={guardarSocio} disabled={guardandoSocio} className="rounded-md bg-[#802907] px-5 py-2 font-semibold text-white hover:bg-[#4e1802] disabled:opacity-60 disabled:cursor-not-allowed">
+              <button type="button" onClick={guardarSocio} disabled={guardandoSocio} className="rounded-md bg-brand-primary px-5 py-2 font-semibold text-white hover:bg-[#4e1802] disabled:opacity-60 disabled:cursor-not-allowed">
                 {guardandoSocio ? 'Guardando...' : socioModal === 'editar' ? 'Guardar cambios' : 'Guardar socio'}
               </button>
             </div>

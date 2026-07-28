@@ -1,34 +1,60 @@
-FROM php:8.3-fpm
+# === STAGE 1: COMPOSER DEPENDENCIES ===
+FROM composer:2 AS vendor_backend
+WORKDIR /app
 
-# Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \
+# Copy dependency mappings first for optimal layer caching
+COPY composer.json composer.lock ./
+
+# Install only production dependencies without dev tools or scripts
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-plugins \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader
+
+# === STAGE 2: PRODUCTION RUNTIME ===
+FROM php:8.3-fpm-alpine
+
+# Install system extensions required for Laravel APIs
+RUN apk add --no-cache \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    zip \
+    libzip-dev \
+    unzip \
     git \
     curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip
+    oniguruma-dev \
+    postgresql-dev
 
-# Limpiar caché para reducir el tamaño de la imagen
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Configure and install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip exif pcntl gd
 
-# Instalar extensiones de PHP requeridas por Laravel
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# Install and enable OPcache for production performance
+RUN docker-php-ext-install opcache
+COPY ./docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
-# Obtener la última versión de Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Configurar el directorio de trabajo
+# Set deployment working directory
 WORKDIR /var/www
 
-# Dar permisos al usuario www-data
-RUN chown -R www-data:www-data /var/www
+# Copy application source code
+COPY . .
 
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# Copy pre-built vendor folders from Stage 1
+COPY --from=vendor_backend /app/vendor ./vendor
 
-ENTRYPOINT ["entrypoint.sh"]
- 
+# Set correct production file permissions for Laravel storage
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
+# Switch to unprivileged web-server user for security
+USER www-data
+
+# Expose PHP-FPM port
 EXPOSE 9000
-CMD [ "php-fpm" ]
+
+CMD ["sh", "-c", "php artisan migrate --seed --force && php-fpm"]

@@ -3,6 +3,10 @@ set -e
 
 cd /var/www
 
+echo "=== VARIABLES ==="
+env | grep -E 'APP|DB'
+echo "================="
+
 if [ ! -f .env ]; then
     echo "No se encontró .env en /var/www. Copia .env.example a .env y configúralo antes de desplegar." >&2
     exit 1

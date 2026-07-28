@@ -6,6 +6,8 @@
 # Bloquear carpetas pesadas de dependencias
 node_modules/
 vendor/
+web
+storage
 
 # Archivos temporales o de sistema
 .DS_Store

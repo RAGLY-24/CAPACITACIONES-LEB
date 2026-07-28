@@ -33,7 +33,7 @@ export function EditorPresentacion({ modulo, onCerrar, onGuardado }) {
     setGuardando(true);
     try {
       const snapshot = getSnapshot(editorRef.current.store);
-      const { data } = await axios.put(`${API}/api/modulos/${modulo.id}/presentacion`, {
+      const { data } = await axios.put(`${API}/modulos/${modulo.id}/presentacion`, {
         contenido: JSON.stringify(snapshot),
       });
       Swal.fire({ icon: "success", title: "Presentación guardada.", confirmButtonColor: "#802907" });
@@ -54,7 +54,7 @@ export function EditorPresentacion({ modulo, onCerrar, onGuardado }) {
         </div>
         <div className="flex gap-2 shrink-0">
           <button onClick={guardar} disabled={guardando}
-            className="rounded-lg bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
+            className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
             {guardando ? "Guardando..." : "Guardar presentación"}
           </button>
           <button onClick={onCerrar}

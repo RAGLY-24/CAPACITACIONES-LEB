@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import fondodeinterfaz from '../assets/fondodeinterfaz.jpg';
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
 
 function Noticias() {
     const [noticias, setNoticias] = useState([]);
@@ -40,7 +40,7 @@ function Noticias() {
 
     const obtenerNoticias = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/noticias`);
+            const response = await axios.get(`${API_URL}/noticias`);
             setNoticias(response.data);
         } catch (err) {
             console.error(err);
@@ -50,7 +50,7 @@ function Noticias() {
 
     const obtenerAviso = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/aviso-emergencia`);
+            const response = await axios.get(`${API_URL}/aviso-emergencia`);
             setAviso(response.data);
         } catch (err) {
             console.error(err);
@@ -81,7 +81,7 @@ function Noticias() {
         if (!isConfirmed) return;
 
         try {
-            const response = await axios.put(`${API_URL}/api/aviso-emergencia`, { mensaje });
+            const response = await axios.put(`${API_URL}/aviso-emergencia`, { mensaje });
             setAviso(response.data);
             setAvisoColapsado(false);
             sessionStorage.setItem('aviso_colapsado', '0');
@@ -151,11 +151,11 @@ function Noticias() {
             }
 
             if (modalType === 'crear') {
-                await axios.post(`${API_URL}/api/noticias`, dataToSend);
+                await axios.post(`${API_URL}/noticias`, dataToSend);
                 Swal.fire({ icon: 'success', title: 'Publicada', confirmButtonColor: '#802907' });
             } else {
                 dataToSend.append('_method', 'PUT');
-                await axios.post(`${API_URL}/api/noticias/${selectedNoticia.id}`, dataToSend);
+                await axios.post(`${API_URL}/noticias/${selectedNoticia.id}`, dataToSend);
                 Swal.fire({ icon: 'success', title: 'Actualizada', confirmButtonColor: '#802907' });
             }
 
@@ -182,7 +182,7 @@ function Noticias() {
         if (!confirm.isConfirmed) return;
 
         try {
-            await axios.delete(`${API_URL}/api/noticias/${noticia.id}`);
+            await axios.delete(`${API_URL}/noticias/${noticia.id}`);
             obtenerNoticias();
             setModalType(null);
             Swal.fire({ icon: 'success', title: 'Eliminada', confirmButtonColor: '#802907' });
@@ -239,8 +239,12 @@ function Noticias() {
                     <img src={src} className="w-full h-full object-cover" alt={`slide-${idx}`} />
                 )}
 
-                <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white">‹</button>
-                <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white">›</button>
+                <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 hover:bg-black/40 backdrop-blur-lg p-2 text-white">
+                    <ArrowLeft size={15} className="text-white" />
+                </button>
+                <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full  bg-black/60 hover:bg-black/40 backdrop-blur-lg  p-2 text-white">
+                    <ArrowRight size={15} className="text-white" />
+                </button>
 
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
                     {images.map((_, i) => (
@@ -253,21 +257,45 @@ function Noticias() {
 
     return (
         <div
-            className="min-h-screen w-full p-4 md:p-6 font-sans text-gray-900 bg-cover bg-center bg-no-repeat bg-fixed"
-        //style={{ backgroundImage: `url(${fondodeinterfaz})` }}
+            className="min-h-screen w-full p-4 md:p-6 font-sans text-gray-900 bg-zinc-100 bg-center bg-no-repeat bg-fixed"
+        // style={{ backgroundImage: `url(${fondodeinterfaz})` }}
         >
             <div className="w-[95%] max-w-[1600px] mx-auto">
 
                 {/* CABEZERA */}
-                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border border-white/20 pb-5 pt-5 px-6 bg-white/30 backdrop-blur-md rounded-2xl shadow-lg">
-                    <div>
-                        {/* drop-shadow para la cabezera */}
-                        <h2 className="text-3xl font-bold tracking-tight text-gray-900 drop-shadow-md">Panel de Noticias</h2>
-                        <p className="text-sm font-semibold text-gray-800 mt-1 drop-shadow-sm">Titulares destacados y actualizaciones recientes.</p>
+                {/* CABEZERA */}
+                <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-white/20 bg-white px-6 py-5 shadow-lg backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex-1">
+                        <h2 className="text-3xl font-medium tracking-tight text-gray-900">
+                            Panel de Noticias
+                        </h2>
+
+                        <p className="mt-2 text-sm text-zinc-500">
+                            Titulares destacados y actualizaciones recientes.
+                        </p>
                     </div>
+
                     {puedeCrearNoticias && (
-                        <button onClick={abrirModalCrear} className="rounded-lg bg-[#802907] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#5a1b04] transition-all shadow-md hover:shadow-lg hover:scale-105">
-                            + Crear Noticia
+                        <button
+                            onClick={abrirModalCrear}
+                            className="
+                inline-flex shrink-0 items-center justify-center gap-2
+                rounded-lg
+                bg-brand-primary
+                px-4 py-2.5
+                text-sm font-medium text-white
+                transition-colors duration-200
+                hover:bg-red-800
+                active:bg-red-950
+                focus:outline-none
+                focus:ring-2
+                focus:ring-red-700/40
+            "
+                        >
+                            <Plus size={18} strokeWidth={2.2} />
+                            <span className="">
+                                Crear noticia
+                            </span>
                         </button>
                     )}
                 </div>
@@ -282,7 +310,7 @@ function Noticias() {
                     </div>
                 ) : (
                     /* --- NUEVO GRID: 2 Columnas para mejor proporción --- */
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
                         {noticias.map((noticia, index) => {
                             const imagenes = obtenerImagenes(noticia);
                             const imgUrl = imagenes[0];
@@ -336,7 +364,7 @@ function Noticias() {
                                         )}
 
                                         {isFeatured && (
-                                            <span className="mb-3 w-max rounded bg-blue-600 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
+                                            <span className="mb-3 w-max rounded bg-red-600 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
                                                 Contenido destacado
                                             </span>
                                         )}
@@ -368,13 +396,13 @@ function Noticias() {
                     {avisoColapsado ? (
                         <button
                             onClick={toggleAviso}
-                            className="pointer-events-auto flex items-center gap-2 rounded-full bg-red-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-red-800 transition-colors"
+                            className="pointer-events-auto flex items-center gap-2 rounded-xl border-red-700 bg-red-700/90  backdrop-blur-sm px-4 py-2.5 text-sm  text-white shadow-lg hover:scale-102 transition-all "
                             title="Mostrar aviso de emergencia"
                         >
                             🚨 Aviso de emergencia
                         </button>
                     ) : (
-                        <div className="pointer-events-auto flex w-full max-w-3xl items-start gap-3 rounded-xl border border-red-800 bg-red-900/95 backdrop-blur-sm px-5 py-4 text-white shadow-2xl">
+                        <div className="pointer-events-auto flex flex-row items-center w-full max-w-3xl  gap-3 rounded-xl border border-red-700 bg-red-700/90   backdrop-blur-sm px-5 py-4 text-white shadow-2xl">
                             <span className="text-xl leading-none shrink-0">🚨</span>
                             <p className="flex-1 text-sm leading-snug whitespace-pre-wrap self-center">
                                 {aviso?.mensaje || (puedeAdministrarNoticias ? 'Aún no has configurado el aviso de emergencia.' : '')}
@@ -395,109 +423,363 @@ function Noticias() {
             )}
 
             {/* --- MODAL DE LECTURA COMPLETA --- */}
-            {modalType === 'ver' && selectedNoticia && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm" onClick={cerrarModal}>
-                    <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl bg-[#1e1e1e] shadow-2xl border border-gray-700" onClick={(e) => e.stopPropagation()}>
+            {modalType === "ver" && selectedNoticia && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+                    onClick={cerrarModal}
+                >
+                    <div
+                        className="relative w-full max-w-4xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Botón cerrar fijo */}
+                        <button
+                            onClick={cerrarModal}
+                            className="
+                    absolute right-3 top-3 z-50
+                    rounded-full
+                    bg-black/60
+                    p-2
+                    text-white
+                    backdrop-blur-md
+                    shadow-lg
+                    transition
+                    hover:bg-black/80
+                "
+                        >
+                            <X size={18} />
+                        </button>
 
-                        <div className="relative w-full h-80 bg-black">
-                            <button onClick={cerrarModal} className="absolute top-4 right-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-gray-700 transition-colors">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                            {(() => {
-                                const imgs = obtenerImagenes(selectedNoticia);
-                                if (!imgs || imgs.length === 0) return null;
-                                if (imgs.length === 1) {
-                                    const src = imgs[0];
-                                    const esVid = src.match(/\.(mp4|webm|ogg)(\?|$)/i);
-                                    return esVid ? (
-                                        <video src={src} className="w-full h-full object-cover opacity-80" controls />
-                                    ) : (
-                                        <img src={src} className="w-full h-full object-cover opacity-80" alt="Portada" />
-                                    );
-                                }
-                                return <FullCarousel images={imgs} />;
-                            })()}
-                        </div>
+                        {/* Contenedor con scroll */}
+                        <div className="
+                max-h-[90vh]
+                overflow-y-auto
+                hide-scrollbar
+                rounded-3xl
+                bg-white
+                shadow-2xl
+            ">
 
-                        <div className="p-8 md:p-10">
-                            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{selectedNoticia.title}</h2>
-                            <div className="flex items-center gap-3 text-sm text-gray-400 mb-8 border-b border-gray-700 pb-5">
-                                {noticias[0]?.id === selectedNoticia.id && (
-                                    <span className="bg-[#802907] text-white px-3 py-1 rounded-md font-semibold">Contenido destacado</span>
-                                )}
-                                <span>Publicado recientemente</span>
+                            {/* Imagen principal */}
+                            <div className="relative h-72 w-full overflow-hidden bg-gray-100 md:h-80">
+
+                                {(() => {
+                                    const imgs = obtenerImagenes(selectedNoticia);
+
+                                    if (!imgs || imgs.length === 0) return null;
+
+                                    if (imgs.length === 1) {
+                                        const src = imgs[0];
+                                        const esVid = src.match(/\.(mp4|webm|ogg)(\?|$)/i);
+
+                                        return esVid ? (
+                                            <video
+                                                src={src}
+                                                className="h-full w-full object-cover"
+                                                controls
+                                            />
+                                        ) : (
+                                            <img
+                                                src={src}
+                                                alt="Portada"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        );
+                                    }
+
+                                    return <FullCarousel images={imgs} />;
+                                })()}
+
                             </div>
 
-                            <div className="prose prose-invert max-w-none">
-                                <p className="text-gray-300 leading-relaxed whitespace-pre-wrap text-lg">{selectedNoticia.body}</p>
-                            </div>
 
-                            {selectedNoticia.evidence && (
-                                <div className="mt-8 rounded-lg bg-blue-900/20 border border-blue-800 p-5">
-                                    <h4 className="text-blue-400 font-bold mb-2">Información Adicional / Evidencia:</h4>
-                                    <p className="text-sm text-gray-300 leading-relaxed">{selectedNoticia.evidence}</p>
+                            {/* Contenido */}
+                            <div className="p-6 md:p-10">
+
+                                <div className="border-b border-gray-200 pb-6">
+
+                                    {noticias[0]?.id === selectedNoticia.id && (
+                                        <span className="
+                                            mb-4
+                                            inline-flex
+                                            rounded-full
+                                            bg-red-100
+                                            px-3
+                                            py-1
+                                            text-xs
+                                            font-semibold
+                                            text-red-800
+                                        ">
+                                            Contenido destacado
+                                        </span>
+                                    )}
+
+                                    <h2 className="
+                            mt-3
+                            text-3xl
+                            font-bold
+                            tracking-tight
+                            text-gray-900
+                            md:text-4xl
+                        ">
+                                        {selectedNoticia.title}
+                                    </h2>
+
+                                    <p className="mt-3 text-sm text-gray-500">
+                                        Publicado recientemente
+                                    </p>
+
                                 </div>
-                            )}
 
-                            {selectedNoticia.file_urls && selectedNoticia.file_urls.length > 1 && (
-                                <div className="mt-10">
-                                    <h4 className="text-gray-400 font-bold mb-4">Galería adjunta</h4>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        {selectedNoticia.file_urls.slice(1).map((url, i) => (
-                                            <a key={i} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
-                                                <img src={url} className="w-full h-32 object-cover hover:scale-110 hover:opacity-80 transition duration-300" alt="Evidencia adjunta" />
-                                            </a>
-                                        ))}
+
+                                {/* Texto */}
+                                <div className="mt-8">
+                                    <p className="
+                            whitespace-pre-wrap
+                            text-lg
+                            leading-8
+                            text-gray-700
+                        ">
+                                        {selectedNoticia.body}
+                                    </p>
+                                </div>
+
+
+                                {/* Evidencia */}
+                                {selectedNoticia.evidence && (
+                                    <div className="
+                            mt-10
+                            rounded-xl
+                            border
+                            border-zinc-200
+                            bg-zinc-50
+                            p-5
+                        ">
+                                        <h4 className="
+                                mb-2
+                                text-sm
+                                font-semibold
+                                text-zinc-700
+                            ">
+                                            Información adicional
+                                        </h4>
+
+                                        <p className="
+                                leading-7
+                                text-gray-700
+                            ">
+                                            {selectedNoticia.evidence}
+                                        </p>
                                     </div>
-                                </div>
-                            )}
+                                )}
+
+
+                                {/* Galería */}
+                                {selectedNoticia.file_urls &&
+                                    selectedNoticia.file_urls.length > 1 && (
+                                        <div className="mt-10">
+
+                                            <h4 className="
+                                    mb-4
+                                    text-lg
+                                    font-semibold
+                                    text-gray-900
+                                ">
+                                                Galería
+                                            </h4>
+
+
+                                            <div className="
+                                    grid
+                                    grid-cols-2
+                                    gap-4
+                                    sm:grid-cols-4
+                                ">
+                                                {selectedNoticia.file_urls
+                                                    .slice(1)
+                                                    .map((url, i) => (
+                                                        <a
+                                                            key={i}
+                                                            href={url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="
+                                                    group
+                                                    overflow-hidden
+                                                    rounded-xl
+                                                    border
+                                                    border-gray-200
+                                                "
+                                                        >
+                                                            <img
+                                                                src={url}
+                                                                alt="Archivo adjunto"
+                                                                className="
+                                                        h-32
+                                                        w-full
+                                                        object-cover
+                                                        transition
+                                                        duration-300
+                                                        group-hover:scale-105
+                                                    "
+                                                            />
+                                                        </a>
+                                                    ))}
+                                            </div>
+
+                                        </div>
+                                    )}
+
+                            </div>
+
                         </div>
                     </div>
                 </div>
             )}
-
             {/* --- MODAL CREAR / EDITAR (CON INPUT MULTIPLE) --- */}
             {(modalType === 'crear' || modalType === 'editar') && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm">
-                    <div className="w-full max-w-xl overflow-hidden rounded-xl bg-[#2d2d2d] p-6 shadow-2xl border border-gray-600 text-white">
-                        <div className="mb-5 flex items-start justify-between border-b border-gray-700 pb-3">
-                            <h3 className="text-xl font-bold">{modalType === 'crear' ? 'Publicar Nueva Noticia' : 'Editar Noticia'}</h3>
-                            <button onClick={cerrarModal} className="text-gray-400 hover:text-white">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6 backdrop-blur-sm">
+                    <div className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+
+                        {/* Header */}
+                        <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-5">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <h3 className="text-xl font-semibold text-gray-900">
+                                        {modalType === "crear"
+                                            ? "Publicar nueva noticia"
+                                            : "Editar noticia"}
+                                    </h3>
+
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Completa la información para publicar la noticia.
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={cerrarModal}
+                                    className="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                                >
+                                    <svg
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M6 18L18 6M6 6l12 12"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
-                        <form onSubmit={guardarNoticia} className="space-y-4">
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold text-gray-300">Titular</label>
-                                <input name="title" value={formData.title} onChange={handleChange} className="w-full rounded bg-[#1e1e1e] border border-gray-600 p-2 text-white focus:border-blue-500 focus:outline-none" placeholder="Titular llamativo..." />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold text-gray-300">Desarrollo de la Noticia</label>
-                                <textarea name="body" rows={5} value={formData.body} onChange={handleChange} className="w-full rounded bg-[#1e1e1e] border border-gray-600 p-2 text-white focus:border-blue-500 focus:outline-none" placeholder="Escribe todo el contenido aquí..." />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold text-gray-300">Notas / Evidencia (Opcional)</label>
-                                <textarea name="evidence" rows={2} value={formData.evidence} onChange={handleChange} className="w-full rounded bg-[#1e1e1e] border border-gray-600 p-2 text-white focus:border-blue-500 focus:outline-none" placeholder="Links o información extra..." />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold text-blue-400">Adjuntar Archivos (Puedes seleccionar varias fotos)</label>
-                                <input
-                                    type="file"
-                                    name="files"
-                                    multiple
-                                    accept=".jpg,.jpeg,.png,.mp4"
-                                    onChange={handleFileChange}
-                                    className="w-full text-sm text-gray-400 file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                                />
-                                {formData.files.length > 0 && (
-                                    <p className="mt-2 text-xs text-green-400">{formData.files.length} archivo(s) preparado(s) para subir.</p>
-                                )}
+                        {/* Contenido scrolleable */}
+                        <form
+                            onSubmit={guardarNoticia}
+                            className="flex-1 overflow-y-auto p-6"
+                        >
+                            <div className="space-y-5">
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                                        Titular
+                                    </label>
+
+                                    <input
+                                        name="title"
+                                        value={formData.title}
+                                        onChange={handleChange}
+                                        placeholder="Titular llamativo..."
+                                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                                        Desarrollo de la noticia
+                                    </label>
+
+                                    <textarea
+                                        name="body"
+                                        rows={5}
+                                        value={formData.body}
+                                        onChange={handleChange}
+                                        placeholder="Escribe todo el contenido aquí..."
+                                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                                        Notas / Evidencia <span className="text-gray-400">(Opcional)</span>
+                                    </label>
+
+                                    <textarea
+                                        name="evidence"
+                                        rows={2}
+                                        value={formData.evidence}
+                                        onChange={handleChange}
+                                        placeholder="Links o información adicional..."
+                                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
+                                    />
+                                </div>
+
+                                <div className="">
+                                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                                        Adjuntar archivos
+                                    </label>
+
+                                    <input
+                                        type="file"
+                                        name="files"
+                                        multiple
+                                        accept=".jpg,.jpeg,.png,.mp4"
+                                        onChange={handleFileChange}
+                                        className="
+                                            w-full text-sm text-gray-600
+                                            file:mr-4
+                                            file:rounded-lg
+                                            file:border-0
+                                            file:bg-red-900
+                                            file:px-4
+                                            file:py-2
+                                            file:font-medium
+                                            file:text-white
+                                            hover:file:bg-red-800
+                                            cursor-pointer
+                                        "
+                                    />
+
+                                    {formData.files.length > 0 && (
+                                        <p className="mt-2 text-sm text-zinc-600">
+                                            {formData.files.length} archivo(s) seleccionado(s).
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
-                                <button type="button" onClick={cerrarModal} className="rounded bg-transparent px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white">Cancelar</button>
-                                <button type="submit" className="rounded bg-[#802907] px-6 py-2 text-sm font-bold text-white hover:bg-[#5a1b04]">Publicar</button>
+                            {/* Footer fijo */}
+                            <div className="sticky bottom-0 mt-6 flex justify-end gap-3 border-t border-gray-200 bg-white pt-5">
+                                <button
+                                    type="button"
+                                    onClick={cerrarModal}
+                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+                                >
+                                    Cancelar
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="rounded-lg bg-red-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800"
+                                >
+                                    {modalType === "crear"
+                                        ? "Publicar"
+                                        : "Guardar cambios"}
+                                </button>
                             </div>
                         </form>
                     </div>
