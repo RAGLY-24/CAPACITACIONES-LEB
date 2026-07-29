@@ -3,6 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { VisorArchivo } from "../components/VisorArchivo";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useMe } from "../hooks/auth/useMe";
 
 // Carga diferida: tldraw es pesado y solo se necesita al crear/editar presentaciones.
 const EditorPresentacion = lazy(() =>
@@ -13,22 +14,22 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // ─── Íconos ──────────────────────────────────────────────────────────────────
 const Ico = {
-  plus:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>,
-  edit:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.5-6.5a2.121 2.121 0 013 3L12 14H9v-3z"/></svg>,
-  trash: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
-  qa:    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
-  file:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>,
-  video: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>,
-  img:   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>,
-  back:  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>,
-  check: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>,
+  plus: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+  edit: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.5-6.5a2.121 2.121 0 013 3L12 14H9v-3z" /></svg>,
+  trash: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  qa: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  file: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+  video: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
+  img: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  back: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
+  check: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>,
 };
 
 // ─── Modal Sección ─────────────────────────────────────────────────────────────
 function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
   useLockBodyScroll();
-  const [form, setForm]     = useState({ nombre: datos?.nombre || "", descripcion: datos?.descripcion || "", estado: datos?.estado || "Activo", seccion_requerida_id: datos?.seccion_requerida_id || "" });
-  const [errs, setErrs]     = useState({});
+  const [form, setForm] = useState({ nombre: datos?.nombre || "", descripcion: datos?.descripcion || "", estado: datos?.estado || "Activo", seccion_requerida_id: datos?.seccion_requerida_id || "" });
+  const [errs, setErrs] = useState({});
   const [saving, setSaving] = useState(false);
 
   const handle = e => {
@@ -45,8 +46,8 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
     if (Object.keys(v).length) { setErrs(v); return; }
     setSaving(true);
     try {
-      if (tipo === "crear") await axios.post(`${API}/api/secciones`, form);
-      else await axios.put(`${API}/api/secciones/${datos.id}`, form);
+      if (tipo === "crear") await axios.post(`${API}/secciones`, form);
+      else await axios.put(`${API}/secciones/${datos.id}`, form);
       onGuardar();
     } catch (err) {
       const backErrs = err.response?.data?.errors || {};
@@ -98,7 +99,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
           <div className="flex justify-end gap-3 pt-2 border-t">
             <button type="button" onClick={onCerrar} className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancelar</button>
             <button type="submit" disabled={saving}
-              className="rounded bg-[#802907] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
+              className="rounded bg-brand-primary px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
               {saving ? "Guardando..." : tipo === "crear" ? "Crear Sección" : "Guardar"}
             </button>
           </div>
@@ -115,16 +116,16 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
 function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo, onCerrar }) {
   useLockBodyScroll();
   const [form, setForm] = useState({
-    nombre:      datos?.nombre || "",
+    nombre: datos?.nombre || "",
     descripcion: datos?.descripcion || "",
-    estado:      datos?.estado || "Activo",
+    estado: datos?.estado || "Activo",
     prerequisite_module_id: datos?.prerequisite_module_id || "",
-    archivo:     null,
-    imagen:      null,
+    archivo: null,
+    imagen: null,
   });
   const [preview, setPreview] = useState(datos?.imagen_url || null);
-  const [errs, setErrs]       = useState({});
-  const [saving, setSaving]   = useState(false);
+  const [errs, setErrs] = useState({});
+  const [saving, setSaving] = useState(false);
   const tienePresentacion = datos?.file_type === "presentacion";
 
   const handle = e => {
@@ -153,17 +154,17 @@ function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo
 
   const guardarModulo = async () => {
     const fd = new FormData();
-    fd.append("seccion_id",  seccionId);
-    fd.append("nombre",      form.nombre);
+    fd.append("seccion_id", seccionId);
+    fd.append("nombre", form.nombre);
     fd.append("descripcion", form.descripcion);
-    fd.append("estado",      form.estado);
+    fd.append("estado", form.estado);
     if (form.prerequisite_module_id) fd.append("prerequisite_module_id", form.prerequisite_module_id);
     if (form.archivo) fd.append("archivo", form.archivo);
-    if (form.imagen)  fd.append("imagen", form.imagen);
+    if (form.imagen) fd.append("imagen", form.imagen);
 
     const { data } = tipo === "crear"
-      ? await axios.post(`${API}/api/modulos`, fd)
-      : await axios.post(`${API}/api/modulos/${datos.id}/update`, fd);
+      ? await axios.post(`${API}/modulos`, fd)
+      : await axios.post(`${API}/modulos/${datos.id}/update`, fd);
     return data.modulo;
   };
 
@@ -303,7 +304,7 @@ function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo
           <div className="flex justify-end gap-3 pt-2 border-t">
             <button type="button" onClick={onCerrar} className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancelar</button>
             <button type="submit" disabled={saving}
-              className="rounded bg-[#802907] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
+              className="rounded bg-brand-primary px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
               {saving ? "Guardando..." : tipo === "crear" ? "Crear Módulo" : "Guardar"}
             </button>
           </div>
@@ -364,18 +365,18 @@ function EditorOpciones({ ops, setOps, setCorrecta }) {
 function PanelExamen({ modulo, onCerrar }) {
   useLockBodyScroll();
   const [preguntas, setPreguntas] = useState([]);
-  const [cargando, setCargando]   = useState(true);
-  const [nueva, setNueva]         = useState(false);
-  const [npTexto, setNpTexto]     = useState("");
-  const [npOps, setNpOps]         = useState([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]);
-  const [editId, setEditId]       = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [nueva, setNueva] = useState(false);
+  const [npTexto, setNpTexto] = useState("");
+  const [npOps, setNpOps] = useState([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]);
+  const [editId, setEditId] = useState(null);
   const [editTexto, setEditTexto] = useState("");
-  const [editOps, setEditOps]     = useState([]);
+  const [editOps, setEditOps] = useState([]);
 
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      const r = await axios.get(`${API}/api/modulos/${modulo.id}/preguntas`);
+      const r = await axios.get(`${API}/modulos/${modulo.id}/preguntas`);
       setPreguntas(r.data);
     } catch { /* silencioso */ }
     finally { setCargando(false); }
@@ -384,7 +385,7 @@ function PanelExamen({ modulo, onCerrar }) {
   useEffect(() => { cargar(); }, [cargar]);
 
   const setCorrectaNueva = i => setNpOps(o => o.map((x, idx) => ({ ...x, es_correcta: idx === i })));
-  const setCorrectaEdit  = i => setEditOps(o => o.map((x, idx) => ({ ...x, es_correcta: idx === i })));
+  const setCorrectaEdit = i => setEditOps(o => o.map((x, idx) => ({ ...x, es_correcta: idx === i })));
 
   const validarOps = (ops, texto) => {
     if (!texto.trim()) { Swal.fire({ icon: "warning", title: "Escribe el texto de la pregunta.", confirmButtonColor: "#802907" }); return false; }
@@ -396,7 +397,7 @@ function PanelExamen({ modulo, onCerrar }) {
   const guardarNueva = async () => {
     if (!validarOps(npOps, npTexto)) return;
     try {
-      await axios.post(`${API}/api/modulos/${modulo.id}/preguntas`, { texto: npTexto, opciones: npOps });
+      await axios.post(`${API}/modulos/${modulo.id}/preguntas`, { texto: npTexto, opciones: npOps });
       setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]);
       setNueva(false); cargar();
     } catch (err) {
@@ -407,7 +408,7 @@ function PanelExamen({ modulo, onCerrar }) {
   const guardarEdicion = async () => {
     if (!validarOps(editOps, editTexto)) return;
     try {
-      await axios.put(`${API}/api/preguntas/${editId}`, { texto: editTexto, opciones: editOps });
+      await axios.put(`${API}/preguntas/${editId}`, { texto: editTexto, opciones: editOps });
       setEditId(null); cargar();
     } catch (err) {
       Swal.fire({ icon: "error", title: err.response?.data?.message || "Error.", confirmButtonColor: "#802907" });
@@ -417,7 +418,7 @@ function PanelExamen({ modulo, onCerrar }) {
   const eliminar = async id => {
     const ok = await Swal.fire({ title: "¿Eliminar pregunta?", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", cancelButtonColor: "#6b7280", confirmButtonText: "Sí", cancelButtonText: "Cancelar" });
     if (!ok.isConfirmed) return;
-    try { await axios.delete(`${API}/api/preguntas/${id}`); cargar(); }
+    try { await axios.delete(`${API}/preguntas/${id}`); cargar(); }
     catch { Swal.fire({ icon: "error", title: "Error al eliminar.", confirmButtonColor: "#802907" }); }
   };
 
@@ -445,7 +446,7 @@ function PanelExamen({ modulo, onCerrar }) {
                         className="w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]" />
                       <EditorOpciones ops={editOps} setOps={setEditOps} setCorrecta={setCorrectaEdit} />
                       <div className="flex gap-2 pt-1">
-                        <button onClick={guardarEdicion} className="text-xs rounded bg-[#802907] text-white px-3 py-1 hover:bg-[#5a1b04]">Guardar</button>
+                        <button onClick={guardarEdicion} className="text-xs rounded bg-brand-primary text-white px-3 py-1 hover:bg-[#5a1b04]">Guardar</button>
                         <button onClick={() => setEditId(null)} className="text-xs rounded border px-3 py-1 text-gray-600 hover:bg-gray-100">Cancelar</button>
                       </div>
                     </div>
@@ -480,7 +481,7 @@ function PanelExamen({ modulo, onCerrar }) {
                     className="w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]" />
                   <EditorOpciones ops={npOps} setOps={setNpOps} setCorrecta={setCorrectaNueva} />
                   <div className="flex gap-2 pt-1">
-                    <button onClick={guardarNueva} className="text-xs rounded bg-[#802907] text-white px-3 py-1.5 hover:bg-[#5a1b04]">Guardar pregunta</button>
+                    <button onClick={guardarNueva} className="text-xs rounded bg-brand-primary text-white px-3 py-1.5 hover:bg-[#5a1b04]">Guardar pregunta</button>
                     <button onClick={() => { setNueva(false); setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]); }}
                       className="text-xs rounded border px-3 py-1.5 text-gray-600 hover:bg-gray-100">Cancelar</button>
                   </div>
@@ -527,7 +528,7 @@ function ModalVistaPrevia({ modulo, onCerrar, onEditar }) {
 
 // ─── Tarjeta de módulo (con imagen) ────────────────────────────────────────────
 function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiada, onVerContenido }) {
-  const inputRef    = useRef(null);
+  const inputRef = useRef(null);
   const [subiendo, setSubiendo] = useState(false);
 
   const subirImagen = async e => {
@@ -537,12 +538,12 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
     e.target.value = "";
     setSubiendo(true);
     const fd = new FormData();
-    fd.append("nombre",      modulo.nombre);
+    fd.append("nombre", modulo.nombre);
     fd.append("descripcion", modulo.descripcion);
-    fd.append("estado",      modulo.estado);
-    fd.append("imagen",      file);
+    fd.append("estado", modulo.estado);
+    fd.append("imagen", file);
     try {
-      await axios.post(`${API}/api/modulos/${modulo.id}/update`, fd);
+      await axios.post(`${API}/modulos/${modulo.id}/update`, fd);
       onImagenCambiada();
     } catch (err) {
       const errores = err.response?.data?.errors || {};
@@ -583,11 +584,10 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
         </div>
         {/* Badge tipo de contenido */}
         {modulo.file_type && (
-          <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${
-            modulo.file_type === "pdf" ? "bg-red-600 text-white"
+          <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${modulo.file_type === "pdf" ? "bg-red-600 text-white"
               : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
-              : "bg-blue-600 text-white"
-          }`}>
+                : "bg-blue-600 text-white"
+            }`}>
             {modulo.file_type === "presentacion" ? "PRESENTACIÓN" : modulo.file_type.toUpperCase()}
           </span>
         )}
@@ -632,11 +632,11 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
 
 // ─── Vista: módulos de una sección ─────────────────────────────────────────────
 function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
-  const [modalMod, setModalMod]             = useState(null);
-  const [examenMod, setExamenMod]           = useState(null);
-  const [editSec, setEditSec]               = useState(false);
+  const [modalMod, setModalMod] = useState(null);
+  const [examenMod, setExamenMod] = useState(null);
+  const [editSec, setEditSec] = useState(false);
   const [presentacionMod, setPresentacionMod] = useState(null);
-  const [previewMod, setPreviewMod]         = useState(null);
+  const [previewMod, setPreviewMod] = useState(null);
 
   useLockBodyScroll(!!presentacionMod);
 
@@ -649,7 +649,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
     });
     if (!ok.isConfirmed) return;
     try {
-      await axios.delete(`${API}/api/modulos/${m.id}`);
+      await axios.delete(`${API}/modulos/${m.id}`);
       onRefrescar();
       Swal.fire({ icon: "success", title: "Módulo eliminado.", confirmButtonColor: "#802907" });
     } catch (err) {
@@ -690,7 +690,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
             {Ico.edit} Editar sección
           </button>
           <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
-            className="flex items-center gap-2 rounded-lg bg-[#802907] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
+            className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
             {Ico.plus} Nuevo módulo
           </button>
         </div>
@@ -705,7 +705,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
         <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
           <p className="text-gray-400 text-sm mb-4">Esta sección no tiene módulos todavía.</p>
           <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
-            className="rounded-lg bg-[#802907] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
+            className="rounded-lg bg-brand-primary px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
             + Nuevo módulo
           </button>
         </div>
@@ -804,21 +804,23 @@ function TarjetaSeccion({ seccion, onClick, onEditar, onEliminar }) {
 
 // ─── Vista principal ────────────────────────────────────────────────────────────
 function Contenido() {
-  const storedUser  = typeof window !== "undefined" ? JSON.parse(sessionStorage.getItem("user") || "null") : null;
-  const rol         = storedUser?.puesto?.nombre || null;
-  const permisos    = storedUser?.permissions || {};
+  const { data } = useMe();
+
+  const storedUser = typeof window !== "undefined" ? data : null;
+  const rol = storedUser?.puesto?.nombre || null;
+  const permisos = storedUser?.permissions || {};
   const puedeEditar = rol === "SistemasAdmin" || permisos.edit_trainings;
 
-  const [secciones, setSecciones]  = useState([]);
-  const [cargando, setCargando]    = useState(true);
+  const [secciones, setSecciones] = useState([]);
+  const [cargando, setCargando] = useState(true);
   const [seccionActiva, setActiva] = useState(null);
-  const [modalSec, setModalSec]    = useState(null);
+  const [modalSec, setModalSec] = useState(null);
 
   // Carga la lista de secciones sin tocar seccionActiva
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      const r = await axios.get(`${API}/api/secciones`);
+      const r = await axios.get(`${API}/secciones`);
       setSecciones(r.data);
     } catch {
       Swal.fire({ icon: "error", title: "Error al cargar secciones.", confirmButtonColor: "#802907" });
@@ -828,7 +830,7 @@ function Contenido() {
   // Recarga y actualiza la sección activa (para cuando se crean/editan módulos)
   const refrescar = useCallback(async () => {
     try {
-      const r = await axios.get(`${API}/api/secciones`);
+      const r = await axios.get(`${API}/secciones`);
       setSecciones(r.data);
       setActiva(prev => {
         if (!prev) return null;
@@ -851,7 +853,7 @@ function Contenido() {
     });
     if (!ok.isConfirmed) return;
     try {
-      await axios.delete(`${API}/api/secciones/${seccion.id}`);
+      await axios.delete(`${API}/secciones/${seccion.id}`);
       if (seccionActiva?.id === seccion.id) setActiva(null);
       cargar();
       Swal.fire({ icon: "success", title: "Sección eliminada.", confirmButtonColor: "#802907" });
@@ -892,7 +894,7 @@ function Contenido() {
           <p className="text-sm text-gray-500">Selecciona una sección para ver y gestionar sus módulos.</p>
         </div>
         <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
-          className="flex items-center gap-2 rounded-lg bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
+          className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
           {Ico.plus} Nueva Sección
         </button>
       </div>
@@ -906,7 +908,7 @@ function Contenido() {
           <p className="text-lg font-semibold text-gray-600 mb-1">Sin secciones</p>
           <p className="text-sm text-gray-400 mb-5">Crea la primera sección para organizar los módulos.</p>
           <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
-            className="rounded-lg bg-[#802907] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
+            className="rounded-lg bg-brand-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
             Crear primera sección
           </button>
         </div>

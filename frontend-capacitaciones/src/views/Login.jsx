@@ -3,17 +3,20 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import logoEmpresa from '../assets/leb_logotipo.png';
-import fondoLogin from '../assets/paisaje-fondo-2.jpg';
+import { useLogin } from "../hooks/auth/useLogin";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const login = useLogin();
+
+
   const navigate = useNavigate();
 
-  const getDefaultAdminPath = () => '/admin/noticias';
+  const getDefaultAdminPath = () => '/noticias';
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
@@ -41,47 +44,35 @@ function Login() {
         Swal.showLoading();
       }
     });
-
     try {
-      const response = await axios.post(`${API_URL}/api/login`, {
-        usuario: email,
+      await login.mutateAsync({
+        username: email,
         password: password
       });
-
-      if (response.data.status === 'success') {
-        const usuarioLogueado = response.data.user;
-
-        // Guardamos el token en sessionStorage para forzar login al cerrar pestaña
-        sessionStorage.setItem("token", response.data.token);
-        sessionStorage.setItem("user", JSON.stringify(usuarioLogueado));
-        // El aviso de emergencia siempre debe iniciar expandido en cada login.
-        sessionStorage.removeItem("aviso_colapsado");
-
-        Swal.close();
-
-        // REDIRECCIÓN INTELIGENTE: la pantalla de noticias es la predeterminada para todos
-        navigate(getDefaultAdminPath(), { replace: true });
-      }
-    } catch (err) {
-      // 3. Cerramos la alerta de carga si ocurre un error
-      Swal.close();
-
-      if (err.response && err.response.status === 401) {
-        setError("Usuario o contraseña incorrectos");
-      } else {
-        setError("Error al conectar con el servidor. Revisa que Laravel esté encendido.");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          setError("Usuario o contraseña incorrectos");
+        } else if (!error.response) {
+          setError("Servidor no disponible");
+        } else {
+          setError("Ocurrió un error al iniciar sesión");
+        }
       }
     }
-  };
+    finally {
+      Swal.close();
+    }
+  }
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
+      className="flex min-h-screen items-center justify-center bg-cover bg-zinc-100 bg-center bg-no-repeat"
       style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${fondoLogin})`
+        //backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0.6)), url(${fondoLogin})`
       }}
     >
-      <div className="w-full max-w-[440px] bg-white p-11 shadow-[0_2px_6px_rgba(0,0,0,0.2)] rounded-2xl">
+      <div className="w-full max-w-110 bg-white p-11 shadow-[0_2px_6px_rgba(0,0,0,0.2)] rounded-2xl">
 
         {/* --- ENCABEZADO CENTRADO --- */}
         <div className="mb-8 flex flex-col items-center justify-center">
@@ -90,7 +81,7 @@ function Login() {
             alt="Logotipo de la empresa"
             className="mb-2 h-20 w-auto"
           />
-          <span className="mb-6 text-center font-['Segoe_UI',Arial,sans-serif] text-[18px] font-semibold text-[#737373]">
+          <span className="mb-6 text-center font-['Segoe_UI',Arial,sans-serif] text-[18px] font-semibold text-zinc-00">
             Capacitaciones
           </span>
         </div>
@@ -127,7 +118,7 @@ function Login() {
           <div className="flex items-center justify-center">
             <button
               type="submit"
-              className="rounded-md bg-[#802907] px-8 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-[#4e1802]"
+              className="rounded-md bg-brand-primary px-8 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-[#4e1802]"
             >
               Iniciar Sesion
             </button>
