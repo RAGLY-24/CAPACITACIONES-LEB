@@ -439,7 +439,7 @@ function Usuarios() {
   const customStyles = {
     tableWrapper: {
       style: {
-        borderTop: '1px solid #e5e7eb', // Línea separadora sutil
+        borderTop: '1.5px solid #d5d7db', // Línea separadora sutil
       },
     },
     headRow: {
@@ -585,22 +585,21 @@ function Usuarios() {
   ), [filtroPuestos]);
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm relative">
-
-      {/* CABECERA USUARIOS */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Directorio de Usuarios</h2>
-        </div>
-        {puedeCrearUsuarios && (
-          <button onClick={abrirModalCrear} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm">
-            + Crear Nuevo Usuario
-          </button>
-        )}
-      </div>
+    <div className="p-6 relative">
 
       {/* TABLA USUARIOS CON ESTILO DATATABLES */}
-      <div className="rounded-lg border border-gray-200 p-4 bg-white">
+      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800">Directorio de Usuarios</h3>
+          </div>
+          {puedeCrearUsuarios && (
+            <button onClick={abrirModalCrear} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm">
+              + Crear Nuevo Usuario
+            </button>
+          )}
+        </div>
+
         <DataTable
           columns={columnas}
           data={usuariosFiltrados} // <-- Pasamos el arreglo filtrado
@@ -610,7 +609,6 @@ function Usuarios() {
           highlightOnHover
           responsive
           customStyles={customStyles} // <-- Aplica los estilos de Tailwind
-          subHeader
           subHeaderComponent={BuscadorUsuarios} // <-- Inserta el input de búsqueda arriba a la derecha
           noDataComponent={<div className="p-8 text-gray-500 text-center">No se encontraron usuarios.</div>}
           progressPending={cargando}
@@ -746,14 +744,14 @@ function Usuarios() {
         </div>
 
         {socioError && <p className="mt-2 text-xs text-red-500">{socioError}</p>}
-        <div className="mt-4 rounded-lg border border-gray-200 p-4 bg-white">
+        <div className="mt-4  ">
           <div className="grid gap-2 text-sm text-gray-700">
             {socios.length === 0 ? (
               <p className="text-gray-500">No hay socios registrados.</p>
             ) : socios.map((socio) => (
               <div
                 key={socio.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-[#802907] hover:bg-[#fdf7f3]"
+                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-[#802907] hover:bg-[#fdf7f3] bg-white"
               >
                 <button
                   type="button"
@@ -797,23 +795,19 @@ function Usuarios() {
             </button>
           </div>
         </div>
-
-        {/* TABLA PUESTOS CON ESTILO DATATABLES */}
-        <div className="rounded-lg border border-gray-200 p-4 bg-white">
-          <DataTable
-            columns={columnasPuestos}
-            data={puestosFiltrados} // <-- Pasamos el arreglo filtrado
-            pagination
-            paginationPerPage={5}
-            paginationRowsPerPageOptions={[5, 10, 20]}
-            highlightOnHover
-            responsive
-            customStyles={customStyles} // <-- Aplica los estilos de Tailwind
-            subHeader
-            subHeaderComponent={BuscadorPuestos} // <-- Inserta el input de búsqueda arriba a la derecha
-            noDataComponent={<div className="p-8 text-gray-500 text-center">No hay puestos registrados en el sistema.</div>}
-          />
-        </div>
+        <DataTable
+          columns={columnasPuestos}
+          data={puestosFiltrados} // <-- Pasamos el arreglo filtrado
+          pagination
+          paginationPerPage={5}
+          paginationRowsPerPageOptions={[5, 10, 20]}
+          highlightOnHover
+          responsive
+          customStyles={customStyles} // <-- Aplica los estilos de Tailwind
+          //subHeader
+          subHeaderComponent={BuscadorPuestos} // <-- Inserta el input de búsqueda arriba a la derecha
+          noDataComponent={<div className="p-8 text-gray-500 text-center">No hay puestos registrados en el sistema.</div>}
+        />
       </div>
 
       {(socioModal === 'crear' || socioModal === 'editar') && (

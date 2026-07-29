@@ -9,7 +9,7 @@ import { useLogout } from "../hooks/auth/useLogout";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-function AdminPanel({ user }) {
+function AdminPanel({ user, routes }) {
   const logout = useLogout();
 
 
@@ -33,12 +33,6 @@ function AdminPanel({ user }) {
   void perfilVersion;
 
   const usuarioLogueado = user;
-  const esAdmin = usuarioLogueado.puesto?.nombre === 'SistemasAdmin';
-  const permisos = usuarioLogueado.permissions || {};
-  const muestraNoticias = permisos.news_access !== false;
-  const muestraUsuarios = esAdmin || permisos.create_users || permisos.delete_users || permisos.assign_permissions;
-  const muestraContenido = esAdmin || permisos.edit_trainings;
-  const muestraCapacitaciones = true; // Todos los empleados pueden tomar módulos de capacitación
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -163,29 +157,6 @@ function AdminPanel({ user }) {
     }
   };
 
-  const menuItems = [
-    {
-      label: "Noticias",
-      path: "/noticias",
-      visible: muestraNoticias,
-    },
-    {
-      label: "Capacitaciones",
-      path: "/capacitaciones",
-      visible: muestraCapacitaciones,
-    },
-    {
-      label: "Editar Contenido",
-      path: "/contenido",
-      visible: muestraContenido,
-    },
-    {
-      label: "Usuarios",
-      path: "/usuarios",
-      visible: muestraUsuarios,
-    },
-  ];
-
 
   return (
     <div className="min-h-screen bg-[#f3f2f1] overflow-x-hidden">
@@ -251,11 +222,11 @@ function AdminPanel({ user }) {
 
       {/* --- BARRA LATERAL (SIDEBAR) A la Izquierda --- */}
       <div
-        className={`fixed left-0 top-13 z-40 h-[calc(100vh-72px)] w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed left-0 top-13 z-40 h-[calc(100vh-54px)] w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         <div className="flex flex-col gap-2 p-4 mt-4">
-          {menuItems
+          {routes
             .filter((item) => item.visible)
             .map((item) => (
               <Link
@@ -271,7 +242,7 @@ function AdminPanel({ user }) {
 
       {/* --- CONTENIDO PRINCIPAL DINÁMICO --- */}
       {/* Cambié pt-[90px] a pt-[72px] para que pegue exacto con tu barra de arriba que mide 72px */}
-      <div className={`transition-all duration-300 ease-in-out pt-[72px] ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
+      <div className={`transition-all duration-300 ease-in-out pt-18 ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
 
         {/* Dejamos el main completamente libre para que las pantallas decidan su propio tamaño */}
         <main className="w-full">
@@ -282,7 +253,7 @@ function AdminPanel({ user }) {
 
       {/* --- MODAL EDITAR PERFIL --- */}
       {isPerfilModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-2xl">
             <h2 className="mb-6 text-2xl font-bold text-gray-800">Editar Perfil</h2>
 
