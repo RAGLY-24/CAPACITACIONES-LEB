@@ -15,6 +15,7 @@ use App\Http\Controllers\SeccionController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\SocioController;
 use App\Http\Controllers\AvisoEmergenciaController;
+use App\Http\Controllers\EnlaceRegistroController;
 use App\Http\Middleware\CheckSistemasAdmin;
 
 /*
@@ -26,6 +27,9 @@ use App\Http\Middleware\CheckSistemasAdmin;
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 Route::post('register', [AuthController::class, 'register'])->middleware('throttle:6,1');
 Route::get('socios-publico', [SocioController::class, 'listaPublica']);
+
+// Estado del enlace temporal de registro, consultado por el formulario público
+Route::get('enlaces-registro/{token}/estado', [EnlaceRegistroController::class, 'estado']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
@@ -53,6 +57,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Crear usuario: SistemasAdmin o cualquier usuario con permiso para crear usuarios
     Route::post('/usuarios', [UsuarioController::class, 'store']);
+
+    // Generar enlace temporal de registro (un solo uso, expira en 30 min)
+    Route::post('/enlaces-registro', [EnlaceRegistroController::class, 'store']);
 
     // Listar usuarios: el usuario debe tener al menos un permiso de gestión de usuarios
     Route::get('/usuarios', [UsuarioController::class, 'index']);

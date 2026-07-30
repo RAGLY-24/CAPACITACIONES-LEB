@@ -32,6 +32,12 @@ class User extends Authenticatable
         'permissions',
         'descripcion',
         'foto',
+        'es_operador',
+        'operador_nombre_completo',
+        'operador_numero_economico_tractor',
+        'operador_placas_remolque',
+        'operador_folio',
+        'operador_numero_licencia',
     ];
 
     /**
@@ -53,6 +59,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'permissions' => 'array',
+        'es_operador' => 'boolean',
     ];
 
     // foto en la BD es solo el nombre del archivo; el frontend debe usar
