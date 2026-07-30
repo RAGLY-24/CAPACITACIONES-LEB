@@ -28,7 +28,7 @@ function Registro() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`${API_URL}/api/socios-publico`)
+    axios.get(`${API_URL}/socios-publico`)
       .then(res => setSocios(res.data))
       .catch(() => { });
   }, []);
@@ -107,7 +107,7 @@ function Registro() {
     });
 
     try {
-      const response = await axios.post(`${API_URL}/api/register`, {
+      const response = await axios.post(`${API_URL}/register`, {
         name: formData.name,
         lastname: formData.lastname,
         email: formData.email,
@@ -130,7 +130,7 @@ function Registro() {
       sessionStorage.removeItem("aviso_colapsado");
 
       Swal.close();
-      navigate('/admin/noticias', { replace: true });
+      navigate('/noticias', { replace: true });
     } catch (err) {
       Swal.close();
       if (err.response?.status === 422) {
@@ -289,7 +289,7 @@ function Registro() {
 
           <div className="sm:col-span-2 mt-2 flex items-center justify-center">
             <button type="submit"
-              className="rounded-md bg-[#802907] px-8 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-[#4e1802]">
+              className="rounded-md bg-brand-primary px-8 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-[#4e1802]">
               Crear cuenta
             </button>
           </div>

@@ -117,7 +117,7 @@ class AuthController extends Controller
         }
 
         // 3. Borramos tokens anteriores por seguridad
-        $user->tokens()->delete();
+        //$user->tokens()->delete();
 
         // 4. Generamos el token para React
         $token = $user->createToken('token-auth')->plainTextToken;
