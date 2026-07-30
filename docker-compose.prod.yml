@@ -21,7 +21,7 @@ services:
       - .env
     volumes:
       - .env:/var/www/.env
-      - ./storage/:/var/www/storage/app/public
+      - ${APP_STORAGE}:/var/www/storage/app/public
     networks:
       - laravel_network
 
