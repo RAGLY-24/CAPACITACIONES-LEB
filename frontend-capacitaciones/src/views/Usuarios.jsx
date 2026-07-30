@@ -33,6 +33,7 @@ function Usuarios() {
   const { data } = useMe();
 
   const storedUser = typeof window !== 'undefined' ? data : null;
+  
   const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
   const esAdmin = usuarioLogueado.rol === 'SistemasAdmin';
   const permisosUsuario = storedUser?.permissions || {};
