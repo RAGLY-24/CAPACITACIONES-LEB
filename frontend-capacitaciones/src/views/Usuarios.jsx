@@ -74,7 +74,7 @@ function Usuarios() {
   const obtenerUsuarios = async () => {
     try {
       setCargando(true);
-      const response = await axios.get(`${API_URL}/usuarios`);
+      const response = await axios.get(`${API_URL}/api/usuarios`);
       setUsuarios(response.data);
     } catch (err) {
       console.error("Error:", err);
@@ -85,7 +85,7 @@ function Usuarios() {
 
   const obtenerPuestos = async () => {
     try {
-      const response = await axios.get(`${API_URL}/puestos`);
+      const response = await axios.get(`${API_URL}/api/puestos`);
       setPuestos(response.data);
     } catch (err) {
       console.error("Error al obtener puestos:", err);
@@ -94,7 +94,7 @@ function Usuarios() {
 
   const obtenerSocios = async () => {
     try {
-      const response = await axios.get(`${API_URL}/socios`);
+      const response = await axios.get(`${API_URL}/api/socios`);
       setSocios(response.data);
     } catch (err) {
       console.error("Error al obtener socios:", err);
@@ -200,7 +200,7 @@ function Usuarios() {
       return;
     }
     try {
-      await axios.post(`${API_URL}/puestos`, { nombre: nuevoPuesto.trim() });
+      await axios.post(`${API_URL}/api/puestos`, { nombre: nuevoPuesto.trim() });
       setNuevoPuesto("");
       obtenerPuestos();
       Swal.fire({ icon: 'success', title: '¡Creado!', text: 'Puesto agregado correctamente.', confirmButtonColor: '#802907' });
@@ -238,9 +238,9 @@ function Usuarios() {
     setGuardandoSocio(true);
     try {
       if (socioModal === 'editar') {
-        await axios.put(`${API_URL}/socios/${socioEditandoId}`, payload);
+        await axios.put(`${API_URL}/api/socios/${socioEditandoId}`, payload);
       } else {
-        await axios.post(`${API_URL}/socios`, payload);
+        await axios.post(`${API_URL}/api/socios`, payload);
       }
       setNuevoSocio(estadoInicialSocio);
       setSocioEditandoId(null);
@@ -280,7 +280,7 @@ function Usuarios() {
     }).then(async (result) => {
       if (!result.isConfirmed) return;
       try {
-        await axios.delete(`${API_URL}/socios/${socio.id}`);
+        await axios.delete(`${API_URL}/api/socios/${socio.id}`);
         obtenerSocios();
         Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El socio fue eliminado correctamente.', confirmButtonColor: '#802907' });
       } catch (err) {
@@ -309,7 +309,7 @@ function Usuarios() {
     Swal.fire({ title: 'Procesando...', text: 'Actualizando el nombre del puesto.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     try {
-      await axios.put(`${API_URL}/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
+      await axios.put(`${API_URL}/api/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
       setEditarPuestoId(null);
       setEditarPuestoNombre("");
       obtenerPuestos();
@@ -330,7 +330,7 @@ function Usuarios() {
     const confirmar = window.confirm("¿Eliminar este puesto? Esto puede dejar usuarios sin puesto.");
     if (!confirmar) return;
     try {
-      await axios.delete(`${API_URL}/puestos/${id}`);
+      await axios.delete(`${API_URL}/api/puestos/${id}`);
       obtenerPuestos();
       Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'Puesto eliminado correctamente.', confirmButtonColor: '#802907' });
     } catch (err) {
@@ -462,9 +462,9 @@ function Usuarios() {
 
     try {
       if (modalType === 'crear') {
-        await axios.post(`${API_URL}/usuarios`, payload);
+        await axios.post(`${API_URL}/api/usuarios`, payload);
       } else {
-        await axios.put(`${API_URL}/usuarios/${formData.id}`, payload);
+        await axios.put(`${API_URL}/api/usuarios/${formData.id}`, payload);
       }
       obtenerUsuarios();
       obtenerSocios();
@@ -487,7 +487,7 @@ function Usuarios() {
   const confirmarEliminacion = async () => {
     Swal.fire({ title: 'Eliminando...', text: 'Dando de baja al usuario', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
     try {
-      await axios.delete(`${API_URL}/usuarios/${usuarioSeleccionado.id}`);
+      await axios.delete(`${API_URL}/api/usuarios/${usuarioSeleccionado.id}`);
       obtenerUsuarios();
       setModalType(null);
       Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El usuario ha sido borrado permanentemente.', confirmButtonColor: '#802907' });
@@ -712,9 +712,7 @@ function Usuarios() {
           progressPending={cargando}
           progressComponent={<div className="p-8 text-gray-600 font-semibold text-center">Cargando directorio...</div>}
         />
-      </div>
 
-      {/* MODAL USUARIOS */}
       {(modalType === 'crear' || modalType === 'editar') && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-2xl">

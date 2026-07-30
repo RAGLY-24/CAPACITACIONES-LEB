@@ -188,7 +188,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
   const cargarExamenBlanco = useCallback(async () => {
     setCargando(true); setSinExamen(false); setBloqueado(false); setResultado(null); setRespuestas({});
     try {
-      const res = await axios.get(`${API}/modulos/${moduloId}/examen`);
+      const res = await axios.get(`${API}/api/modulos/${moduloId}/examen`);
       setPreguntas(res.data.preguntas || []);
     } catch (err) {
       if (err.response?.status === 404) setSinExamen(true);
@@ -210,7 +210,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
       if (estadoAlAbrir.current === "completado" || estadoAlAbrir.current === "reprobado") {
         setCargando(true);
         try {
-          const res = await axios.get(`${API}/modulos/${moduloId}/examen/retroalimentacion`);
+          const res = await axios.get(`${API}/api/modulos/${moduloId}/examen/retroalimentacion`);
           if (!cancelado) { setResultado(res.data); setIntentosRestantes(res.data.intentos_restantes); }
           if (!cancelado) setCargando(false);
           return;
@@ -238,7 +238,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
     }
     setEnviando(true);
     try {
-      const res = await axios.post(`${API}/modulos/${moduloId}/examen`, { respuestas });
+      const res = await axios.post(`${API}/api/modulos/${moduloId}/examen`, { respuestas });
       setResultado(res.data);
       setIntentosRestantes(res.data.intentos_restantes);
       onCalificado?.();
@@ -342,7 +342,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
 
   useEffect(() => {
     if (activo && activo.estado === "pendiente") {
-      axios.post(`${API}/modulos/${activo.modulo.id}/iniciar`).catch(() => { });
+      axios.post(`${API}/api/modulos/${activo.modulo.id}/iniciar`).catch(() => { });
     }
   }, [activo?.modulo.id]);
 
@@ -431,7 +431,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                 <VisorArchivo fileUrl={modulo.file_url} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json}
                   onCompletado={() => {
                     setContenidoListo(true);
-                    axios.post(`${API}/modulos/${modulo.id}/contenido-visto`).catch(() => { });
+                    axios.post(`${API}/api/modulos/${modulo.id}/contenido-visto`).catch(() => { });
                   }} />
                 {tiene_examen && (
                   <div className={`rounded-lg border p-4 shrink-0 ${contenidoListo ? "bg-blue-50 border-blue-200" : "bg-amber-50 border-amber-200"}`}>
@@ -541,7 +541,7 @@ function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialId, onCe
     setModuloActivo(item);
     setRetro(null);
     setCargandoRetro(true);
-    axios.get(`${API}/progreso/${item.progreso_id}/retroalimentacion`)
+    axios.get(`${API}/api/progreso/${item.progreso_id}/retroalimentacion`)
       .then(res => setRetro(res.data))
       .catch(() => Swal.fire({ icon: "error", title: "Error al cargar las respuestas.", confirmButtonColor: "#802907" }))
       .finally(() => setCargandoRetro(false));
@@ -549,7 +549,7 @@ function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialId, onCe
 
   useEffect(() => {
     let cancelado = false;
-    axios.get(`${API}/progreso/usuario/${usuarioId}`)
+    axios.get(`${API}/api/progreso/usuario/${usuarioId}`)
       .then(res => {
         if (cancelado) return;
         setSecciones(res.data);
@@ -681,8 +681,8 @@ function VistaAdmin() {
     setCargando(true);
     try {
       const [rAdmin, rPie] = await Promise.all([
-        axios.get(`${API}/progreso/admin`),
-        axios.get(`${API}/progreso/por-seccion`),
+        axios.get(`${API}/api/progreso/admin`),
+        axios.get(`${API}/api/progreso/por-seccion`),
       ]);
       setDatos(rAdmin.data);
       setPieData(rPie.data);
@@ -1010,7 +1010,7 @@ function VistaEmpleado() {
   const cargar = useCallback(async (silencioso = false) => {
     if (!silencioso) setCargando(true);
     try {
-      const res = await axios.get(`${API}/progreso/mio`);
+      const res = await axios.get(`${API}/api/progreso/mio`);
       setSecciones(res.data);
     } catch {
       Swal.fire({ icon: "error", title: "Error al cargar tus capacitaciones.", confirmButtonColor: "#802907" });

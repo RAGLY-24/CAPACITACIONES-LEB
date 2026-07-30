@@ -123,7 +123,7 @@ function AdminPanel({ user, routes }) {
     if (fotoFile) formData.append('foto', fotoFile);
 
     try {
-      const response = await axios.post(`${API_URL}/perfil`, formData, {
+      const response = await axios.post(`${API_URL}/api/perfil`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 

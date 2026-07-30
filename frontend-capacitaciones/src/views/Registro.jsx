@@ -28,7 +28,7 @@ function Registro() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`${API_URL}/socios-publico`)
+    axios.get(`${API_URL}/api/socios-publico`)
       .then(res => setSocios(res.data))
       .catch(() => { });
   }, []);
@@ -107,7 +107,7 @@ function Registro() {
     });
 
     try {
-      const response = await axios.post(`${API_URL}/register`, {
+      const response = await axios.post(`${API_URL}/api/register`, {
         name: formData.name,
         lastname: formData.lastname,
         email: formData.email,
