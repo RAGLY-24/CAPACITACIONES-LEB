@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { VisorArchivo } from "../components/VisorArchivo";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useMe } from "../hooks/auth/useMe";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -393,8 +394,8 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                       disabled={bloqueado}
                       title={bloqueado ? "Aprueba el examen del módulo anterior (mínimo 70%) para desbloquearlo" : undefined}
                       className={`w-full flex items-center gap-2 pl-6 pr-4 py-2.5 text-left text-xs border-l-4 transition-colors ${esActivo ? "border-[#802907] bg-white font-semibold text-[#802907]"
-                          : bloqueado ? "border-transparent text-gray-400 cursor-not-allowed"
-                            : "border-transparent text-gray-600 hover:bg-gray-100"
+                        : bloqueado ? "border-transparent text-gray-400 cursor-not-allowed"
+                          : "border-transparent text-gray-600 hover:bg-gray-100"
                         }`}>
                       <IconoEstadoModulo estado={item.estado} desbloqueado={item.desbloqueado} />
                       <span className="truncate flex-1">{item.modulo.nombre}</span>
@@ -418,8 +419,8 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                 disabled={!contenidoListo}
                 title={!contenidoListo ? "Revisa todo el contenido (PDF hasta el final o video completo) para desbloquear el examen" : undefined}
                 className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === "examen" ? "border-b-2 border-[#802907] text-[#802907] bg-white"
-                    : !contenidoListo ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:text-gray-700"
+                  : !contenidoListo ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:text-gray-700"
                   }`}>
                 {contenidoListo ? "📝 Examen" : "🔒 Examen"}
               </button>
@@ -961,8 +962,8 @@ function TarjetaModuloEmpleado({ item, onAbrir }) {
         )}
         {modulo.file_type && (
           <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${modulo.file_type === "pdf" ? "bg-red-600 text-white"
-              : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
-                : "bg-blue-600 text-white"
+            : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
+              : "bg-blue-600 text-white"
             }`}>
             {modulo.file_type === "presentacion" ? "PRESENTACIÓN" : modulo.file_type.toUpperCase()}
           </span>
@@ -1125,7 +1126,10 @@ function VistaEmpleado() {
 
 // ─── Componente raíz ─────────────────────────────────────────────────────────
 function Capacitaciones() {
-  const storedUser = typeof window !== "undefined" ? JSON.parse(sessionStorage.getItem("user") || "null") : null;
+  // --- Usuario autenticado  ---
+  const { data } = useMe();
+
+  const storedUser = typeof window !== 'undefined' ? data : null;
   const rol = storedUser?.puesto?.nombre || null;
   const permisos = storedUser?.permissions || {};
   const esAdmin = rol === "SistemasAdmin" || permisos.edit_trainings || permisos.edit_capacitaciones_course;
