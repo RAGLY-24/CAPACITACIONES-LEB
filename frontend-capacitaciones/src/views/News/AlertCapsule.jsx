@@ -50,7 +50,7 @@ export function AlertCapsule({ canEdit, show }) {
         }
     };
 
-    if (isAlertLoading || !show || !alert.mensaje) return null
+    if (isAlertLoading || !show ) return null
 
     return (
         <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4 pointer-events-none">
