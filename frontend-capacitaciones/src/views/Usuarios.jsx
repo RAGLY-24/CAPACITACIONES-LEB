@@ -49,6 +49,12 @@ function Usuarios() {
   const estadoInicialForm = {
     name: "", lastname: "", email: "", usuario: "",
     password: "", confirmPassword: "", puesto_id: "", socio_id: "", estado: "Activo",
+    es_operador: false,
+    operador_nombre_completo: "",
+    operador_numero_economico_tractor: "",
+    operador_placas_remolque: "",
+    operador_folio: "",
+    operador_numero_licencia: "",
     permissions: {
       create_users: false, delete_users: false, manage_news: false,
       edit_capacitaciones_course: false, manage_passwords: false,
@@ -104,6 +110,30 @@ function Usuarios() {
     if (erroresForm[name]) setErroresForm({ ...erroresForm, [name]: null });
   };
 
+  const handleEsOperadorChange = (e) => {
+    const esOperador = e.target.value === "si";
+    setFormData({
+      ...formData,
+      es_operador: esOperador,
+      ...(esOperador ? {} : {
+        operador_nombre_completo: "",
+        operador_numero_economico_tractor: "",
+        operador_placas_remolque: "",
+        operador_folio: "",
+        operador_numero_licencia: "",
+      }),
+    });
+    setIsDirty(true);
+    setErroresForm({
+      ...erroresForm,
+      operador_nombre_completo: null,
+      operador_numero_economico_tractor: null,
+      operador_placas_remolque: null,
+      operador_folio: null,
+      operador_numero_licencia: null,
+    });
+  };
+
   const handlePermissionChange = (e) => {
     const { name, checked } = e.target;
     setFormData({ ...formData, permissions: { ...formData.permissions, [name]: checked } });
@@ -119,6 +149,45 @@ function Usuarios() {
     const { name, value } = e.target;
     setNuevoSocio({ ...nuevoSocio, [name]: value });
     if (socioError) setSocioError("");
+  };
+
+  const generarEnlaceRegistro = async () => {
+    Swal.fire({ title: 'Generando enlace...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+    try {
+      const response = await axios.post(`${API_URL}/api/enlaces-registro`);
+      const { url } = response.data;
+      Swal.fire({
+        icon: 'success',
+        title: 'Enlace de registro generado',
+        html: `
+          <p class="text-sm text-gray-600 mb-3">Válido por 30 minutos y solo puede usarse una vez. Compártelo con la persona que se va a registrar.</p>
+          <input id="enlace-registro-input" type="text" readonly value="${url}" class="swal2-input" style="font-size:12px;" />
+        `,
+        confirmButtonText: 'Copiar enlace',
+        confirmButtonColor: '#802907',
+        showCancelButton: true,
+        cancelButtonText: 'Cerrar',
+        preConfirm: async () => {
+          try {
+            await navigator.clipboard.writeText(url);
+          } catch {
+            // S el navegador bloquea el portapapeles, el usuario puede copiarlo manualmente del campo.
+          }
+          return true;
+        },
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({ icon: 'success', title: 'Copiado', text: 'El enlace fue copiado al portapapeles.', confirmButtonColor: '#802907' });
+        }
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'No se pudo generar el enlace',
+        text: err.response?.data?.message || 'Ocurrió un problema al generar el enlace de registro.',
+        confirmButtonColor: '#802907',
+      });
+    }
   };
 
   const crearPuesto = async () => {
@@ -290,6 +359,14 @@ function Usuarios() {
       if (formData.password !== formData.confirmPassword) nuevosErrores.confirmPassword = "Las contraseñas no coinciden.";
     }
 
+    if (formData.es_operador) {
+      if (!formData.operador_nombre_completo) nuevosErrores.operador_nombre_completo = "El nombre completo del operador es obligatorio.";
+      if (!formData.operador_numero_economico_tractor) nuevosErrores.operador_numero_economico_tractor = "El número económico del tracto es obligatorio.";
+      if (!formData.operador_placas_remolque) nuevosErrores.operador_placas_remolque = "Las placas del remolque son obligatorias.";
+      if (!formData.operador_folio) nuevosErrores.operador_folio = "El folio es obligatorio.";
+      if (!formData.operador_numero_licencia) nuevosErrores.operador_numero_licencia = "El número de licencia es obligatorio.";
+    }
+
     setErroresForm(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
@@ -305,7 +382,17 @@ function Usuarios() {
   const abrirModalEditar = (user) => {
     if (!puedeEditarUsuarios) return alert("No tienes permisos para editar usuarios.");
     if (user.puesto?.nombre === 'SistemasAdmin' && !esAdmin) return alert("No tienes permisos para editar a un Administrador.");
-    setFormData({ ...user, password: "", confirmPassword: "", socio_id: user.socio_id || "", permissions: { ...estadoInicialForm.permissions, ...user.permissions } });
+    setFormData({
+      ...user,
+      password: "", confirmPassword: "", socio_id: user.socio_id || "",
+      es_operador: !!user.es_operador,
+      operador_nombre_completo: user.operador_nombre_completo || "",
+      operador_numero_economico_tractor: user.operador_numero_economico_tractor || "",
+      operador_placas_remolque: user.operador_placas_remolque || "",
+      operador_folio: user.operador_folio || "",
+      operador_numero_licencia: user.operador_numero_licencia || "",
+      permissions: { ...estadoInicialForm.permissions, ...user.permissions },
+    });
     setErroresForm({});
     setIsDirty(false);
     setPermissionsOpen(false);
@@ -589,9 +676,14 @@ function Usuarios() {
           <h2 className="text-xl font-bold text-gray-800">Directorio de Usuarios</h2>
         </div>
         {puedeCrearUsuarios && (
-          <button onClick={abrirModalCrear} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm">
-            + Crear Nuevo Usuario
-          </button>
+          <div className="flex gap-3">
+            <button onClick={generarEnlaceRegistro} className="rounded-md border border-[#802907] px-4 py-2 text-sm font-semibold text-[#802907] transition-colors hover:bg-[#fdf7f3] shadow-sm">
+              Generar link de registro
+            </button>
+            <button onClick={abrirModalCrear} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm">
+              + Crear Nuevo Usuario
+            </button>
+          </div>
         )}
       </div>
 
@@ -673,6 +765,56 @@ function Usuarios() {
                   ))}
                 </select>
               </div>
+
+              <div className="col-span-2">
+                <label className="mb-1 block text-sm font-semibold text-gray-700">¿Es operador?</label>
+                <div className="flex gap-6">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input type="radio" name="es_operador" value="si" checked={formData.es_operador === true} onChange={handleEsOperadorChange}
+                      className="h-4 w-4 text-[#802907] focus:ring-[#802907]" />
+                    Sí
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input type="radio" name="es_operador" value="no" checked={formData.es_operador === false} onChange={handleEsOperadorChange}
+                      className="h-4 w-4 text-[#802907] focus:ring-[#802907]" />
+                    No
+                  </label>
+                </div>
+              </div>
+
+              {formData.es_operador && (
+                <div className="col-span-2 grid grid-cols-2 gap-6 rounded-md bg-gray-50 p-4 border border-gray-200">
+                  <div className="col-span-2">
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre completo de operador <span className="text-red-500">*</span></label>
+                    <input type="text" name="operador_nombre_completo" value={formData.operador_nombre_completo} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
+                    {erroresForm.operador_nombre_completo && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_nombre_completo}</p>}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Número de económico del tracto <span className="text-red-500">*</span></label>
+                    <input type="text" name="operador_numero_economico_tractor" value={formData.operador_numero_economico_tractor} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
+                    {erroresForm.operador_numero_economico_tractor && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_numero_economico_tractor}</p>}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Placas del remolque <span className="text-red-500">*</span></label>
+                    <input type="text" name="operador_placas_remolque" value={formData.operador_placas_remolque} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
+                    {erroresForm.operador_placas_remolque && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_placas_remolque}</p>}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Folio <span className="text-red-500">*</span></label>
+                    <input type="text" name="operador_folio" value={formData.operador_folio} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
+                    {erroresForm.operador_folio && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_folio}</p>}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Número de licencia <span className="text-red-500">*</span></label>
+                    <input type="text" name="operador_numero_licencia" value={formData.operador_numero_licencia} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
+                    {erroresForm.operador_numero_licencia && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_numero_licencia}</p>}
+                  </div>
+                </div>
+              )}
 
               <div className="col-span-2 grid grid-cols-2 gap-6 rounded-md bg-gray-50 p-4 border border-gray-200">
                 <div>
