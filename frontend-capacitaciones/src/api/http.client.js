@@ -1,8 +1,9 @@
 // src/api/httpClient.ts
 import axios from "axios";
 
+const URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 export const httpClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1/",
+    baseURL: `${URL}/api`
 });
 
 httpClient.interceptors.request.use((config) => {

@@ -46,8 +46,8 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
     if (Object.keys(v).length) { setErrs(v); return; }
     setSaving(true);
     try {
-      if (tipo === "crear") await axios.post(`${API}/secciones`, form);
-      else await axios.put(`${API}/secciones/${datos.id}`, form);
+      if (tipo === "crear") await axios.post(`${API}/api/secciones`, form);
+      else await axios.put(`${API}/api/secciones/${datos.id}`, form);
       onGuardar();
     } catch (err) {
       const backErrs = err.response?.data?.errors || {};
@@ -163,8 +163,8 @@ function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo
     if (form.imagen) fd.append("imagen", form.imagen);
 
     const { data } = tipo === "crear"
-      ? await axios.post(`${API}/modulos`, fd)
-      : await axios.post(`${API}/modulos/${datos.id}/update`, fd);
+      ? await axios.post(`${API}/api/modulos`, fd)
+      : await axios.post(`${API}/api/modulos/${datos.id}/update`, fd);
     return data.modulo;
   };
 
@@ -376,7 +376,7 @@ function PanelExamen({ modulo, onCerrar }) {
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      const r = await axios.get(`${API}/modulos/${modulo.id}/preguntas`);
+      const r = await axios.get(`${API}/api/modulos/${modulo.id}/preguntas`);
       setPreguntas(r.data);
     } catch { /* silencioso */ }
     finally { setCargando(false); }
@@ -397,7 +397,7 @@ function PanelExamen({ modulo, onCerrar }) {
   const guardarNueva = async () => {
     if (!validarOps(npOps, npTexto)) return;
     try {
-      await axios.post(`${API}/modulos/${modulo.id}/preguntas`, { texto: npTexto, opciones: npOps });
+      await axios.post(`${API}/api/modulos/${modulo.id}/preguntas`, { texto: npTexto, opciones: npOps });
       setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]);
       setNueva(false); cargar();
     } catch (err) {
@@ -408,7 +408,7 @@ function PanelExamen({ modulo, onCerrar }) {
   const guardarEdicion = async () => {
     if (!validarOps(editOps, editTexto)) return;
     try {
-      await axios.put(`${API}/preguntas/${editId}`, { texto: editTexto, opciones: editOps });
+      await axios.put(`${API}/api/preguntas/${editId}`, { texto: editTexto, opciones: editOps });
       setEditId(null); cargar();
     } catch (err) {
       Swal.fire({ icon: "error", title: err.response?.data?.message || "Error.", confirmButtonColor: "#802907" });
@@ -418,7 +418,7 @@ function PanelExamen({ modulo, onCerrar }) {
   const eliminar = async id => {
     const ok = await Swal.fire({ title: "¿Eliminar pregunta?", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", cancelButtonColor: "#6b7280", confirmButtonText: "Sí", cancelButtonText: "Cancelar" });
     if (!ok.isConfirmed) return;
-    try { await axios.delete(`${API}/preguntas/${id}`); cargar(); }
+    try { await axios.delete(`${API}/api/preguntas/${id}`); cargar(); }
     catch { Swal.fire({ icon: "error", title: "Error al eliminar.", confirmButtonColor: "#802907" }); }
   };
 
@@ -543,7 +543,7 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
     fd.append("estado", modulo.estado);
     fd.append("imagen", file);
     try {
-      await axios.post(`${API}/modulos/${modulo.id}/update`, fd);
+      await axios.post(`${API}/api/modulos/${modulo.id}/update`, fd);
       onImagenCambiada();
     } catch (err) {
       const errores = err.response?.data?.errors || {};
@@ -649,7 +649,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
     });
     if (!ok.isConfirmed) return;
     try {
-      await axios.delete(`${API}/modulos/${m.id}`);
+      await axios.delete(`${API}/api/modulos/${m.id}`);
       onRefrescar();
       Swal.fire({ icon: "success", title: "Módulo eliminado.", confirmButtonColor: "#802907" });
     } catch (err) {
@@ -820,7 +820,7 @@ function Contenido() {
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      const r = await axios.get(`${API}/secciones`);
+      const r = await axios.get(`${API}/api/secciones`);
       setSecciones(r.data);
     } catch {
       Swal.fire({ icon: "error", title: "Error al cargar secciones.", confirmButtonColor: "#802907" });
@@ -830,7 +830,7 @@ function Contenido() {
   // Recarga y actualiza la sección activa (para cuando se crean/editan módulos)
   const refrescar = useCallback(async () => {
     try {
-      const r = await axios.get(`${API}/secciones`);
+      const r = await axios.get(`${API}/api/secciones`);
       setSecciones(r.data);
       setActiva(prev => {
         if (!prev) return null;
@@ -853,7 +853,7 @@ function Contenido() {
     });
     if (!ok.isConfirmed) return;
     try {
-      await axios.delete(`${API}/secciones/${seccion.id}`);
+      await axios.delete(`${API}/api/secciones/${seccion.id}`);
       if (seccionActiva?.id === seccion.id) setActiva(null);
       cargar();
       Swal.fire({ icon: "success", title: "Sección eliminada.", confirmButtonColor: "#802907" });
