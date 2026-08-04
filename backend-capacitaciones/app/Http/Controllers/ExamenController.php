@@ -52,6 +52,7 @@ class ExamenController extends Controller
                 'id'      => $pregunta->id,
                 'texto'   => $pregunta->texto,
                 'orden'   => $pregunta->orden,
+                'tipo'    => $pregunta->tipo, // 'opcion_multiple' o 'feedback' (no se califica)
                 'opciones' => $pregunta->opciones->map(fn($op) => [
                     'id'    => $op->id,
                     'texto' => $op->texto,
@@ -96,14 +97,21 @@ class ExamenController extends Controller
             return response()->json(['message' => 'Agotaste tus 2 intentos. Debes repasar el contenido (PDF o video) antes de volver a intentar el examen.'], 403);
         }
 
-        $request->validate([
-            'respuestas'   => 'required|array',
-            'respuestas.*' => 'required|integer|exists:opciones,id',
-        ], [
+        // Las preguntas de opción múltiple son obligatorias y deben apuntar a una
+        // opción real; las de tipo "feedback" son texto libre y opcionales, ya
+        // que no se califican.
+        $rules = ['respuestas' => 'required|array'];
+        foreach ($modulo->preguntas as $pregunta) {
+            $rules["respuestas.{$pregunta->id}"] = $pregunta->tipo === Pregunta::TIPO_FEEDBACK
+                ? 'nullable|string|max:2000'
+                : 'required|integer|exists:opciones,id';
+        }
+
+        $request->validate($rules, [
             'respuestas.required' => 'Debes responder todas las preguntas antes de enviar.',
         ]);
 
-        $totalPreguntas = $modulo->preguntas->count();
+        $totalPreguntas = $modulo->preguntas->where('tipo', Pregunta::TIPO_OPCION_MULTIPLE)->count();
         if ($totalPreguntas === 0) {
             return response()->json(['message' => 'Este módulo no tiene examen.'], 422);
         }
