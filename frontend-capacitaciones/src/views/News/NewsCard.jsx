@@ -2,6 +2,7 @@ import { Calendar, Pencil, Trash2 } from "lucide-react";
 import { PrettyDate } from "../utils/date";
 import { obtenerImagenes } from "../utils/images";
 import { CarouselTile } from "../components/Carrousel";
+import { IconButton } from "../../components/IconButton";
 
 export function NewsCard({ noticia, isFeatured, canEdit, canDelete, onClick, onActions }) {
     if (!noticia) return null
@@ -37,22 +38,35 @@ export function NewsCard({ noticia, isFeatured, canEdit, canDelete, onClick, onA
                 }`}
         >
             <div
-                className={`overflow-hidden bg-[#1e1e1e] ${isFeatured ? "aspect-2/1" : "aspect-video rounded-2xl"
+                className={`overflow-hidden w-full bg-[#1e1e1e] ${isFeatured ? "aspect-2/1" : "aspect-video rounded-2xl"
                     }`}
             >
 
-                <div className="transition-all duration-700 group-hover:scale-104 group-hover:opacity-80 flex h-full items-center justify-center">
+                <div className="transition-all duration-700 group-hover:scale-104 group-hover:opacity-80 flex h-full  items-center justify-center">
                     {media}
                 </div>
                 {canEdit && (<div className="absolute top-2 right-2 flex gap-1 opacity-10 transition-opacity group-hover:opacity-100 z-20">
-                    <button onClick={(e) => { e.stopPropagation(); onActions("edit") }} className="rounded-xl bg-black/60  text-white hover:bg-zinc-400/40 backdrop-blur-sm h-8 w-8 flex items-center justify-center" title="Editar">
-                        <Pencil size={13} />
-                    </button>
-                    {canDelete && (
-                        <button onClick={(e) => { e.stopPropagation(); onActions("delete") }} className="rounded-xl bg-black/60  text-white hover:bg-red-500/90 backdrop-blur-xs h-8 w-8 flex items-center justify-center" title="Editar">
-                            <Trash2 size={13} />
-                        </button>
-                    )}
+                    <div className="flex gap-1">
+                        <IconButton
+                            icon={Pencil}
+                            variant="primary"
+                            title="Editar"
+                            neutralText
+                            dark
+                            onClick={() => onActions("edit")}
+                        />
+
+                        {canDelete && (
+                            <IconButton
+                                icon={Trash2}
+                                variant="danger"
+                                title="Eliminar"
+                                neutralText
+                                dark
+                                onClick={() => onActions("delete")}
+                            />
+                        )}
+                    </div>
                 </div>)}
             </div>
 

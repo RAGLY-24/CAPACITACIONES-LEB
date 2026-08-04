@@ -4,6 +4,9 @@ import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 import { useMe } from "../hooks/auth/useMe";
+import { IconButton } from "../components/IconButton";
+import { Check, Pencil, Trash2, X } from "lucide-react";
+import { URL } from "../api/http.client";
 
 function Usuarios() {
   // --- ESTADOS PRINCIPALES ---
@@ -27,13 +30,13 @@ function Usuarios() {
   const [filtroUsuarios, setFiltroUsuarios] = useState("");
   const [filtroPuestos, setFiltroPuestos] = useState("");
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const API_URL = URL
 
   // --- Usuario autenticado  ---
   const { data } = useMe();
 
   const storedUser = typeof window !== 'undefined' ? data : null;
-  
+
   const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
   const esAdmin = usuarioLogueado.rol === 'SistemasAdmin';
   const permisosUsuario = storedUser?.permissions || {};
@@ -575,27 +578,29 @@ function Usuarios() {
       name: 'Acciones',
       minWidth: '180px',
       cell: row => (
-        <div className="flex space-x-4">
-          <button
+        <div className="flex space-x-2">
+          <IconButton
+            icon={Pencil}
+            variant="primary"
+            title="Editar"
+            filled={false}
+            isDisabled={!puedeEditarUsuarios || (row.puesto?.nombre === 'SistemasAdmin' && !esAdmin)}
             onClick={() => abrirModalEditar(row)}
-            disabled={!puedeEditarUsuarios || (row.puesto?.nombre === 'SistemasAdmin' && !esAdmin)}
-            className={`font-semibold ${!puedeEditarUsuarios || (row.puesto?.nombre === 'SistemasAdmin' && !esAdmin) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
-          >
-            Editar
-          </button>
-          <button
+          />
+          <IconButton
+            icon={Trash2}
+            variant="danger"
+            title="Eliminar"
+            filled={false}
+            isDisabled={!puedeEliminarUsuarios || row.id === usuarioLogueado.id}
             onClick={() => abrirModalEliminar(row)}
-            disabled={!puedeEliminarUsuarios || row.id === usuarioLogueado.id}
-            className={`font-semibold ${!puedeEliminarUsuarios || row.id === usuarioLogueado.id ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:underline'}`}
-          >
-            Eliminar
-          </button>
+          />
         </div>
       ),
       ignoreRowClick: true,
       allowOverflow: true,
     },
-  ], [puedeEditarUsuarios, esAdmin, puedeEliminarUsuarios, usuarioLogueado.id]);
+  ], [puedeEditarUsuarios, esAdmin, puedeEliminarUsuarios, usuarioLogueado.id, abrirModalEditar, abrirModalEliminar]);
 
   const columnasPuestos = useMemo(() => [
     {
@@ -623,16 +628,38 @@ function Usuarios() {
       cell: row => {
         if (editarPuestoId === row.id) {
           return (
-            <div className="flex space-x-4">
-              <button onClick={guardarEdicionPuesto} className="font-semibold text-green-600 hover:underline">Guardar</button>
-              <button onClick={() => { setEditarPuestoId(null); setEditarPuestoNombre(""); setErrorPuesto(""); }} className="font-semibold text-gray-500 hover:underline">Cancelar</button>
+            <div className="flex space-x-2">
+              <IconButton
+                icon={Check}
+                variant="success"
+                title="Editar"
+                onClick={guardarEdicionPuesto}
+              />
+              <IconButton
+                icon={X}
+                variant="secondary"
+                title="Eliminar"
+                onClick={() => { setEditarPuestoId(null); setEditarPuestoNombre(""); setErrorPuesto(""); }}
+              />
             </div>
           );
         }
         return (
-          <div className="flex space-x-4">
-            <button onClick={() => editarPuesto(row)} className="font-semibold text-blue-600 hover:underline">Editar</button>
-            <button onClick={() => eliminarPuesto(row.id)} className="font-semibold text-red-600 hover:underline">Eliminar</button>
+          <div className="flex space-x-2">
+            <IconButton
+              icon={Pencil}
+              variant="primary"
+              title="Editar"
+              filled={false}
+              onClick={() => editarPuesto(row)}
+            />
+            <IconButton
+              icon={Trash2}
+              variant="danger"
+              title="Eliminar"
+              filled={false}
+              onClick={() => eliminarPuesto(row.id)}
+            />
           </div>
         );
       },
@@ -676,7 +703,7 @@ function Usuarios() {
     <div className="p-6 relative">
 
       {/* TABLA USUARIOS CON ESTILO DATATABLES */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+      <div className=" rounded-xl border border-gray-200 bg-gray-50 p-6 flex flex-col">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-gray-800">Directorio de Usuarios</h3>
@@ -697,9 +724,9 @@ function Usuarios() {
             </button>
           </div>
         )}
-      </div>
 
         <DataTable
+          className="mt-4"
           columns={columnas}
           data={usuariosFiltrados} // <-- Pasamos el arreglo filtrado
           pagination
@@ -713,6 +740,7 @@ function Usuarios() {
           progressPending={cargando}
           progressComponent={<div className="p-8 text-gray-600 font-semibold text-center">Cargando directorio...</div>}
         />
+      </div>
 
       {(modalType === 'crear' || modalType === 'editar') && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -898,7 +926,7 @@ function Usuarios() {
             ) : socios.map((socio) => (
               <div
                 key={socio.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-[#802907] hover:bg-[#fdf7f3] bg-white"
+                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-zinc-400 hover:bg-zinc-100 bg-white"
               >
                 <button
                   type="button"
@@ -909,9 +937,21 @@ function Usuarios() {
                   <p className="text-xs text-gray-500">{socio.telefono || 'Sin teléfono'} · {socio.correo || 'Sin correo'} · {socio.estado}</p>
                 </button>
                 <span className="text-xs font-semibold text-gray-600 whitespace-nowrap">{socio.usuarios_count ?? socio.usuarios?.length ?? 0} asignado(s)</span>
-                <div className="flex gap-3 shrink-0">
-                  <button type="button" onClick={() => abrirModalEditarSocio(socio)} className="text-xs font-semibold text-blue-600 hover:underline">Editar</button>
-                  <button type="button" onClick={() => eliminarSocio(socio)} className="text-xs font-semibold text-red-600 hover:underline">Eliminar</button>
+                <div className="flex space-x-1">
+                  <IconButton
+                    icon={Pencil}
+                    variant="primary"
+                    title="Editar"
+                    filled={false}
+                    onClick={() => abrirModalEditarSocio(socio)}
+                  />
+                  <IconButton
+                    icon={Trash2}
+                    variant="danger"
+                    title="Eliminar"
+                    filled={false}
+                    onClick={() => eliminarSocio(socio)}
+                  />
                 </div>
               </div>
             ))}

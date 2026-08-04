@@ -1,7 +1,14 @@
 // src/api/httpClient.ts
 import axios from "axios";
 
-const URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+export let URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
+const endpoint = localStorage.getItem('endpoint');
+
+if (endpoint) {
+    URL = endpoint
+}
+
 export const httpClient = axios.create({
     baseURL: `${URL}/api`
 });
