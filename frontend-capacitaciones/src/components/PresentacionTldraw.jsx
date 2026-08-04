@@ -3,8 +3,9 @@ import { Tldraw, getSnapshot, loadSnapshot } from "tldraw";
 import axios from "axios";
 import Swal from "sweetalert2";
 import "tldraw/tldraw.css";
+import { URL } from "../api/http.client";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = URL
 
 function parseSnapshot(presentacionJson) {
   if (!presentacionJson) return null;

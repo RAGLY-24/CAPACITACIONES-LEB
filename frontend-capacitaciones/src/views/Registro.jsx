@@ -4,8 +4,9 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import logoEmpresa from '../assets/leb_logotipo.png';
 import fondoLogin from '../assets/paisaje-fondo-2.jpg';
+import { URL } from "../api/http.client";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = URL
 
 const estadoInicialForm = {
   name: "", lastname: "", email: "", usuario: "", socio_id: "",

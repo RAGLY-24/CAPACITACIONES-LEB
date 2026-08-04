@@ -50,7 +50,7 @@ export function ProtectedRoutes() {
 
     const firstRoute = routes.at(0)?.path ?? "";
 
-    // RETORNO DE RUTA POR DEFECTO
+
     return (
         <Routes>
             <Route path="/" element={<AdminPanel user={data} routes={routes} />}>

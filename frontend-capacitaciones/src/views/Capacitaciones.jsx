@@ -5,8 +5,9 @@ import DataTable from "react-data-table-component";
 import { VisorArchivo } from "../components/VisorArchivo";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 import { useMe } from "../hooks/auth/useMe";
+import { URL } from "../api/http.client";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = URL
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const ESTADOS = {

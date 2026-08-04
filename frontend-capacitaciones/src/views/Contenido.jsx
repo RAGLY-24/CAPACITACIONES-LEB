@@ -4,13 +4,14 @@ import Swal from "sweetalert2";
 import { VisorArchivo } from "../components/VisorArchivo";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 import { useMe } from "../hooks/auth/useMe";
+import { URL } from "../api/http.client";
 
 // Carga diferida: tldraw es pesado y solo se necesita al crear/editar presentaciones.
 const EditorPresentacion = lazy(() =>
   import("../components/PresentacionTldraw").then(m => ({ default: m.EditorPresentacion }))
 );
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = URL
 
 // ─── Íconos ──────────────────────────────────────────────────────────────────
 const Ico = {
