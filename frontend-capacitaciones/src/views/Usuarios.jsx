@@ -3,6 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useMe } from "../hooks/auth/useMe";
 
 function Usuarios() {
   // --- ESTADOS PRINCIPALES ---
@@ -28,8 +29,10 @@ function Usuarios() {
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  // --- Usuario autenticado (desde localStorage) ---
-  const storedUser = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('user') || 'null') : null;
+  // --- Usuario autenticado  ---
+  const { data } = useMe();
+
+  const storedUser = typeof window !== 'undefined' ? data : null;
   const usuarioLogueado = { id: storedUser?.id || null, rol: storedUser?.puesto?.nombre || null };
   const esAdmin = usuarioLogueado.rol === 'SistemasAdmin';
   const permisosUsuario = storedUser?.permissions || {};
@@ -64,18 +67,14 @@ function Usuarios() {
   };
   const [formData, setFormData] = useState(estadoInicialForm);
 
-  useEffect(() => {
-    obtenerUsuarios();
-    obtenerPuestos();
-    obtenerSocios();
-  }, []);
+
 
   useLockBodyScroll(!!(modalType || socioModal));
 
   const obtenerUsuarios = async () => {
     try {
       setCargando(true);
-      const response = await axios.get(`${API_URL}/api/usuarios`);
+      const response = await axios.get(`${API_URL}/usuarios`);
       setUsuarios(response.data);
     } catch (err) {
       console.error("Error:", err);
@@ -86,7 +85,7 @@ function Usuarios() {
 
   const obtenerPuestos = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/puestos`);
+      const response = await axios.get(`${API_URL}/puestos`);
       setPuestos(response.data);
     } catch (err) {
       console.error("Error al obtener puestos:", err);
@@ -95,12 +94,17 @@ function Usuarios() {
 
   const obtenerSocios = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/socios`);
+      const response = await axios.get(`${API_URL}/socios`);
       setSocios(response.data);
     } catch (err) {
       console.error("Error al obtener socios:", err);
     }
   };
+  useEffect(() => {
+    obtenerUsuarios();
+    obtenerPuestos();
+    obtenerSocios();
+  }, []);
 
   // --- CONTROLADORES DE ENTRADA Y DIRTY STATE ---
   const handleChange = (e) => {
@@ -196,7 +200,7 @@ function Usuarios() {
       return;
     }
     try {
-      await axios.post(`${API_URL}/api/puestos`, { nombre: nuevoPuesto.trim() });
+      await axios.post(`${API_URL}/puestos`, { nombre: nuevoPuesto.trim() });
       setNuevoPuesto("");
       obtenerPuestos();
       Swal.fire({ icon: 'success', title: '¡Creado!', text: 'Puesto agregado correctamente.', confirmButtonColor: '#802907' });
@@ -234,9 +238,9 @@ function Usuarios() {
     setGuardandoSocio(true);
     try {
       if (socioModal === 'editar') {
-        await axios.put(`${API_URL}/api/socios/${socioEditandoId}`, payload);
+        await axios.put(`${API_URL}/socios/${socioEditandoId}`, payload);
       } else {
-        await axios.post(`${API_URL}/api/socios`, payload);
+        await axios.post(`${API_URL}/socios`, payload);
       }
       setNuevoSocio(estadoInicialSocio);
       setSocioEditandoId(null);
@@ -276,7 +280,7 @@ function Usuarios() {
     }).then(async (result) => {
       if (!result.isConfirmed) return;
       try {
-        await axios.delete(`${API_URL}/api/socios/${socio.id}`);
+        await axios.delete(`${API_URL}/socios/${socio.id}`);
         obtenerSocios();
         Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El socio fue eliminado correctamente.', confirmButtonColor: '#802907' });
       } catch (err) {
@@ -305,7 +309,7 @@ function Usuarios() {
     Swal.fire({ title: 'Procesando...', text: 'Actualizando el nombre del puesto.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     try {
-      await axios.put(`${API_URL}/api/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
+      await axios.put(`${API_URL}/puestos/${editarPuestoId}`, { nombre: editarPuestoNombre.trim() });
       setEditarPuestoId(null);
       setEditarPuestoNombre("");
       obtenerPuestos();
@@ -326,7 +330,7 @@ function Usuarios() {
     const confirmar = window.confirm("¿Eliminar este puesto? Esto puede dejar usuarios sin puesto.");
     if (!confirmar) return;
     try {
-      await axios.delete(`${API_URL}/api/puestos/${id}`);
+      await axios.delete(`${API_URL}/puestos/${id}`);
       obtenerPuestos();
       Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'Puesto eliminado correctamente.', confirmButtonColor: '#802907' });
     } catch (err) {
@@ -458,9 +462,9 @@ function Usuarios() {
 
     try {
       if (modalType === 'crear') {
-        await axios.post(`${API_URL}/api/usuarios`, payload);
+        await axios.post(`${API_URL}/usuarios`, payload);
       } else {
-        await axios.put(`${API_URL}/api/usuarios/${formData.id}`, payload);
+        await axios.put(`${API_URL}/usuarios/${formData.id}`, payload);
       }
       obtenerUsuarios();
       obtenerSocios();
@@ -483,7 +487,7 @@ function Usuarios() {
   const confirmarEliminacion = async () => {
     Swal.fire({ title: 'Eliminando...', text: 'Dando de baja al usuario', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
     try {
-      await axios.delete(`${API_URL}/api/usuarios/${usuarioSeleccionado.id}`);
+      await axios.delete(`${API_URL}/usuarios/${usuarioSeleccionado.id}`);
       obtenerUsuarios();
       setModalType(null);
       Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El usuario ha sido borrado permanentemente.', confirmButtonColor: '#802907' });
@@ -522,7 +526,7 @@ function Usuarios() {
   const customStyles = {
     tableWrapper: {
       style: {
-        borderTop: '1px solid #e5e7eb', // Línea separadora sutil
+        borderTop: '1.5px solid #d5d7db', // Línea separadora sutil
       },
     },
     headRow: {
@@ -668,12 +672,19 @@ function Usuarios() {
   ), [filtroPuestos]);
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm relative">
+    <div className="p-6 relative">
 
-      {/* CABECERA USUARIOS */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Directorio de Usuarios</h2>
+      {/* TABLA USUARIOS CON ESTILO DATATABLES */}
+      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800">Directorio de Usuarios</h3>
+          </div>
+          {puedeCrearUsuarios && (
+            <button onClick={abrirModalCrear} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm">
+              + Crear Nuevo Usuario
+            </button>
+          )}
         </div>
         {puedeCrearUsuarios && (
           <div className="flex gap-3">
@@ -687,8 +698,6 @@ function Usuarios() {
         )}
       </div>
 
-      {/* TABLA USUARIOS CON ESTILO DATATABLES */}
-      <div className="rounded-lg border border-gray-200 p-4 bg-white">
         <DataTable
           columns={columnas}
           data={usuariosFiltrados} // <-- Pasamos el arreglo filtrado
@@ -698,7 +707,6 @@ function Usuarios() {
           highlightOnHover
           responsive
           customStyles={customStyles} // <-- Aplica los estilos de Tailwind
-          subHeader
           subHeaderComponent={BuscadorUsuarios} // <-- Inserta el input de búsqueda arriba a la derecha
           noDataComponent={<div className="p-8 text-gray-500 text-center">No se encontraron usuarios.</div>}
           progressPending={cargando}
@@ -864,7 +872,7 @@ function Usuarios() {
 
               <div className="col-span-2 mt-4 flex justify-end gap-4">
                 <button type="button" onClick={cerrarModal} className="rounded-md px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100">Cancelar</button>
-                <button type="submit" disabled={!isDirty} className={`rounded-md px-6 py-2 font-semibold text-white shadow-sm ${!isDirty ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#802907] hover:bg-[#4e1802]'}`}>Guardar Usuario</button>
+                <button type="submit" disabled={!isDirty} className={`rounded-md px-6 py-2 font-semibold text-white shadow-sm ${!isDirty ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-primary hover:bg-[#4e1802]'}`}>Guardar Usuario</button>
               </div>
             </form>
           </div>
@@ -878,20 +886,20 @@ function Usuarios() {
             <h3 className="text-lg font-bold text-gray-800">Directorio de Socios</h3>
             <p className="text-sm text-gray-500">Asocia a un operador con su socio y revisa los usuarios vinculados.</p>
           </div>
-          <button onClick={abrirModalSocio} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
+          <button onClick={abrirModalSocio} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
             + Agregar socio
           </button>
         </div>
 
         {socioError && <p className="mt-2 text-xs text-red-500">{socioError}</p>}
-        <div className="mt-4 rounded-lg border border-gray-200 p-4 bg-white">
+        <div className="mt-4  ">
           <div className="grid gap-2 text-sm text-gray-700">
             {socios.length === 0 ? (
               <p className="text-gray-500">No hay socios registrados.</p>
             ) : socios.map((socio) => (
               <div
                 key={socio.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-[#802907] hover:bg-[#fdf7f3]"
+                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-[#802907] hover:bg-[#fdf7f3] bg-white"
               >
                 <button
                   type="button"
@@ -930,28 +938,24 @@ function Usuarios() {
               />
               {errorPuesto && <p className="mt-1 text-xs text-red-500">{errorPuesto}</p>}
             </div>
-            <button onClick={crearPuesto} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
+            <button onClick={crearPuesto} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
               + Agregar
             </button>
           </div>
         </div>
-
-        {/* TABLA PUESTOS CON ESTILO DATATABLES */}
-        <div className="rounded-lg border border-gray-200 p-4 bg-white">
-          <DataTable
-            columns={columnasPuestos}
-            data={puestosFiltrados} // <-- Pasamos el arreglo filtrado
-            pagination
-            paginationPerPage={5}
-            paginationRowsPerPageOptions={[5, 10, 20]}
-            highlightOnHover
-            responsive
-            customStyles={customStyles} // <-- Aplica los estilos de Tailwind
-            subHeader
-            subHeaderComponent={BuscadorPuestos} // <-- Inserta el input de búsqueda arriba a la derecha
-            noDataComponent={<div className="p-8 text-gray-500 text-center">No hay puestos registrados en el sistema.</div>}
-          />
-        </div>
+        <DataTable
+          columns={columnasPuestos}
+          data={puestosFiltrados} // <-- Pasamos el arreglo filtrado
+          pagination
+          paginationPerPage={5}
+          paginationRowsPerPageOptions={[5, 10, 20]}
+          highlightOnHover
+          responsive
+          customStyles={customStyles} // <-- Aplica los estilos de Tailwind
+          //subHeader
+          subHeaderComponent={BuscadorPuestos} // <-- Inserta el input de búsqueda arriba a la derecha
+          noDataComponent={<div className="p-8 text-gray-500 text-center">No hay puestos registrados en el sistema.</div>}
+        />
       </div>
 
       {(socioModal === 'crear' || socioModal === 'editar') && (
@@ -982,7 +986,7 @@ function Usuarios() {
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={cerrarModalSocio} disabled={guardandoSocio} className="rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50">Cancelar</button>
-              <button type="button" onClick={guardarSocio} disabled={guardandoSocio} className="rounded-md bg-[#802907] px-5 py-2 font-semibold text-white hover:bg-[#4e1802] disabled:opacity-60 disabled:cursor-not-allowed">
+              <button type="button" onClick={guardarSocio} disabled={guardandoSocio} className="rounded-md bg-brand-primary px-5 py-2 font-semibold text-white hover:bg-[#4e1802] disabled:opacity-60 disabled:cursor-not-allowed">
                 {guardandoSocio ? 'Guardando...' : socioModal === 'editar' ? 'Guardar cambios' : 'Guardar socio'}
               </button>
             </div>

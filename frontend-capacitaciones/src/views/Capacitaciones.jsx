@@ -188,7 +188,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
   const cargarExamenBlanco = useCallback(async () => {
     setCargando(true); setSinExamen(false); setBloqueado(false); setResultado(null); setRespuestas({});
     try {
-      const res = await axios.get(`${API}/api/modulos/${moduloId}/examen`);
+      const res = await axios.get(`${API}/modulos/${moduloId}/examen`);
       setPreguntas(res.data.preguntas || []);
     } catch (err) {
       if (err.response?.status === 404) setSinExamen(true);
@@ -210,7 +210,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
       if (estadoAlAbrir.current === "completado" || estadoAlAbrir.current === "reprobado") {
         setCargando(true);
         try {
-          const res = await axios.get(`${API}/api/modulos/${moduloId}/examen/retroalimentacion`);
+          const res = await axios.get(`${API}/modulos/${moduloId}/examen/retroalimentacion`);
           if (!cancelado) { setResultado(res.data); setIntentosRestantes(res.data.intentos_restantes); }
           if (!cancelado) setCargando(false);
           return;
@@ -238,7 +238,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
     }
     setEnviando(true);
     try {
-      const res = await axios.post(`${API}/api/modulos/${moduloId}/examen`, { respuestas });
+      const res = await axios.post(`${API}/modulos/${moduloId}/examen`, { respuestas });
       setResultado(res.data);
       setIntentosRestantes(res.data.intentos_restantes);
       onCalificado?.();
@@ -288,7 +288,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
           <p className="text-sm font-semibold text-gray-800 mb-3">{i + 1}. {p.texto}</p>
           <div className="space-y-2">
             {p.opciones.map(op => (
-              <label key={op.id} className={`flex items-center gap-3 rounded-lg border cursor-pointer px-3 py-2 text-sm transition-colors ${respuestas[p.id] === op.id ? "border-[#802907] bg-[#802907]/5 text-[#802907] font-medium" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"}`}>
+              <label key={op.id} className={`flex items-center gap-3 rounded-lg border cursor-pointer px-3 py-2 text-sm transition-colors ${respuestas[p.id] === op.id ? "border-[#802907] bg-brand-primary/5 text-[#802907] font-medium" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"}`}>
                 <input type="radio" name={`p_${p.id}`} value={op.id} checked={respuestas[p.id] === op.id}
                   onChange={() => setRespuestas(r => ({ ...r, [p.id]: op.id }))} className="accent-[#802907]" />
                 {op.texto}
@@ -298,7 +298,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
         </div>
       ))}
       <button onClick={enviar} disabled={enviando}
-        className="w-full rounded-lg bg-[#802907] py-3 font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
+        className="w-full rounded-lg bg-brand-primary py-3 font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
         {enviando ? "Enviando..." : "Enviar Examen"}
       </button>
     </div>
@@ -342,7 +342,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
 
   useEffect(() => {
     if (activo && activo.estado === "pendiente") {
-      axios.post(`${API}/api/modulos/${activo.modulo.id}/iniciar`).catch(() => { });
+      axios.post(`${API}/modulos/${activo.modulo.id}/iniciar`).catch(() => { });
     }
   }, [activo?.modulo.id]);
 
@@ -381,7 +381,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                 </div>
                 <div className="px-4 pb-3 -mt-1">
                   <div className="rounded-full bg-gray-200 h-1.5 overflow-hidden">
-                    <div className="h-1.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pct}%` }} />
+                    <div className="h-1.5 rounded-full bg-brand-primary transition-all" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
                 {modulos.map(item => {
@@ -431,7 +431,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                 <VisorArchivo fileUrl={modulo.file_url} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json}
                   onCompletado={() => {
                     setContenidoListo(true);
-                    axios.post(`${API}/api/modulos/${modulo.id}/contenido-visto`).catch(() => { });
+                    axios.post(`${API}/modulos/${modulo.id}/contenido-visto`).catch(() => { });
                   }} />
                 {tiene_examen && (
                   <div className={`rounded-lg border p-4 shrink-0 ${contenidoListo ? "bg-blue-50 border-blue-200" : "bg-amber-50 border-amber-200"}`}>
@@ -515,7 +515,7 @@ function TarjetaModuloOperador({ item, onVer }) {
         <button
           onClick={e => { e.stopPropagation(); if (puedeVer) onVer(item); }}
           disabled={!puedeVer}
-          className={`mt-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${puedeVer ? "bg-[#802907] text-white hover:bg-[#5a1b04]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+          className={`mt-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${puedeVer ? "bg-brand-primary text-white hover:bg-[#5a1b04]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
           {puedeVer ? "Ver respuestas" : tiene_examen ? "Aún sin contestar" : "Sin examen"}
         </button>
       </div>
@@ -541,7 +541,7 @@ function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialId, onCe
     setModuloActivo(item);
     setRetro(null);
     setCargandoRetro(true);
-    axios.get(`${API}/api/progreso/${item.progreso_id}/retroalimentacion`)
+    axios.get(`${API}/progreso/${item.progreso_id}/retroalimentacion`)
       .then(res => setRetro(res.data))
       .catch(() => Swal.fire({ icon: "error", title: "Error al cargar las respuestas.", confirmButtonColor: "#802907" }))
       .finally(() => setCargandoRetro(false));
@@ -549,7 +549,7 @@ function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialId, onCe
 
   useEffect(() => {
     let cancelado = false;
-    axios.get(`${API}/api/progreso/usuario/${usuarioId}`)
+    axios.get(`${API}/progreso/usuario/${usuarioId}`)
       .then(res => {
         if (cancelado) return;
         setSecciones(res.data);
@@ -640,7 +640,7 @@ function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialId, onCe
                     <span className="text-sm font-bold text-[#802907]">{pctTotal}%</span>
                   </div>
                   <div className="rounded-full bg-gray-200 h-2.5 overflow-hidden">
-                    <div className="h-2.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pctTotal}%` }} />
+                    <div className="h-2.5 rounded-full bg-brand-primary transition-all" style={{ width: `${pctTotal}%` }} />
                   </div>
                   <p className="text-xs text-gray-400 mt-2">{completadosTotal} de {todosLosModulos.length} módulo(s) completados</p>
                 </div>
@@ -681,8 +681,8 @@ function VistaAdmin() {
     setCargando(true);
     try {
       const [rAdmin, rPie] = await Promise.all([
-        axios.get(`${API}/api/progreso/admin`),
-        axios.get(`${API}/api/progreso/por-seccion`),
+        axios.get(`${API}/progreso/admin`),
+        axios.get(`${API}/progreso/por-seccion`),
       ]);
       setDatos(rAdmin.data);
       setPieData(rPie.data);
@@ -911,7 +911,7 @@ function TarjetaSeccionEmpleado({ seccion, modulos, desbloqueada, seccionRequeri
           {/* Barra de progreso */}
           <div className="mt-3 flex items-center gap-2">
             <div className="flex-1 rounded-full bg-gray-200 h-1.5 overflow-hidden">
-              <div className="h-1.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pct}%` }} />
+              <div className="h-1.5 rounded-full bg-brand-primary transition-all" style={{ width: `${pct}%` }} />
             </div>
             <span className="text-xs text-gray-500 shrink-0">{completados}/{modulos.length} completados</span>
           </div>
@@ -990,7 +990,7 @@ function TarjetaModuloEmpleado({ item, onAbrir }) {
           onClick={e => { e.stopPropagation(); if (desbloqueado) onAbrir(modulo.id); }}
           disabled={!desbloqueado}
           title={!desbloqueado ? `Aprueba el examen de "${item.requiere_modulo || "el módulo anterior"}" (mínimo 70%) para desbloquearlo` : undefined}
-          className={`mt-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${desbloqueado ? "bg-[#802907] text-white hover:bg-[#5a1b04]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+          className={`mt-auto rounded-lg px-3 py-1.5 text-xs font-semibold ${desbloqueado ? "bg-brand-primary text-white hover:bg-[#5a1b04]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
           {botonLabel()}
         </button>
       </div>
@@ -1010,7 +1010,7 @@ function VistaEmpleado() {
   const cargar = useCallback(async (silencioso = false) => {
     if (!silencioso) setCargando(true);
     try {
-      const res = await axios.get(`${API}/api/progreso/mio`);
+      const res = await axios.get(`${API}/progreso/mio`);
       setSecciones(res.data);
     } catch {
       Swal.fire({ icon: "error", title: "Error al cargar tus capacitaciones.", confirmButtonColor: "#802907" });
@@ -1075,7 +1075,7 @@ function VistaEmpleado() {
                   <span className="text-sm font-bold text-[#802907]">{pctTotal}%</span>
                 </div>
                 <div className="rounded-full bg-gray-200 h-2.5 overflow-hidden">
-                  <div className="h-2.5 rounded-full bg-[#802907] transition-all" style={{ width: `${pctTotal}%` }} />
+                  <div className="h-2.5 rounded-full bg-brand-primary transition-all" style={{ width: `${pctTotal}%` }} />
                 </div>
                 <p className="text-xs text-gray-400 mt-2">{completadosTotal} de {todosLosModulos.length} módulo(s) completados</p>
               </div>
@@ -1149,7 +1149,7 @@ function Capacitaciones() {
           <div className="flex rounded-lg border border-gray-200 bg-white p-1 shrink-0 shadow-sm">
             {[["admin", "Reporte General"], ["empleado", "Vista Empleado"]].map(([k, l]) => (
               <button key={k} onClick={() => setVista(k)}
-                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${vista === k ? "bg-[#802907] text-white" : "text-gray-600 hover:text-gray-800"}`}>
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${vista === k ? "bg-brand-primary text-white" : "text-gray-600 hover:text-gray-800"}`}>
                 {l}
               </button>
             ))}
