@@ -8,6 +8,8 @@ import ViewNewsModal from "./ViewNewsModal";
 import { obtenerImagenes } from "../utils/images";
 import { Plus } from "lucide-react";
 import { AlertCapsule } from "./AlertCapsule";
+import { CarouselTile } from "../components/Carrousel";
+import { NewsCard } from "./NewsCard";
 
 function Noticias() {
     const [modalType, setModalType] = useState(null); // 'crear', 'editar', o 'ver'
@@ -73,18 +75,29 @@ function Noticias() {
     };
 
 
+    const handleOnClickActions = async (action, noticia) => {
+        switch (action) {
+            case "edit":
+                abrirModalEditar(noticia);
+                break;
+            case "delete":
+                await eliminarNoticia(noticia)
+                break;
+            default:
+                break;
+        }
+    }
 
-
-    const eliminarNoticia = async (noticia, e) => {
-        e.stopPropagation();
+    const eliminarNoticia = async (noticia) => {
 
         const confirm = await Swal.fire({
+            theme: 'bootstrap-5',
             title: 'Eliminar noticia',
             text: `¿Deseas eliminar "${noticia.title}"?`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6b7280',
+            confirmButtonColor: '#752323',
+            cancelButtonColor: '#3a3a3a',
             confirmButtonText: 'Sí, eliminar',
             showLoaderOnConfirm: isDeleting
         });
@@ -101,28 +114,6 @@ function Noticias() {
         }
         setModalType(null);
     };
-
-
-    const CarouselTile = ({ images }) => {
-        const [idx, setIdx] = useState(0);
-
-        useEffect(() => {
-            if (!images || images.length <= 1) return;
-            const t = setInterval(() => setIdx((i) => (i + 1) % images.length), 7000);
-            return () => clearInterval(t);
-        }, [images]);
-
-        if (!images || images.length === 0) return null;
-        const src = images[idx];
-        const esVideo = src.match(/\.(mp4|webm|ogg)(\?|$)/i);
-
-        return esVideo ? (
-            <video src={src} className="h-full w-full object-cover opacity-80" muted loop playsInline />
-        ) : (
-            <img src={src} className="h-full w-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" alt="cover" />
-        );
-    };
-
 
     if (!news || isLoading) return null
 
@@ -181,8 +172,9 @@ function Noticias() {
                     </div>
                 ) : (
                     /* --- NUEVO GRID: 2 Columnas para mejor proporción --- */
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
+                    <div className="grid grid-cols-2 md:grid-cols-3  gap-4 mb-20">
                         {news.map((noticia, index) => {
+                            const EXPERIMENTAL = true
                             const imagenes = obtenerImagenes(noticia);
                             const imgUrl = imagenes[0];
                             const esVideo = imgUrl && imgUrl.match(/\.(mp4|webm|ogg)$/i);
@@ -190,11 +182,15 @@ function Noticias() {
                             // La noticia principal ocupa TODO el ancho de la fila (col-span-2)
                             const isFeatured = index === 0;
 
+                            if (EXPERIMENTAL) {
+                                return (<NewsCard noticia={noticia} isFeatured={isFeatured} onClick={() => abrirModalVer(noticia)} canEdit={puedeAdministrarNoticias || noticia.created_by === storedUser?.id} canDelete={puedeAdministrarNoticias} onActions={(a) => { handleOnClickActions(a, noticia) }} />)
+                            }
+
                             return (
                                 <div
                                     key={noticia.id}
                                     onClick={() => abrirModalVer(noticia)}
-                                    className={`group relative flex flex-col overflow-hidden rounded-xl bg-[#2d2d2d] transition-transform duration-300 hover:scale-[1.01] hover:shadow-2xl cursor-pointer ${isFeatured ? 'md:col-span-2 h-100 md:h-137.5' : 'col-span-1 h-70 md:h-87.5'
+                                    className={`group relative flex flex-col overflow-hidden rounded-xl bg-[#2d2d2d] transition-transform duration-300 hover:scale-[1.01] hover:shadow-2xl cursor-pointer ${isFeatured ? 'md:col-span-3 col-span-2 lg:col-span-4 h-100 md:h-137.5 ' : 'col-span-1 h-70 md:h-87.5'
                                         }`}
                                 >
                                     {/* FONDO IMAGEN/VIDEO */}
@@ -265,7 +261,7 @@ function Noticias() {
                 canEdit={puedeAdministrarNoticias}
             />
 
-            
+
 
             <ViewNewsModal
                 open={modalType === "ver" && selectedNoticia}

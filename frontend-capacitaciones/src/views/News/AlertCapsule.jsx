@@ -54,9 +54,8 @@ export function AlertCapsule({ canEdit, show }) {
 
     return (
         <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4 pointer-events-none">
-            <div className={`transition-all duration-700 pointer-events-auto flex items-center w-full gap-3 border border-red-700 bg-red-700/90 backdrop-blur-sm px-4 py-2 text-white shadow-2xl ${avisoColapsado ? "max-w-68 rounded-2xl" : "max-w-3xl rounded-xl"}`}>
-                <p className="flex-1 text-sm leading-snug whitespace-pre-wrap transition-all duration-700">
-                    <span className="text-sm leading-none shrink-0 pb-1">🚨</span>{" "}
+            <div className={`transition-all duration-700 pointer-events-auto flex items-center w-full gap-3 border border-zinc-100 bg-white backdrop-blur-sm px-4 py-2 text-black shadow-2xl ${avisoColapsado ? "max-w-68 rounded-2xl" : "max-w-3xl rounded-xl"}`}>
+                <p className="flex-1 text-md leading-snug whitespace-pre-wrap transition-all duration-700 text-red-500 font-medium">
                     {avisoColapsado ? "Aviso de emergencia" : alert?.mensaje || (canEdit ? "Aún no has configurado el aviso de emergencia." : "")}
                 </p>
 
