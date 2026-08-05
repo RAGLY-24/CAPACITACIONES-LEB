@@ -13,12 +13,9 @@ export const useLogin = () => {
         },
 
         onSuccess: (data) => {
-            // 1. guardar token
             setToken(data.token);
-
-            // 2. forzar refetch de /me
             queryClient.invalidateQueries({ queryKey: ["me"] });
         },
     });
-    
+
 };

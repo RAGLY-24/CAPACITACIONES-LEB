@@ -3,10 +3,11 @@ import Swal from "sweetalert2";
 import { Modal } from "../../components/Modal";
 
 export default function NewsFormModal({
-    state, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
+    open, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
     mode,
     noticia,
     onSave,
+    onClose
 }) {
     const initialState = {
         title: "",
@@ -29,8 +30,8 @@ export default function NewsFormModal({
         } else {
             setFormData(initialState);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mode, noticia, state.isOpen]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mode, noticia, open]);
 
     const handleChange = ({ target: { name, value } }) => {
         setFormData((prev) => ({
@@ -87,7 +88,7 @@ export default function NewsFormModal({
                 confirmButtonColor: "#802907",
             });
 
-            state.close();
+            onClose()
         } catch (err) {
             console.error(err);
 
@@ -102,15 +103,16 @@ export default function NewsFormModal({
 
     return (
         <Modal
-            state={state}
+            open={open}
             title={mode === "crear" ? "Publicar nueva noticia" : "Editar noticia"}
             size="xl"
             aspect="default"
+            onClose={onClose}
             footer={
                 <>
                     <button
                         type="button"
-                        onClick={state.close}
+                        onClick={onClose}
                         className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 cursor-pointer"
                     >
                         Cancelar
