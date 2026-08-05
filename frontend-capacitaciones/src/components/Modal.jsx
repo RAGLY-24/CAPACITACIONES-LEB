@@ -20,46 +20,48 @@ const aspectClasses = {
 };
 
 export function Modal({
-    state,
+    open,
     title,
     footer,
     children,
-    size = "md",      
-    aspect = "default" 
+    size = "md",
+    aspect = "default",
+    onClose
 }) {
 
     // Efecto para cerrar el modal al presionar la tecla Escape
     useEffect(() => {
         const handleKeyDown = (event) => {
-            if (event.key === "Escape" && state.isOpen) {
-                state.close();
+            if (event.key === "Escape" && open) {
+                onClose();
             }
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [state]);
+    }, [onClose, open]);
 
-    useLockBodyScroll(state.isOpen);
+    useLockBodyScroll(open);
 
-    if (!state.isOpen) return null;
+    if (!open) return null;
 
     // Obtenemos las clases dinámicas según las props
     const selectedSize = sizeClasses[size] || sizeClasses.md;
     const selectedAspect = aspectClasses[aspect] || aspectClasses.default;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" onClick={onClose}>
             <div
                 className={`bg-white rounded-2xl overflow-hidden shadow-xl w-full relative flex flex-col ${selectedSize} ${selectedAspect}`}
+                onClick={(e) => e.stopPropagation()}
             >
                 {/* Header (Prop) */}
                 {title && (
                     <div className="flex justify-between items-center border-b border-zinc-200 px-4 py-4 bg-zinc-50 shrink-0">
                         <h3 className="text-lg text-black font-medium">{title}</h3>
                         <button
-                            onClick={state.close}
+                            onClick={onClose}
                             className="text-zinc-500 hover:text-zinc-700 cursor-pointer p-1 rounded-lg hover:bg-zinc-200/50 transition-colors"
                         >
                             <X size={18} />

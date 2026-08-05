@@ -1,25 +1,30 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Swal from "sweetalert2";
 import { useMe } from "../../hooks/auth/useMe";
 import { useNews } from "../../hooks/news/useNews";
 import NewsFormModal from "./NewsFormModal";
 import ViewNewsModal from "./ViewNewsModal";
-import { obtenerImagenes } from "../utils/images";
 import { Plus } from "lucide-react";
 import { AlertCapsule } from "./AlertCapsule";
-import { CarouselTile } from "../components/Carrousel";
 import { NewsCard } from "./NewsCard";
-import { UseOverlayState } from "../../hooks/useOverlayState";
+import { useSearchParams } from "react-router-dom";
 
 function Noticias() {
 
-    const state = UseOverlayState({
-        defaultOpen: false,
-        onOpenChange: (isOpen) => console.log("Estado del modal:", isOpen),
-    });
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    const [modalType, setModalType] = useState(null); // 'crear', 'editar', o 'ver'
-    const [selectedNoticia, setSelectedNoticia] = useState(null);
+    const action = searchParams.get("action");
+    const actionId = searchParams.get("id");
+
+    const isView = action === "view";
+
+    const isEdit = action === "edit";
+    //const isDelete = action === "delete";
+    const isCreate = action === "create";
+
+    const modalType = isEdit ? "editar" : isCreate ? "crear" : null
+
+
 
     // --- Usuario autenticado  ---
     const { data } = useMe();
@@ -34,6 +39,7 @@ function Noticias() {
     const UseNews = useNews()
 
     const { data: news, isLoading, error: newsError } = UseNews.Get()
+
     const { mutateAsync: deleteNews, isPending: isDeleting } = UseNews.Delete;
     const { mutateAsync: create } = UseNews.Create;
     const { mutateAsync: update } = UseNews.Update;
@@ -46,25 +52,19 @@ function Noticias() {
     }, [isLoading, newsError])
 
     const abrirModalCrear = () => {
-        setSelectedNoticia(null);
-        setModalType('crear');
-        state.open()
+        setSearchParams({ action: "create" });
     };
 
     const abrirModalEditar = (noticia) => {
-        setSelectedNoticia(noticia);
-        setModalType('editar');
-        state.open()
+        setSearchParams({ action: "edit", id: noticia.id });
     };
 
     const abrirModalVer = (noticia) => {
-        setSelectedNoticia(noticia);
-        setModalType('ver');
+        setSearchParams({ action: "view", id: noticia.id });
     };
 
     const cerrarModal = () => {
-        setModalType(null);
-        setSelectedNoticia(null);
+        setSearchParams({});
     };
 
     const guardarNoticia = async (data) => {
@@ -72,7 +72,7 @@ function Noticias() {
             await create({ data });
         } else {
             await update({
-                id: selectedNoticia.id,
+                id: actionId,
                 data,
             });
         }
@@ -116,7 +116,7 @@ function Noticias() {
             console.error(error);
             Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar.', confirmButtonColor: '#802907' });
         }
-        setModalType(null);
+        //setModalType(null);
     };
 
     if (!news || isLoading) return null
@@ -192,17 +192,17 @@ function Noticias() {
 
 
             <ViewNewsModal
-                open={modalType === "ver" && selectedNoticia}
-                mode={modalType}
-                noticia={selectedNoticia}
-                isRecent={news[0]?.id === selectedNoticia?.id}
+                open={isView}
+                mode={"ver"}
+                noticia={news.find(i => i.id == actionId)}
+                isRecent={news[0]?.id === actionId}
                 onClose={cerrarModal}
             />
 
             <NewsFormModal
-                state={state}
+                open={isEdit || isCreate}
                 mode={modalType}
-                noticia={selectedNoticia}
+                noticia={news.find(i => i.id == actionId)}
                 onClose={cerrarModal}
                 onSave={guardarNoticia}
             />

@@ -16,7 +16,6 @@ export const authApi = {
 
     me: async () => {
         const { data } = await httpClient.get("/user");
-
         return data;
     },
 };

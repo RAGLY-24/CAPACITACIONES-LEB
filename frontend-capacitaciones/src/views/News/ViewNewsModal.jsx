@@ -1,13 +1,29 @@
 import { X } from "lucide-react";
 import { FullCarousel } from "../components/FullCarousel";
 import { obtenerImagenes } from "../utils/images";
+import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
+import { useEffect } from "react";
 
 export default function ViewNewsModal({ open, noticia, isRecent, onClose }) {
+    useLockBodyScroll(open);
+    // Efecto para cerrar el modal al presionar la tecla Escape
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape" && open) {
+                onClose()
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [onClose, open]);
     if (!open) return null;
+
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
             onClick={onClose}
         >
             <div className="relative w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
