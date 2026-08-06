@@ -3,8 +3,9 @@ import { Tldraw, getSnapshot, loadSnapshot } from "tldraw";
 import axios from "axios";
 import Swal from "sweetalert2";
 import "tldraw/tldraw.css";
+import { URL } from "../api/http.client";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = URL
 
 function parseSnapshot(presentacionJson) {
   if (!presentacionJson) return null;
@@ -33,7 +34,7 @@ export function EditorPresentacion({ modulo, onCerrar, onGuardado }) {
     setGuardando(true);
     try {
       const snapshot = getSnapshot(editorRef.current.store);
-      const { data } = await axios.put(`${API}/modulos/${modulo.id}/presentacion`, {
+      const { data } = await axios.put(`${API}/api/modulos/${modulo.id}/presentacion`, {
         contenido: JSON.stringify(snapshot),
       });
       Swal.fire({ icon: "success", title: "Presentación guardada.", confirmButtonColor: "#802907" });
