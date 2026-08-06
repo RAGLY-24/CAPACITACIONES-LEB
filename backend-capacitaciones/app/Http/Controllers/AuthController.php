@@ -134,7 +134,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json($request->user(), 200);
+        return response()->json($request->user()->load('puesto'), 200);
     }
 
     public function logout(Request $request)

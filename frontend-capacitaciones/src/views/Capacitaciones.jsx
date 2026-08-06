@@ -144,32 +144,47 @@ function RetroalimentacionExamen({ resultado, onReintentar, intentosRestantes, o
         )}
       </div>
       <div className="space-y-3">
-        {resultado.resultados.map((r, i) => (
-          <div key={r.pregunta_id} className={`rounded-lg p-4 border ${r.acertada ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-            <p className="text-sm font-semibold text-gray-800 mb-2">
-              {i + 1}. {r.texto}
-              <span className={`ml-2 text-xs font-bold ${r.acertada ? "text-green-700" : "text-red-600"}`}>
-                {r.acertada ? "✓ Correcto" : "✗ Incorrecto"}
-              </span>
-            </p>
-            <ul className="space-y-1 pl-2">
-              {r.opciones.map(op => {
-                const sel = op.id === r.opcion_seleccionada;
-                const cor = op.es_correcta;
-                let cls = "text-gray-600";
-                if (cor) cls = "text-green-700 font-semibold";
-                if (sel && !cor) cls = "text-red-600 font-semibold line-through";
-                return (
-                  <li key={op.id} className={`text-xs flex items-center gap-2 ${cls}`}>
-                    <span>{sel ? "●" : "○"}</span>
-                    {op.texto}
-                    {cor && <span className="text-[10px] bg-green-100 rounded px-1">Correcta</span>}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+        {resultado.resultados.map((r, i) => {
+          if (r.tipo === "feedback") {
+            return (
+              <div key={r.pregunta_id} className="rounded-lg p-4 border border-gray-200 bg-gray-50">
+                <p className="text-sm font-semibold text-gray-800 mb-2">
+                  {i + 1}. {r.texto}
+                  <span className="ml-2 text-xs font-bold text-gray-400">💬 Retroalimentación</span>
+                </p>
+                <p className="text-xs text-gray-600 pl-2 whitespace-pre-wrap">
+                  {r.respuesta_texto?.trim() ? r.respuesta_texto : <em className="text-gray-400">Sin comentarios.</em>}
+                </p>
+              </div>
+            );
+          }
+          return (
+            <div key={r.pregunta_id} className={`rounded-lg p-4 border ${r.acertada ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+              <p className="text-sm font-semibold text-gray-800 mb-2">
+                {i + 1}. {r.texto}
+                <span className={`ml-2 text-xs font-bold ${r.acertada ? "text-green-700" : "text-red-600"}`}>
+                  {r.acertada ? "✓ Correcto" : "✗ Incorrecto"}
+                </span>
+              </p>
+              <ul className="space-y-1 pl-2">
+                {r.opciones.map(op => {
+                  const sel = op.id === r.opcion_seleccionada;
+                  const cor = op.es_correcta;
+                  let cls = "text-gray-600";
+                  if (cor) cls = "text-green-700 font-semibold";
+                  if (sel && !cor) cls = "text-red-600 font-semibold line-through";
+                  return (
+                    <li key={op.id} className={`text-xs flex items-center gap-2 ${cls}`}>
+                      <span>{sel ? "●" : "○"}</span>
+                      {op.texto}
+                      {cor && <span className="text-[10px] bg-green-100 rounded px-1">Correcta</span>}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -233,7 +248,9 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
   }, [moduloId, cargarExamenBlanco]);
 
   const enviar = async () => {
-    const faltantes = preguntas.filter(p => !respuestas[p.id]);
+    // Las preguntas de feedback son texto libre y opcionales (el backend las
+    // valida como "nullable"); solo las de opción múltiple son obligatorias.
+    const faltantes = preguntas.filter(p => p.tipo !== "feedback" && !respuestas[p.id]);
     if (faltantes.length) {
       Swal.fire({ icon: "warning", title: `Faltan ${faltantes.length} pregunta(s) por responder.`, confirmButtonColor: "#802907" });
       return;
@@ -287,16 +304,30 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
       <p className="text-sm text-gray-600 font-medium">{preguntas.length} pregunta(s) — necesitas 70% para aprobar (máx. 2 intentos)</p>
       {preguntas.map((p, i) => (
         <div key={p.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-          <p className="text-sm font-semibold text-gray-800 mb-3">{i + 1}. {p.texto}</p>
-          <div className="space-y-2">
-            {p.opciones.map(op => (
-              <label key={op.id} className={`flex items-center gap-3 rounded-lg border cursor-pointer px-3 py-2 text-sm transition-colors ${respuestas[p.id] === op.id ? "border-[#802907] bg-brand-primary/5 text-[#802907] font-medium" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"}`}>
-                <input type="radio" name={`p_${p.id}`} value={op.id} checked={respuestas[p.id] === op.id}
-                  onChange={() => setRespuestas(r => ({ ...r, [p.id]: op.id }))} className="accent-[#802907]" />
-                {op.texto}
-              </label>
-            ))}
-          </div>
+          <p className="text-sm font-semibold text-gray-800 mb-3">
+            {i + 1}. {p.texto}
+            {p.tipo === "feedback" && <span className="ml-2 text-xs font-normal text-gray-400">(opcional)</span>}
+          </p>
+          {p.tipo === "feedback" ? (
+            <textarea
+              value={respuestas[p.id] || ""}
+              onChange={(e) => setRespuestas(r => ({ ...r, [p.id]: e.target.value }))}
+              maxLength={2000}
+              rows={3}
+              placeholder="Escribe tu comentario u opinión sobre este módulo..."
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-[#802907] focus:outline-none"
+            />
+          ) : (
+            <div className="space-y-2">
+              {p.opciones.map(op => (
+                <label key={op.id} className={`flex items-center gap-3 rounded-lg border cursor-pointer px-3 py-2 text-sm transition-colors ${respuestas[p.id] === op.id ? "border-[#802907] bg-brand-primary/5 text-[#802907] font-medium" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"}`}>
+                  <input type="radio" name={`p_${p.id}`} value={op.id} checked={respuestas[p.id] === op.id}
+                    onChange={() => setRespuestas(r => ({ ...r, [p.id]: op.id }))} className="accent-[#802907]" />
+                  {op.texto}
+                </label>
+              ))}
+            </div>
+          )}
         </div>
       ))}
       <button onClick={enviar} disabled={enviando}

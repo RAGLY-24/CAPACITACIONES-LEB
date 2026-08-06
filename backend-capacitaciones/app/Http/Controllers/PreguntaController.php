@@ -40,12 +40,35 @@ class PreguntaController extends Controller
         Modulo::findOrFail($moduloId);
 
         $request->validate([
-            'texto'                   => 'required|string|max:500',
+            'texto' => 'required|string|max:500',
+            'tipo'  => 'nullable|in:' . Pregunta::TIPO_OPCION_MULTIPLE . ',' . Pregunta::TIPO_FEEDBACK,
+        ], [
+            'texto.required' => 'El texto de la pregunta es obligatorio.',
+        ]);
+
+        $tipo = $request->input('tipo', Pregunta::TIPO_OPCION_MULTIPLE);
+        $orden = Pregunta::where('modulo_id', $moduloId)->max('orden') + 1;
+
+        // Pregunta de retroalimentación: solo texto libre, no se califica y no lleva opciones.
+        if ($tipo === Pregunta::TIPO_FEEDBACK) {
+            $pregunta = Pregunta::create([
+                'modulo_id' => $moduloId,
+                'texto'     => $request->texto,
+                'orden'     => $orden,
+                'tipo'      => Pregunta::TIPO_FEEDBACK,
+            ]);
+
+            return response()->json([
+                'message'  => 'Pregunta de retroalimentación agregada.',
+                'pregunta' => $pregunta->load('opciones'),
+            ], 201);
+        }
+
+        $request->validate([
             'opciones'                => 'required|array|min:2|max:5',
             'opciones.*.texto'        => 'required|string|max:300',
             'opciones.*.es_correcta'  => 'required|boolean',
         ], [
-            'texto.required'              => 'El texto de la pregunta es obligatorio.',
             'opciones.required'           => 'Debes agregar al menos 2 opciones.',
             'opciones.min'                => 'Cada pregunta debe tener al menos 2 opciones.',
             'opciones.max'                => 'Una pregunta puede tener como máximo 5 opciones.',
@@ -59,12 +82,11 @@ class PreguntaController extends Controller
             ], 422);
         }
 
-        $orden = Pregunta::where('modulo_id', $moduloId)->max('orden') + 1;
-
         $pregunta = Pregunta::create([
             'modulo_id' => $moduloId,
             'texto'     => $request->texto,
             'orden'     => $orden,
+            'tipo'      => Pregunta::TIPO_OPCION_MULTIPLE,
         ]);
 
         foreach ($request->opciones as $op) {
@@ -91,7 +113,20 @@ class PreguntaController extends Controller
         $pregunta = Pregunta::findOrFail($id);
 
         $request->validate([
-            'texto'                   => 'required|string|max:500',
+            'texto' => 'required|string|max:500',
+        ]);
+
+        // El tipo de una pregunta ya creada no cambia desde esta pantalla de edición.
+        if ($pregunta->tipo === Pregunta::TIPO_FEEDBACK) {
+            $pregunta->update(['texto' => $request->texto]);
+
+            return response()->json([
+                'message'  => 'Pregunta actualizada.',
+                'pregunta' => $pregunta->load('opciones'),
+            ], 200);
+        }
+
+        $request->validate([
             'opciones'                => 'required|array|min:2|max:5',
             'opciones.*.texto'        => 'required|string|max:300',
             'opciones.*.es_correcta'  => 'required|boolean',

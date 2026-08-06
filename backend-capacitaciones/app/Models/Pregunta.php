@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pregunta extends Model
 {
-    protected $fillable = ['modulo_id', 'texto', 'orden'];
+    const TIPO_OPCION_MULTIPLE = 'opcion_multiple';
+    const TIPO_FEEDBACK = 'feedback';
+
+    protected $fillable = ['modulo_id', 'texto', 'orden', 'tipo'];
 
     public function opciones()
     {
