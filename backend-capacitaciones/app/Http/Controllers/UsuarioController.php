@@ -41,6 +41,8 @@ class UsuarioController extends Controller
             ], 403);
         }
 
+        $esOperador = $request->boolean('es_operador');
+
         // 1. Validaciones estrictas
         $request->validate([
             'name' => 'required|string|max:255',
@@ -57,11 +59,22 @@ class UsuarioController extends Controller
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/'
             ],
             'permissions' => 'sometimes|array',
+            'es_operador' => 'sometimes|boolean',
+            'operador_nombre_completo' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+            'operador_numero_economico_tractor' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+            'operador_placas_remolque' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+            'operador_folio' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+            'operador_numero_licencia' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
         ], [
             // Mensajes personalizados de error (opcional, pero buena práctica)
             'email.unique' => 'El correo ya está registrado.',
             'usuario.unique' => 'El nombre de usuario ya existe.',
-            'password.regex' => 'La contraseña no cumple con las políticas de seguridad.'
+            'password.regex' => 'La contraseña no cumple con las políticas de seguridad.',
+            'operador_nombre_completo.required' => 'El nombre completo del operador es obligatorio.',
+            'operador_numero_economico_tractor.required' => 'El número económico del tracto es obligatorio.',
+            'operador_placas_remolque.required' => 'Las placas del remolque son obligatorias.',
+            'operador_folio.required' => 'El folio es obligatorio.',
+            'operador_numero_licencia.required' => 'El número de licencia es obligatorio.',
         ]);
 
         $puesto = Puesto::find($request->input('puesto_id'));
@@ -125,6 +138,12 @@ class UsuarioController extends Controller
             'socio_id' => $request->socio_id,
             'estado' => $request->estado,
             'password' => $request->password,
+            'es_operador' => $esOperador,
+            'operador_nombre_completo' => $esOperador ? $request->operador_nombre_completo : null,
+            'operador_numero_economico_tractor' => $esOperador ? $request->operador_numero_economico_tractor : null,
+            'operador_placas_remolque' => $esOperador ? $request->operador_placas_remolque : null,
+            'operador_folio' => $esOperador ? $request->operador_folio : null,
+            'operador_numero_licencia' => $esOperador ? $request->operador_numero_licencia : null,
             'permissions' => array_merge($defaultPermissions, $requestedPermissions),
         ]);
 
@@ -152,6 +171,8 @@ class UsuarioController extends Controller
             ], 403);
         }
 
+        $esOperador = $request->boolean('es_operador');
+
         // 1. Validaciones (Notar el uso de Rule::unique para ignorar al usuario actual)
         $request->validate([
             'name' => 'required|string|max:255',
@@ -178,6 +199,18 @@ class UsuarioController extends Controller
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/'
             ],
             'permissions' => 'sometimes|array',
+            'es_operador' => 'sometimes|boolean',
+            'operador_nombre_completo' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+            'operador_numero_economico_tractor' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+            'operador_placas_remolque' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+            'operador_folio' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+            'operador_numero_licencia' => $esOperador ? 'required|string|max:255' : 'nullable|string|max:255',
+        ], [
+            'operador_nombre_completo.required' => 'El nombre completo del operador es obligatorio.',
+            'operador_numero_economico_tractor.required' => 'El número económico del tracto es obligatorio.',
+            'operador_placas_remolque.required' => 'Las placas del remolque son obligatorias.',
+            'operador_folio.required' => 'El folio es obligatorio.',
+            'operador_numero_licencia.required' => 'El número de licencia es obligatorio.',
         ]);
 
         // 2. Preparar los datos a actualizar
@@ -189,6 +222,12 @@ class UsuarioController extends Controller
             'puesto_id' => $request->puesto_id,
             'socio_id' => $request->socio_id,
             'estado' => $request->estado,
+            'es_operador' => $esOperador,
+            'operador_nombre_completo' => $esOperador ? $request->operador_nombre_completo : null,
+            'operador_numero_economico_tractor' => $esOperador ? $request->operador_numero_economico_tractor : null,
+            'operador_placas_remolque' => $esOperador ? $request->operador_placas_remolque : null,
+            'operador_folio' => $esOperador ? $request->operador_folio : null,
+            'operador_numero_licencia' => $esOperador ? $request->operador_numero_licencia : null,
         ];
 
         // Solo actualizar la contraseña si el usuario escribió una nueva

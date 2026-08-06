@@ -1,10 +1,11 @@
 // src/features/auth/hooks/useLogin.js
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext";
 import { authApi } from "../../api/auth.api";
 
 export const useLogout = () => {
     const { logout } = useAuth()
+    const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async () => {
@@ -12,6 +13,7 @@ export const useLogout = () => {
         },
 
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["me"] });
             logout()
         },
     });

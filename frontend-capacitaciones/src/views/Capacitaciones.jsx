@@ -4,8 +4,10 @@ import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { VisorArchivo } from "../components/VisorArchivo";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useMe } from "../hooks/auth/useMe";
+import { URL } from "../api/http.client";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = URL
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const ESTADOS = {
@@ -188,7 +190,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
   const cargarExamenBlanco = useCallback(async () => {
     setCargando(true); setSinExamen(false); setBloqueado(false); setResultado(null); setRespuestas({});
     try {
-      const res = await axios.get(`${API}/modulos/${moduloId}/examen`);
+      const res = await axios.get(`${API}/api/modulos/${moduloId}/examen`);
       setPreguntas(res.data.preguntas || []);
     } catch (err) {
       if (err.response?.status === 404) setSinExamen(true);
@@ -210,7 +212,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
       if (estadoAlAbrir.current === "completado" || estadoAlAbrir.current === "reprobado") {
         setCargando(true);
         try {
-          const res = await axios.get(`${API}/modulos/${moduloId}/examen/retroalimentacion`);
+          const res = await axios.get(`${API}/api/modulos/${moduloId}/examen/retroalimentacion`);
           if (!cancelado) { setResultado(res.data); setIntentosRestantes(res.data.intentos_restantes); }
           if (!cancelado) setCargando(false);
           return;
@@ -238,7 +240,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
     }
     setEnviando(true);
     try {
-      const res = await axios.post(`${API}/modulos/${moduloId}/examen`, { respuestas });
+      const res = await axios.post(`${API}/api/modulos/${moduloId}/examen`, { respuestas });
       setResultado(res.data);
       setIntentosRestantes(res.data.intentos_restantes);
       onCalificado?.();
@@ -342,7 +344,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
 
   useEffect(() => {
     if (activo && activo.estado === "pendiente") {
-      axios.post(`${API}/modulos/${activo.modulo.id}/iniciar`).catch(() => { });
+      axios.post(`${API}/api/modulos/${activo.modulo.id}/iniciar`).catch(() => { });
     }
   }, [activo?.modulo.id]);
 
@@ -393,8 +395,8 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                       disabled={bloqueado}
                       title={bloqueado ? "Aprueba el examen del módulo anterior (mínimo 70%) para desbloquearlo" : undefined}
                       className={`w-full flex items-center gap-2 pl-6 pr-4 py-2.5 text-left text-xs border-l-4 transition-colors ${esActivo ? "border-[#802907] bg-white font-semibold text-[#802907]"
-                          : bloqueado ? "border-transparent text-gray-400 cursor-not-allowed"
-                            : "border-transparent text-gray-600 hover:bg-gray-100"
+                        : bloqueado ? "border-transparent text-gray-400 cursor-not-allowed"
+                          : "border-transparent text-gray-600 hover:bg-gray-100"
                         }`}>
                       <IconoEstadoModulo estado={item.estado} desbloqueado={item.desbloqueado} />
                       <span className="truncate flex-1">{item.modulo.nombre}</span>
@@ -418,8 +420,8 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                 disabled={!contenidoListo}
                 title={!contenidoListo ? "Revisa todo el contenido (PDF hasta el final o video completo) para desbloquear el examen" : undefined}
                 className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === "examen" ? "border-b-2 border-[#802907] text-[#802907] bg-white"
-                    : !contenidoListo ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:text-gray-700"
+                  : !contenidoListo ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:text-gray-700"
                   }`}>
                 {contenidoListo ? "📝 Examen" : "🔒 Examen"}
               </button>
@@ -431,7 +433,7 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                 <VisorArchivo fileUrl={modulo.file_url} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json}
                   onCompletado={() => {
                     setContenidoListo(true);
-                    axios.post(`${API}/modulos/${modulo.id}/contenido-visto`).catch(() => { });
+                    axios.post(`${API}/api/modulos/${modulo.id}/contenido-visto`).catch(() => { });
                   }} />
                 {tiene_examen && (
                   <div className={`rounded-lg border p-4 shrink-0 ${contenidoListo ? "bg-blue-50 border-blue-200" : "bg-amber-50 border-amber-200"}`}>
@@ -541,7 +543,7 @@ function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialId, onCe
     setModuloActivo(item);
     setRetro(null);
     setCargandoRetro(true);
-    axios.get(`${API}/progreso/${item.progreso_id}/retroalimentacion`)
+    axios.get(`${API}/api/progreso/${item.progreso_id}/retroalimentacion`)
       .then(res => setRetro(res.data))
       .catch(() => Swal.fire({ icon: "error", title: "Error al cargar las respuestas.", confirmButtonColor: "#802907" }))
       .finally(() => setCargandoRetro(false));
@@ -549,7 +551,7 @@ function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialId, onCe
 
   useEffect(() => {
     let cancelado = false;
-    axios.get(`${API}/progreso/usuario/${usuarioId}`)
+    axios.get(`${API}/api/progreso/usuario/${usuarioId}`)
       .then(res => {
         if (cancelado) return;
         setSecciones(res.data);
@@ -681,8 +683,8 @@ function VistaAdmin() {
     setCargando(true);
     try {
       const [rAdmin, rPie] = await Promise.all([
-        axios.get(`${API}/progreso/admin`),
-        axios.get(`${API}/progreso/por-seccion`),
+        axios.get(`${API}/api/progreso/admin`),
+        axios.get(`${API}/api/progreso/por-seccion`),
       ]);
       setDatos(rAdmin.data);
       setPieData(rPie.data);
@@ -961,8 +963,8 @@ function TarjetaModuloEmpleado({ item, onAbrir }) {
         )}
         {modulo.file_type && (
           <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${modulo.file_type === "pdf" ? "bg-red-600 text-white"
-              : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
-                : "bg-blue-600 text-white"
+            : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
+              : "bg-blue-600 text-white"
             }`}>
             {modulo.file_type === "presentacion" ? "PRESENTACIÓN" : modulo.file_type.toUpperCase()}
           </span>
@@ -1010,7 +1012,7 @@ function VistaEmpleado() {
   const cargar = useCallback(async (silencioso = false) => {
     if (!silencioso) setCargando(true);
     try {
-      const res = await axios.get(`${API}/progreso/mio`);
+      const res = await axios.get(`${API}/api/progreso/mio`);
       setSecciones(res.data);
     } catch {
       Swal.fire({ icon: "error", title: "Error al cargar tus capacitaciones.", confirmButtonColor: "#802907" });
@@ -1125,7 +1127,10 @@ function VistaEmpleado() {
 
 // ─── Componente raíz ─────────────────────────────────────────────────────────
 function Capacitaciones() {
-  const storedUser = typeof window !== "undefined" ? JSON.parse(sessionStorage.getItem("user") || "null") : null;
+  // --- Usuario autenticado  ---
+  const { data } = useMe();
+
+  const storedUser = typeof window !== 'undefined' ? data : null;
   const rol = storedUser?.puesto?.nombre || null;
   const permisos = storedUser?.permissions || {};
   const esAdmin = rol === "SistemasAdmin" || permisos.edit_trainings || permisos.edit_capacitaciones_course;

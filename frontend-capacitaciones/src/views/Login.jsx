@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import logoEmpresa from '../assets/leb_logotipo.png';
@@ -67,67 +67,82 @@ function Login() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-cover bg-zinc-100 bg-center bg-no-repeat"
+      className="flex min-h-screen items-center justify-center bg-zinc-100 bg-cover bg-center bg-no-repeat p-4"
       style={{
         //backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0.6)), url(${fondoLogin})`
       }}
     >
-      <div className="w-full max-w-110 bg-white p-11 shadow-[0_2px_6px_rgba(0,0,0,0.2)] rounded-2xl">
+      {/* Se ajustó el max-w, padding (p-8 sm:p-10), se redondeó un poco más (rounded-[24px]) y se agregó una sombra muy suave (shadow-sm) para dar el efecto flotante de la imagen */}
+      <div className="w-full max-w-110 rounded-3xl border border-zinc-100 bg-white p-6 shadow-sm ">
 
         {/* --- ENCABEZADO CENTRADO --- */}
-        <div className="mb-8 flex flex-col items-center justify-center">
+        {/* Se ajustó el espaciado (gap) para que la jerarquía visual sea como en "Welcome back" */}
+        <div className="mb-4 flex flex-col items-center justify-center gap-1">
           <img
             src={logoEmpresa}
             alt="Logotipo de la empresa"
-            className="mb-2 h-20 w-auto"
+            className="h-14 w-auto"
           />
-          <span className="mb-6 text-center font-['Segoe_UI',Arial,sans-serif] text-[18px] font-semibold text-zinc-00">
+          <h1 className="text-center text-[28px] font-semibold tracking-tight text-[#1b1b1b]">
+            Iniciar sesión
+          </h1>
+          <span className="text-center text-[15px] font-normal text-slate-500">
             Capacitaciones
           </span>
         </div>
 
-        <h1 className="mb-4 text-[24px] font-semibold text-[#1b1b1b]">Iniciar sesión</h1>
-
         {/* --- Aquí se muestra el error si la contraseña está mal --- */}
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+          <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-          <div className="flex flex-col gap-4">
-            <input
-              type="text"
-              placeholder="Usuario"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border-b border-black pb-2 pt-1 text-[15px] text-black placeholder-gray-600 outline-none transition-colors focus:border-b-2 focus:border-[#0067b8]"
-              required
-            />
-            <input
-              type="password"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border-b border-black pb-2 pt-1 text-[15px] text-black placeholder-gray-600 outline-none transition-colors focus:border-b-2 focus:border-[#0067b8]"
-              required
-            />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
+            {/* Campo de Usuario */}
+            <div className="flex flex-col gap-2">
+              <label className="text-[14px] font-medium text-slate-700">
+                Usuario
+              </label>
+              <input
+                type="text"
+                placeholder="Usuario"
+                autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-100  px-4 py-3 text-[15px] text-black placeholder-gray-400 outline-none transition-all focus:border-[#0067b8] focus:bg-white focus:ring-1 focus:ring-[#0067b8]"
+                required
+              />
+            </div>
+
+            {/* Campo de Contraseña */}
+            <div className="flex flex-col gap-2">
+              <label className="text-[14px] font-medium text-slate-700">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-[15px] text-black placeholder-gray-400 outline-none transition-all focus:border-[#0067b8] focus:bg-white focus:ring-1 focus:ring-[#0067b8]"
+                required
+              />
+            </div>
           </div>
 
-          <div className="flex items-center justify-center">
+          <div className="mt-2 w-full">
             <button
               type="submit"
-              className="rounded-md bg-brand-primary px-8 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-[#4e1802]"
+              className="w-full rounded-xl bg-brand-primary px-4 py-2 text-md  text-white transition-colors hover:bg-[#4e1802]"
             >
               Iniciar Sesion
             </button>
           </div>
         </form>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          ¿No tienes cuenta? <Link to="/registro" className="font-semibold text-[#802907] hover:underline">Regístrate</Link>
-        </p>
       </div>
     </div>
   );

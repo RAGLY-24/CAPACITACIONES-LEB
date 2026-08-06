@@ -6,8 +6,9 @@ import axios from 'axios';
 import logoEmpresa from '../assets/leb_logotipo.png';
 import { Menu, User } from "lucide-react";
 import { useLogout } from "../hooks/auth/useLogout";
+import { URL } from "../api/http.client";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = URL
 
 function AdminPanel({ user, routes }) {
   const logout = useLogout();
@@ -123,7 +124,7 @@ function AdminPanel({ user, routes }) {
     if (fotoFile) formData.append('foto', fotoFile);
 
     try {
-      const response = await axios.post(`${API_URL}/perfil`, formData, {
+      const response = await axios.post(`${API_URL}/api/perfil`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -160,7 +161,7 @@ function AdminPanel({ user, routes }) {
 
   return (
     <div className="min-h-screen bg-[#f3f2f1] overflow-x-hidden">
-
+    
       {/* --- BARRA SUPERIOR (NAVBAR) Fija arriba --- */}
       <nav className="fixed top-0 left-0 w-full z-50 flex h-14 items-center justify-between bg-white px-8 shadow-sm">
 

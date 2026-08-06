@@ -2,9 +2,9 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AdminPanel from "../views/AdminPanel";
 import Contenido from "../views/Contenido";
 import Capacitaciones from "../views/Capacitaciones";
-import Usuarios from "../views/Usuarios";
 import { useMe } from "../hooks/auth/useMe";
 import Noticias from "../views/News/Noticias";
+import Usuarios from "../views/users/Usuarios";
 
 
 export function ProtectedRoutes() {
@@ -50,7 +50,7 @@ export function ProtectedRoutes() {
 
     const firstRoute = routes.at(0)?.path ?? "";
 
-    // RETORNO DE RUTA POR DEFECTO
+
     return (
         <Routes>
             <Route path="/" element={<AdminPanel user={data} routes={routes} />}>
