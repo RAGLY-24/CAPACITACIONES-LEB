@@ -3,7 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { useSearchParams } from "react-router-dom";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { Check, Pencil, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { URL } from "../../api/http.client";
 
@@ -30,6 +30,7 @@ import PartnerDeleteModal from "./socios/PartnerDeleteModal";
 import PartnerViewModal from "./socios/PartnerViewModal";
 
 import PositionDeleteModal from "./puestos/PositionDeleteModal";
+import PositionPermissionsModal from "./puestos/PositionPermissionsModal";
 import { useMe } from "../../hooks/auth/useMe";
 import { IconButton } from "../../components/IconButton";
 
@@ -46,6 +47,7 @@ function Usuarios() {
   const isDelete = action === "delete";
   const isCreate = action === "create";
   const isView = action === "view";
+  const isPermisos = action === "permisos";
 
 
   const shouldOpenUserModal = actionType == "user"
@@ -153,7 +155,7 @@ function Usuarios() {
           await createPosition(payload)
         } else if (mode == "edit") {
           isValidAction = true
-          await updatePosition({ id: payload.id, data: { nombre: payload.nombre } })
+          await updatePosition({ id: payload.id, data: { nombre: payload.nombre, default_permissions: payload.default_permissions } })
         }
         else if (mode == "delete") {
           isValidAction = true
@@ -451,6 +453,10 @@ function Usuarios() {
       return
     };
 
+    const editarPermisosPuesto = (id) => {
+      setSearchParams({ type: "position", action: "permisos", id: id })
+    };
+
     return [
       {
         name: 'Nombre del Puesto',
@@ -502,6 +508,15 @@ function Usuarios() {
                 filled={false}
                 onClick={() => editarPuesto(row)}
               />
+              {row.nombre !== 'SistemasAdmin' && (
+                <IconButton
+                  icon={ShieldCheck}
+                  variant="secondary"
+                  title="Permisos predeterminados"
+                  filled={false}
+                  onClick={() => editarPermisosPuesto(row.id)}
+                />
+              )}
               <IconButton
                 icon={Trash2}
                 variant="danger"
@@ -695,6 +710,7 @@ function Usuarios() {
       <PartnerViewModal open={shouldOpenPartnerModal && isView} partner={socios?.find(u => u.id == actionId)} onClose={cerrarModal} />
 
       <PositionDeleteModal open={shouldOpenPositionModal && isDelete} position={puestos?.find(u => u.id == actionId)} onClose={cerrarModal} onSubmit={handleSaveChanges} />
+      <PositionPermissionsModal open={shouldOpenPositionModal && isPermisos} position={puestos?.find(u => u.id == actionId)} onClose={cerrarModal} onSubmit={handleSaveChanges} />
     </div>
   );
 }

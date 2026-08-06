@@ -87,42 +87,10 @@ class UsuarioController extends Controller
             ], 403);
         }
 
-        $defaultPermissions = [];
-
-        if ($puesto && $puesto->nombre === 'SistemasAdmin') {
-            $defaultPermissions = [
-                'manage_news' => true,
-                'news_access' => true,
-                'edit_capacitaciones_course' => true,
-                'manage_passwords' => true,
-                'create_users' => true,
-                'delete_users' => true,
-                'assign_permissions' => true,
-                'view_reports' => true,
-                'manage_content' => true,
-            ];
-        } elseif ($puesto && $puesto->nombre === 'Gerente') {
-            $defaultPermissions = [
-                'manage_news' => false,
-                'news_access' => true,
-                'edit_capacitaciones_course' => false,
-                'manage_passwords' => true,
-                'create_users' => true,
-                'delete_users' => false,
-                'assign_permissions' => false,
-                'view_reports' => true,
-                'manage_content' => true,
-            ];
-        } else {
-            // Usuarios normales: no pueden publicar noticias ni editar capacitaciones por defecto
-            $defaultPermissions = [
-                'manage_news' => false,
-                'news_access' => true,
-                'edit_capacitaciones_course' => false,
-                'view_reports' => false,
-                'manage_content' => false,
-            ];
-        }
+        // Los permisos por defecto vienen del puesto elegido (editables por
+        // un SistemasAdmin en el directorio de puestos); ya no se hardcodean
+        // aquí por nombre de rol.
+        $defaultPermissions = $puesto->default_permissions ?? [];
 
         $requestedPermissions = $request->input('permissions', []);
         if (!$authUser instanceof User || !$authUser->hasPermission('assign_permissions')) {

@@ -15,7 +15,7 @@ class CursoController extends Controller
     {
         $authUser = Auth::user();
 
-        if (!$authUser instanceof User || !$authUser->hasPermission('edit_capacitaciones_course')) {
+        if (!$authUser instanceof User || !$authUser->hasPermission('edit_trainings')) {
             return response()->json([
                 'message' => 'Acceso denegado. No tienes permiso para acceder a los cursos.'
             ], 403);
@@ -30,7 +30,7 @@ class CursoController extends Controller
     {
         $authUser = Auth::user();
 
-        if (!$authUser instanceof User || !$authUser->hasPermission('edit_capacitaciones_course')) {
+        if (!$authUser instanceof User || !$authUser->hasPermission('edit_trainings')) {
             return response()->json([
                 'message' => 'Acceso denegado. No tienes permiso para crear cursos.'
             ], 403);
@@ -90,7 +90,7 @@ class CursoController extends Controller
     {
         $authUser = Auth::user();
 
-        if (!$authUser instanceof User || !$authUser->hasPermission('edit_capacitaciones_course')) {
+        if (!$authUser instanceof User || !$authUser->hasPermission('edit_trainings')) {
             return response()->json([
                 'message' => 'Acceso denegado. No tienes permiso para editar cursos.'
             ], 403);
@@ -150,7 +150,7 @@ class CursoController extends Controller
     {
         $authUser = Auth::user();
 
-        if (!$authUser instanceof User || !$authUser->hasPermission('edit_capacitaciones_course')) {
+        if (!$authUser instanceof User || !$authUser->hasPermission('edit_trainings')) {
             return response()->json([
                 'message' => 'Acceso denegado. No tienes permiso para eliminar cursos.'
             ], 403);
@@ -178,7 +178,7 @@ class CursoController extends Controller
     {
         $authUser = Auth::user();
 
-        if (!$authUser instanceof User || !$authUser->hasPermission('edit_capacitaciones_course')) {
+        if (!$authUser instanceof User || !$authUser->hasPermission('edit_trainings')) {
             return response()->json([
                 'message' => 'Acceso denegado. No tienes permiso para ver este curso.'
             ], 403);

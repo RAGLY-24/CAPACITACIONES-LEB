@@ -14,11 +14,10 @@ class AuthController extends Controller
     // un enlace temporal de un solo uso generado por un admin (ver
     // EnlaceRegistroController), que expira 30 minutos después de generado.
     // A diferencia de cuando un admin crea un usuario, aquí no se puede
-    // elegir puesto ni permisos: la cuenta siempre nace como "Operador" con
-    // acceso solo a noticias y a realizar capacitaciones (mismos permisos
-    // por defecto que UsuarioController asigna a cualquier puesto que no sea
-    // SistemasAdmin/Gerente). Para acceder a más secciones, un admin debe
-    // editar sus permisos después, como a cualquier otro usuario.
+    // elegir puesto ni permisos: la cuenta siempre nace como "Operador",
+    // heredando los permisos por defecto configurados para ese puesto (ver
+    // Puesto::default_permissions). Para dar permisos especiales, un admin
+    // debe editarlos después, como a cualquier otro usuario.
     public function register(Request $request)
     {
         $esOperador = $request->boolean('es_operador');
@@ -76,13 +75,7 @@ class AuthController extends Controller
             'operador_placas_remolque' => $esOperador ? $request->operador_placas_remolque : null,
             'operador_folio' => $esOperador ? $request->operador_folio : null,
             'operador_numero_licencia' => $esOperador ? $request->operador_numero_licencia : null,
-            'permissions' => [
-                'manage_news' => false,
-                'news_access' => true,
-                'edit_capacitaciones_course' => false,
-                'view_reports' => false,
-                'manage_content' => false,
-            ],
+            'permissions' => $puestoOperador->default_permissions ?? [],
         ]);
 
         $enlace->update(['used_at' => now()]);
