@@ -123,9 +123,9 @@ export default function NewsFormModal({
             }
         >
             <form id="news-form" onSubmit={guardarNoticia} className="space-y-5">
-                <Input isRequired  variant="secondary" name="title" label="Titular" placeholder="Titular llamativo..." value={formData.title} onChange={handleChange} />
-                <TextArea isRequired variant="secondary" label="Desarrollo de la noticia" name="body" rows={5} value={formData.body} onChange={handleChange} placeholder="Escribe el desarrollo de la nota..." />
-                <TextArea variant="secondary" label="Notas / Evidencia" name="evidence" rows={3} value={formData.evidence} onChange={handleChange} placeholder="Links o información adicional..." />
+                <Input isRequired   name="title" label="Titular" placeholder="Titular llamativo..." value={formData.title} onChange={handleChange} />
+                <TextArea isRequired  label="Desarrollo de la noticia" name="body" rows={5} value={formData.body} onChange={handleChange} placeholder="Escribe el desarrollo de la nota..." />
+                <TextArea label="Notas / Evidencia" name="evidence" rows={3} value={formData.evidence} onChange={handleChange} placeholder="Links o información adicional..." />
                 <div>
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                         Adjuntar archivos
@@ -142,12 +142,12 @@ export default function NewsFormModal({
                             file:mr-4
                             file:rounded-lg
                             file:border-0
-                            file:bg-red-900
+                            file:bg-brand-primary
                             file:px-4
                             file:py-2
                             file:font-medium
                             file:text-white
-                            hover:file:bg-red-800
+                            hover:file:bg-brand-primary/80
                             cursor-pointer
                         "
                     />

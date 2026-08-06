@@ -1,20 +1,22 @@
 
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Outlet, Link, useSearchParams } from "react-router-dom";
+import { useNavigate, Outlet, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from 'axios';
 import logoEmpresa from '../../assets/leb_logotipo.png';
-import { Menu, User } from "lucide-react";
+import { LogOut, Menu, Pencil } from "lucide-react";
 import { useLogout } from "../../hooks/auth/useLogout";
 import { URL } from "../../api/http.client";
 import ProfileFormModal from "./ProfileFormModal";
+import { Avatar } from "../../components/Avatar/Avatar";
+import { DropdownMenu } from "../../components/Dropdown/DropdownMenu";
 
 const API_URL = URL
 
 function AdminPanel({ user, routes }) {
   const logout = useLogout();
 
-  const [searchParams, setSearchParams] = useSearchParams();
+
 
   const [isModalProfileOpen, setModalProfileOpen] = useState(false);
 
@@ -22,8 +24,6 @@ function AdminPanel({ user, routes }) {
   // 1. CONDICIÓN INICIAL: Abierto en PC (>768px), Cerrado en móviles
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [perfilForm, setPerfilForm] = useState({ name: '', lastname: '', descripcion: '' });
-  const [fotoFile, setFotoFile] = useState(null);
   // Forzamos un refresco de vista cuando actualizamos el usuario en sessionStorage
   const [perfilVersion, setPerfilVersion] = useState(0);
 
@@ -92,14 +92,27 @@ function AdminPanel({ user, routes }) {
 
   // --- Abrir el modal de edición de perfil precargado con los datos actuales ---
   const abrirModalPerfil = () => {
+    setIsUserMenuOpen(false)
     setModalProfileOpen(true)
   };
+
+  const menuItems = [
+    {
+      label: "Editar Perfil",
+      icon: Pencil,
+      onClick: abrirModalPerfil,
+    },
+    {
+      label: "Cerrar Sesión",
+      icon: LogOut,
+      variant: "danger",
+      onClick: handleLogout,
+    },
+  ];
 
   const guardarPerfil = async (e) => {
     const { payload } = e
     const formData = payload
-    console.log(formData)
-
     try {
       const response = await axios.post(`${API_URL}/api/perfil`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -124,29 +137,57 @@ function AdminPanel({ user, routes }) {
     }
   };
 
-  const irA = (ruta) => {
-    navigate(ruta);
-    // Solo cerramos la barra automáticamente si estamos en celular
+  const HandleNavigation = () => {
     if (window.innerWidth <= 768) {
       setIsSidebarOpen(false);
     }
   };
+
+  const currentPath = location.pathname;
+
+  const isCurrentPath = (item) => {
+    console.log(item)
+    console.log(currentPath)
+    return currentPath.startsWith(item.path);
+  };
+
+
+  useEffect(() => {
+    const HandleNavigation = () => {
+      if (window.innerWidth <= 768) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", HandleNavigation);
+
+    const timeout = setTimeout(() => {
+      HandleNavigation();
+    }, 0);
+
+    return () => {
+      window.removeEventListener("resize", HandleNavigation);
+      clearTimeout(timeout);
+    };
+  }, []);
 
 
   return (
     <div className="min-h-screen bg-[#f3f2f1] overflow-x-hidden">
 
       {/* --- BARRA SUPERIOR (NAVBAR) Fija arriba --- */}
-      <nav className="fixed top-0 left-0 w-full z-50 flex h-14 items-center justify-between bg-white px-8 shadow-sm">
+      <nav className="fixed top-0 left-0 w-full z-50 flex h-14 items-center justify-between bg-white border-b border-zinc-200 px-6 ">
 
         {/* Lado Izquierdo: Logo y Botón de Menú juntos */}
         <div className="flex items-center gap-6">
-          <img
-            src={logoEmpresa}
-            alt="Logotipo LEB"
-            className="h-8 w-auto cursor-pointer object-contain transition-transform hover:scale-105"
-            onClick={() => irA('/')}
-          />
+          <Link
+            to={"/"}>
+            <img
+              src={logoEmpresa}
+              alt="Logotipo LEB"
+              className="h-8 w-auto cursor-pointer object-contain transition-transform hover:scale-105"
+            />
+          </Link>
 
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -161,35 +202,14 @@ function AdminPanel({ user, routes }) {
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-zinc-100 border border-zinc-200 text-white transition-transform hover:scale-105 focus:outline-none "
+              className="hover:opacity-70 cursor-pointer"
             >
-              {usuarioLogueado.foto_url ? (
-                <img
-                  src={usuarioLogueado.foto_url}
-                  alt="Foto de perfil"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <User className="text-brand-primary" strokeWidth={1.5} />
-              )}
+              <Avatar src={usuarioLogueado.foto_url} />
             </button>
 
             {/* Menú Desplegable (Cierra con clic afuera o a los 15s) */}
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-3 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-xl z-50">
-                <button
-                  onClick={abrirModalPerfil}
-                  className="block w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Editar Perfil
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  Cerrar Sesión
-                </button>
-              </div>
+              <DropdownMenu items={menuItems} />
             )}
           </div>
         </div>
@@ -197,27 +217,33 @@ function AdminPanel({ user, routes }) {
 
       {/* --- BARRA LATERAL (SIDEBAR) A la Izquierda --- */}
       <div
-        className={`fixed left-0 top-13 z-40 h-[calc(100vh-54px)] w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed left-0 top-13 z-40 h-[calc(100vh-54px)] w-72 bg-white border-r border-zinc-200 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         <div className="flex flex-col gap-2 p-4 mt-4">
           {routes
             .filter((item) => item.visible)
-            .map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="rounded-md px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-brand-primary hover:text-white"
-              >
-                {item.label}
-              </Link>
-            ))}
+            .map((item) => {
+              const Icon = item.icon
+              const isActive = isCurrentPath(item)
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={HandleNavigation}
+                  className={`rounded-xl flex flex-row items-center gap-2 px-4 py-3 text-left text-sm text-zinc-800 transition-colors hover:bg-brand-primary/10 ${isActive ? "bg-brand-primary/10" : ""}`}
+                >
+                  <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                  {item.label}
+                </Link>
+              )
+            })}
         </div>
       </div>
 
       {/* --- CONTENIDO PRINCIPAL DINÁMICO --- */}
       {/* Cambié pt-[90px] a pt-[72px] para que pegue exacto con tu barra de arriba que mide 72px */}
-      <div className={`transition-all duration-300 ease-in-out pt-18 ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
+      <div className={`transition-all duration-300 ease-in-out pt-14 ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
 
         {/* Dejamos el main completamente libre para que las pantallas decidan su propio tamaño */}
         <main className="w-full">

@@ -5,6 +5,7 @@ import { useMe } from "../hooks/auth/useMe";
 import Noticias from "../views/News/Noticias";
 import Usuarios from "../views/users/Usuarios";
 import AdminPanel from "../views/Frame/AdminPanel";
+import { BookText, Newspaper, Pencil, User } from "lucide-react";
 
 
 export function ProtectedRoutes() {
@@ -21,26 +22,30 @@ export function ProtectedRoutes() {
 
     const routesConfig = [
         {
+            icon: Newspaper,
             label: "Noticias",
-            path: "noticias",
+            path: "/noticias",
             element: <Noticias />,
             visible: muestraNoticias,
         },
         {
+            icon: BookText,
             label: "Capacitaciones",
-            path: "capacitaciones",
+            path: "/capacitaciones",
             element: <Capacitaciones />,
             visible: muestraCapacitaciones,
         },
         {
+            icon: Pencil,
             label: "Editar Contenido",
-            path: "contenido",
+            path: "/contenido",
             element: <Contenido />,
             visible: muestraContenido,
         },
         {
+            icon: User,
             label: "Usuarios",
-            path: "usuarios",
+            path: "/usuarios",
             element: <Usuarios />,
             visible: muestraUsuarios,
         },
