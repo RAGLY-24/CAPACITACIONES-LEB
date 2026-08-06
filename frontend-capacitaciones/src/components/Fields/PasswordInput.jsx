@@ -9,6 +9,7 @@ const PasswordInput = forwardRef(
             isRequired = false,
             type = "password",
             id,
+            error = null,
             variant = "primary",
             ...props
         },
@@ -20,10 +21,10 @@ const PasswordInput = forwardRef(
 
         const variants = {
             primary:
-                "border border-zinc-200 bg-zinc-100 text-black placeholder-gray-400 focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary",
+                "border border-slate-200 bg-slate-50 text-black placeholder-gray-400 focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary",
 
             secondary:
-                "border border-zinc-300 bg-transparent text-slate-700 placeholder-gray-400 hover:bg-zinc-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary",
+                "border border-slate-300 bg-transparent text-slate-700 placeholder-gray-400 hover:bg-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary",
         };
 
         return (
@@ -74,6 +75,9 @@ const PasswordInput = forwardRef(
                         </button>
                     )}
                 </div>
+                {error && (
+                    <p className="mb-2 text-xs text-red-500">{error}</p>
+                )}
             </div>
         );
     }
