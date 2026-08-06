@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Modulo;
 use App\Models\Pregunta;
+use Illuminate\Support\Collection;
 
 // Reconstruye el detalle de aciertos/fallos de un examen a partir de las
 // respuestas seleccionadas (pregunta_id => opcion_id, o pregunta_id => texto
@@ -11,18 +11,22 @@ use App\Models\Pregunta;
 // nuevo como la retroalimentación de uno ya contestado, para no duplicar la
 // lógica de comparar cada opción contra la correcta.
 //
+// Recibe explícitamente el subconjunto de preguntas del intento (no todo el
+// banco del módulo): con el examen aleatorio, cada intento solo cubre 5 de
+// las preguntas de opción múltiple del banco, más las de tipo feedback.
+//
 // Las preguntas tipo "feedback" (opinión del operador sobre el módulo) se
 // incluyen en `resultados` para poder mostrarlas, pero quedan fuera de
 // `aciertos`/`total`: no se califican.
 class ExamenCalificadorService
 {
-    public function calificar(Modulo $modulo, array $respuestas): array
+    public function calificar(Collection $preguntas, array $respuestas): array
     {
         $aciertos = 0;
         $total = 0;
         $resultados = [];
 
-        foreach ($modulo->preguntas as $pregunta) {
+        foreach ($preguntas as $pregunta) {
             if ($pregunta->tipo === Pregunta::TIPO_FEEDBACK) {
                 $resultados[] = [
                     'pregunta_id'     => $pregunta->id,

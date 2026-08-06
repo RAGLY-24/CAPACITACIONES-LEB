@@ -197,18 +197,24 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [sinExamen, setSinExamen] = useState(false);
+  const [sinExamenMensaje, setSinExamenMensaje] = useState("");
   const [bloqueado, setBloqueado] = useState(false);
   const [intentosRestantes, setIntentosRestantes] = useState(undefined);
 
   // Examen en blanco para responder (o reintentar). No consulta la
   // retroalimentación guardada: se usa explícitamente para un intento nuevo.
   const cargarExamenBlanco = useCallback(async () => {
-    setCargando(true); setSinExamen(false); setBloqueado(false); setResultado(null); setRespuestas({});
+    setCargando(true); setSinExamen(false); setSinExamenMensaje(""); setBloqueado(false); setResultado(null); setRespuestas({});
     try {
       const res = await axios.get(`${API}/api/modulos/${moduloId}/examen`);
       setPreguntas(res.data.preguntas || []);
     } catch (err) {
-      if (err.response?.status === 404) setSinExamen(true);
+      // 404: el módulo aún no tiene preguntas. 422: tiene preguntas pero el
+      // banco no llega al mínimo de 15 para poder sortear el examen.
+      if (err.response?.status === 404 || err.response?.status === 422) {
+        setSinExamen(true);
+        setSinExamenMensaje(err.response.data?.message || "Este módulo aún no tiene examen configurado.");
+      }
       else if (err.response?.status === 403) setBloqueado(true);
       else Swal.fire({ icon: "error", title: "Error al cargar el examen.", confirmButtonColor: "#802907" });
     } finally { setCargando(false); }
@@ -272,7 +278,7 @@ function SeccionExamen({ moduloId, estadoInicial, onCalificado, onRepasarConteni
   };
 
   if (cargando) return <p className="text-center text-sm text-gray-400 py-6">Cargando examen...</p>;
-  if (sinExamen) return <p className="text-center text-sm text-gray-400 py-6">Este módulo aún no tiene examen configurado.</p>;
+  if (sinExamen) return <p className="text-center text-sm text-gray-400 py-6">{sinExamenMensaje || "Este módulo aún no tiene examen configurado."}</p>;
 
   if (bloqueado) {
     return (

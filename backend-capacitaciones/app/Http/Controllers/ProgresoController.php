@@ -65,6 +65,8 @@ class ProgresoController extends Controller
         );
 
         $progreso->intentos_ciclo = 0;
+        $progreso->preguntas_usadas_ciclo = []; // Reinicia el ciclo de preguntas usadas
+        $progreso->intento_pendiente = false; // Reinicia el estado de intento pendiente
         $progreso->save();
 
         return response()->json(['intentos_restantes' => 2], 200);
