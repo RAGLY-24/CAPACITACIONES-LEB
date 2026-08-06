@@ -1164,7 +1164,7 @@ function Capacitaciones() {
   const storedUser = typeof window !== 'undefined' ? data : null;
   const rol = storedUser?.puesto?.nombre || null;
   const permisos = storedUser?.permissions || {};
-  const esAdmin = rol === "SistemasAdmin" || permisos.edit_trainings || permisos.edit_capacitaciones_course;
+  const esAdmin = rol === "SistemasAdmin" || permisos.edit_trainings;
 
   const [vista, setVista] = useState(esAdmin ? "admin" : "empleado");
 

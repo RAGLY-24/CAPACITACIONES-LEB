@@ -16,8 +16,41 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $puestoAdmin = Puesto::firstOrCreate(['nombre' => 'SistemasAdmin']);
-        $puestoGerente = Puesto::firstOrCreate(['nombre' => 'Gerente']);
+        $puestoAdmin = Puesto::firstOrCreate(['nombre' => 'SistemasAdmin'], [
+            'default_permissions' => [
+                'manage_news' => true,
+                'news_access' => true,
+                'edit_trainings' => true,
+                'manage_passwords' => true,
+                'create_users' => true,
+                'delete_users' => true,
+                'assign_permissions' => true,
+                'view_reports' => true,
+                'manage_content' => true,
+            ],
+        ]);
+        $puestoGerente = Puesto::firstOrCreate(['nombre' => 'Gerente'], [
+            'default_permissions' => [
+                'manage_news' => true,
+                'news_access' => true,
+                'edit_trainings' => true,
+                'manage_passwords' => true,
+                'create_users' => true,
+                'delete_users' => false,
+                'assign_permissions' => false,
+                'view_reports' => true,
+                'manage_content' => true,
+            ],
+        ]);
+        // Rol base: nace con acceso solo a noticias (realizar capacitaciones
+        // no está gateado por permisos, es universal para todo usuario
+        // autenticado). Un admin puede dar permisos especiales por usuario,
+        // o editar estos defaults desde el directorio de puestos.
+        Puesto::firstOrCreate(['nombre' => 'Operador'], [
+            'default_permissions' => [
+                'news_access' => true,
+            ],
+        ]);
 
         // ejecutar de forma segura en cada deploy (php artisan migrate --seed)
         User::firstOrCreate(

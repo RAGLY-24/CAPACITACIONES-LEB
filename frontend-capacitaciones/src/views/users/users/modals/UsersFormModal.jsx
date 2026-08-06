@@ -4,6 +4,7 @@ import { useMe } from "../../../../hooks/auth/useMe";
 import { usePartners } from "../../../../hooks/partners/usePartners";
 import { Modal } from "../../../../components/Modal";
 import { usePositions } from "../../../../hooks/position/usePositions";
+import { PERMISSION_CATALOG, emptyPermissions } from "../../../../utils/permissions";
 
 export default function UsersFormModal({
     open, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
@@ -66,12 +67,7 @@ export default function UsersFormModal({
         operador_placas_remolque: "",
         operador_folio: "",
         operador_numero_licencia: "",
-        permissions: {
-            create_users: false, delete_users: false, manage_news: false,
-            edit_capacitaciones_course: false, manage_passwords: false,
-            assign_permissions: false, news_access: true, view_reports: false,
-            manage_content: false,
-        }
+        permissions: { ...emptyPermissions(), news_access: true },
     };
 
 
@@ -128,10 +124,45 @@ export default function UsersFormModal({
 
     const handleChange = ({ target: { name, value } }) => {
         setIsDirty(true)
+        // Al crear un usuario, elegir puesto precarga los permisos con los
+        // valores predeterminados de ese rol (el admin puede seguir
+        // marcando permisos especiales encima).
+        if (name === "puesto_id" && mode === "create") {
+            const puestoSeleccionado = puestos.find(p => String(p.id) === String(value));
+            setFormData((prev) => ({
+                ...prev,
+                puesto_id: value,
+                permissions: { ...emptyPermissions(), news_access: true, ...(puestoSeleccionado?.default_permissions || {}) },
+            }));
+            return;
+        }
         setFormData((prev) => ({
             ...prev,
             [name]: value,
         }));
+    };
+
+    const restablecerPermisosDelPuesto = () => {
+        const puestoSeleccionado = puestos.find(p => String(p.id) === String(formData.puesto_id));
+        if (!puestoSeleccionado) return;
+        Swal.fire({
+            title: '¿Restablecer permisos?',
+            text: `Se reemplazarán los permisos actuales por los predeterminados del puesto "${puestoSeleccionado.nombre}". Se perderán los permisos especiales que tenga este usuario.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#802907',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Sí, restablecer',
+            cancelButtonText: 'Cancelar',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                setFormData(prev => ({
+                    ...prev,
+                    permissions: { ...emptyPermissions(), news_access: true, ...(puestoSeleccionado.default_permissions || {}) },
+                }));
+                setIsDirty(true);
+            }
+        });
     };
 
     // --- VALIDACIONES CON REGEX ---
@@ -341,26 +372,28 @@ export default function UsersFormModal({
                             <span className="text-xs text-gray-500">{permissionsOpen ? 'Ocultar' : 'Mostrar'}</span>
                         </button>
                         {permissionsOpen && (
-                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                {[
-                                    { key: 'create_users', label: 'Crear usuarios' }, { key: 'delete_users', label: 'Eliminar usuarios' },
-                                    { key: 'manage_news', label: 'Publicar noticias' }, { key: 'news_access', label: 'Acceso a noticias' },
-                                    { key: 'edit_capacitaciones_course', label: 'Editar capacitaciones' }, { key: 'manage_passwords', label: 'Administrar contraseñas' },
-                                    { key: 'assign_permissions', label: 'Asignar permisos' }, { key: 'view_reports', label: 'Ver reportes' },
-                                    { key: 'manage_content', label: 'Gestionar contenido' },
-                                ].map(permission => (
-                                    <label key={permission.key} className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-                                        <input
-                                            type="checkbox"
-                                            name={permission.key}
-                                            checked={formData.permissions?.[permission.key] || false}
-                                            onChange={handlePermissionChange}
-                                            className="h-4 w-4 rounded border-gray-300 text-[#802907] focus:ring-[#802907]"
-                                        />
-                                        {permission.label}
-                                    </label>
-                                ))}
-                            </div>
+                            <>
+                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                    {PERMISSION_CATALOG.map(permission => (
+                                        <label key={permission.key} className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                                            <input
+                                                type="checkbox"
+                                                name={permission.key}
+                                                checked={formData.permissions?.[permission.key] || false}
+                                                onChange={handlePermissionChange}
+                                                className="h-4 w-4 rounded border-gray-300 text-[#802907] focus:ring-[#802907]"
+                                            />
+                                            {permission.label}
+                                        </label>
+                                    ))}
+                                </div>
+                                {formData.puesto_id && (
+                                    <button type="button" onClick={restablecerPermisosDelPuesto}
+                                        className="mt-3 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                        Restablecer a los valores predeterminados del puesto
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
                 )}
