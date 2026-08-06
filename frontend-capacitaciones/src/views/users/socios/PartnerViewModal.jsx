@@ -1,3 +1,4 @@
+import Button from "../../../components/Buttons/Button";
 import { Modal } from "../../../components/Modal";
 
 export default function PartnerViewModal({
@@ -17,13 +18,9 @@ export default function PartnerViewModal({
             onClose={onClose}
             footer={
                 <>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 cursor-pointer"
-                    >
+                    <Button variant="outline" onClick={onClose} type="button">
                         Cerrar
-                    </button>
+                    </Button>
                 </>
             }
         >

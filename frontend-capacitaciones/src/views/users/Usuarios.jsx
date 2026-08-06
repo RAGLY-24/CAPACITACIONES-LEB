@@ -3,7 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { useSearchParams } from "react-router-dom";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { Check, Link, Pencil, PlusIcon, Trash2, X } from "lucide-react";
 
 import { URL } from "../../api/http.client";
 
@@ -32,6 +32,7 @@ import PartnerViewModal from "./socios/PartnerViewModal";
 import PositionDeleteModal from "./puestos/PositionDeleteModal";
 import { useMe } from "../../hooks/auth/useMe";
 import { IconButton } from "../../components/IconButton";
+import Button from "../../components/Buttons/Button";
 
 function Usuarios() {
 
@@ -569,12 +570,12 @@ function Usuarios() {
           </div>
           {puedeCrearUsuarios && (
             <div className="flex gap-2">
-              <button onClick={generarEnlaceRegistro} className="rounded-md border border-[#802907] px-4 py-2 text-sm font-semibold text-[#802907] transition-colors hover:bg-[#fdf7f3] shadow-sm w-full md:w-auto">
-                Generar link de registro
-              </button>
-              <button onClick={abrirModalCrear} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm w-full md:w-auto">
-                + Crear Nuevo Usuario
-              </button>
+              <Button variant="secondary" Icon={Link} onClick={generarEnlaceRegistro}>
+                Crear Nuevo Usuario
+              </Button>
+              <Button Icon={PlusIcon} onClick={abrirModalCrear}>
+                Crear Nuevo Usuario
+              </Button>
             </div>
           )}
         </div>
@@ -604,9 +605,9 @@ function Usuarios() {
             <h3 className="text-lg font-bold text-gray-800">Directorio de Socios</h3>
             <p className="text-sm text-gray-500">Asocia a un operador con su socio y revisa los usuarios vinculados.</p>
           </div>
-          <button onClick={abrirModalSocio} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
-            + Agregar socio
-          </button>
+          <Button Icon={PlusIcon} onClick={abrirModalSocio}>
+            Agregar socio
+          </Button>
         </div>
 
         <div className="mt-4  ">
@@ -667,9 +668,9 @@ function Usuarios() {
               />
               {errorPuesto && <p className="mt-1 text-xs text-red-500">{errorPuesto}</p>}
             </div>
-            <button onClick={crearPuesto} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
-              + Agregar
-            </button>
+            <Button Icon={PlusIcon} onClick={crearPuesto}>
+              Agregar
+            </Button>
           </div>
         </div>
         <DataTable

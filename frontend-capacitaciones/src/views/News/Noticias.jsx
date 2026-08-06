@@ -4,10 +4,11 @@ import { useMe } from "../../hooks/auth/useMe";
 import { useNews } from "../../hooks/news/useNews";
 import NewsFormModal from "./NewsFormModal";
 import ViewNewsModal from "./ViewNewsModal";
-import { Plus } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { AlertCapsule } from "./AlertCapsule";
 import { NewsCard } from "./NewsCard";
 import { useSearchParams } from "react-router-dom";
+import Button from "../../components/Buttons/Button";
 
 function Noticias() {
 
@@ -123,16 +124,16 @@ function Noticias() {
 
     return (
         <div
-            className="w-full p-4 md:p-6 font-sans text-gray-900 bg-zinc-100 bg-center bg-no-repeat bg-fixed "
+            className="w-full p-6 font-sans text-gray-900 bg-zinc-100 bg-center bg-no-repeat bg-fixed "
         // style={{ backgroundImage: `url(${fondodeinterfaz})` }}
         >
 
-            <div className="w-[95%] max-w-400 mx-auto">
+            <div className="max-w-400 mx-auto">
 
                 {/* CABEZERA */}
                 {/* CABEZERA */}
                 <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-white/20 bg-white px-6 py-5 shadow-lg backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex-1">
+                    <div className="flex-1 w-full">
                         <h2 className="text-3xl font-medium tracking-tight text-gray-900">
                             Panel de Noticias
                         </h2>
@@ -143,27 +144,9 @@ function Noticias() {
                     </div>
 
                     {puedeCrearNoticias && (
-                        <button
-                            onClick={abrirModalCrear}
-                            className="
-                inline-flex shrink-0 items-center justify-center gap-2
-                rounded-lg
-                bg-brand-primary
-                px-4 py-2.5
-                text-sm font-medium text-white
-                transition-colors duration-200
-                hover:bg-red-800
-                active:bg-red-950
-                focus:outline-none
-                focus:ring-2
-                focus:ring-red-700/40
-            "
-                        >
-                            <Plus size={18} strokeWidth={2.2} />
-                            <span className="">
-                                Crear noticia
-                            </span>
-                        </button>
+                        <Button Icon={PlusIcon} onClick={abrirModalCrear}>
+                            Crear noticia
+                        </Button>
                     )}
                 </div>
 

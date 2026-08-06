@@ -4,6 +4,7 @@ import { useMe } from "../../../../hooks/auth/useMe";
 import { usePartners } from "../../../../hooks/partners/usePartners";
 import { Modal } from "../../../../components/Modal";
 import { usePositions } from "../../../../hooks/position/usePositions";
+import Button from "../../../../components/Buttons/Button";
 
 export default function UsersFormModal({
     open, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
@@ -199,21 +200,12 @@ export default function UsersFormModal({
             onClose={handleClose}
             footer={
                 <>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 cursor-pointer"
-                    >
+                    <Button variant="outline" onClick={handleClose} type="button">
                         Cancelar
-                    </button>
-
-                    <button
-                        type="submit"
-                        form="users-form"
-                        className="rounded-lg bg-red-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800 cursor-pointer"
-                    >
-                        {mode === "create" ? "Crear" : "Guardar cambios"}
-                    </button>
+                    </Button>
+                    <Button type="submit" form="users-form">
+                        {mode === "create" ? "Crear" : "Guardar"}
+                    </Button>
                 </>
             }
         >

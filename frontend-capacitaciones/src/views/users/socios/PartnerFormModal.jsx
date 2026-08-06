@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { Modal } from "../../../components/Modal";
+import Button from "../../../components/Buttons/Button";
 
 export default function PartnerFormModal({
     open, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
@@ -98,21 +99,14 @@ export default function PartnerFormModal({
             onClose={handleClose}
             footer={
                 <>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 cursor-pointer"
-                    >
-                        Cancelar
-                    </button>
-
-                    <button
-                        type="submit"
-                        form="partners-form"
-                        className="rounded-lg bg-red-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800 cursor-pointer"
-                    >
-                        {mode === "create" ? "Crear" : "Guardar cambios"}
-                    </button>
+                    <>
+                        <Button variant="outline" onClick={handleClose} type="button">
+                            Cancelar
+                        </Button>
+                        <Button type="submit" form="users-form">
+                            {mode === "create" ? "Crear" : "Guardar"}
+                        </Button>
+                    </>
                 </>
             }
         >

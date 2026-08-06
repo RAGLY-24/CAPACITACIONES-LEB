@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { Modal } from "../../components/Modal";
+import Button from "../../components/Buttons/Button";
+import Input from "../../components/Fields/Input";
+import TextArea from "../../components/Fields/TextArea";
 
 export default function NewsFormModal({
     open, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
@@ -110,69 +113,19 @@ export default function NewsFormModal({
             onClose={onClose}
             footer={
                 <>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 cursor-pointer"
-                    >
+                    <Button variant="outline" onClick={onClose} type="button">
                         Cancelar
-                    </button>
-
-                    <button
-                        type="submit"
-                        form="news-form"
-                        className="rounded-lg bg-red-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800 cursor-pointer"
-                    >
+                    </Button>
+                    <Button type="submit" form="news-form">
                         {mode === "crear" ? "Publicar" : "Guardar cambios"}
-                    </button>
+                    </Button>
                 </>
             }
         >
             <form id="news-form" onSubmit={guardarNoticia} className="space-y-5">
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Titular
-                    </label>
-
-                    <input
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        placeholder="Titular llamativo..."
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
-                    />
-                </div>
-
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Desarrollo de la noticia
-                    </label>
-
-                    <textarea
-                        name="body"
-                        rows={5}
-                        value={formData.body}
-                        onChange={handleChange}
-                        placeholder="Escribe todo el contenido aquí..."
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
-                    />
-                </div>
-
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Notas / Evidencia <span className="text-gray-400">(Opcional)</span>
-                    </label>
-
-                    <textarea
-                        name="evidence"
-                        rows={2}
-                        value={formData.evidence}
-                        onChange={handleChange}
-                        placeholder="Links o información adicional..."
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-red-800 focus:outline-none focus:ring-1 focus:ring-red-800"
-                    />
-                </div>
-
+                <Input isRequired  variant="secondary" name="title" label="Titular" placeholder="Titular llamativo..." value={formData.title} onChange={handleChange} />
+                <TextArea isRequired variant="secondary" label="Desarrollo de la noticia" name="body" rows={5} value={formData.body} onChange={handleChange} placeholder="Escribe el desarrollo de la nota..." />
+                <TextArea variant="secondary" label="Notas / Evidencia" name="evidence" rows={3} value={formData.evidence} onChange={handleChange} placeholder="Links o información adicional..." />
                 <div>
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                         Adjuntar archivos
