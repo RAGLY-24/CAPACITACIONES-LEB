@@ -275,13 +275,14 @@ function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo
             <label className="text-sm font-semibold text-gray-700">Contenido del módulo</label>
             <p className="text-xs text-gray-400 mt-0.5 mb-2">Elige una de las dos opciones para el contenido que verá el empleado.</p>
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#802907] cursor-pointer transition-colors py-4 px-2 text-center">
+              <label className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#802907] cursor-pointer transition-colors py-4 px-2 text-center col-span-2">
                 {Ico.file}
                 <span className="text-xs font-medium text-gray-600 line-clamp-1">
                   {form.archivo ? form.archivo.name : "Subir PDF / Video"}
                 </span>
                 <input type="file" name="archivo" accept=".pdf,.mp4,.webm" onChange={handle} className="hidden" />
               </label>
+              {/*
               <button type="button" onClick={irAlLienzo} disabled={saving}
                 className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-purple-300 hover:border-purple-500 bg-purple-50 py-4 px-2 text-center disabled:opacity-60">
                 {Ico.img}
@@ -289,6 +290,7 @@ function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo
                   {tienePresentacion ? "Editar presentación" : "Crear presentación"}
                 </span>
               </button>
+               */}
             </div>
             {datos?.file_type && datos.file_type !== "presentacion" && !form.archivo && (
               <p className="text-xs text-gray-400 mt-1.5">Actual: <strong>{datos.file_type.toUpperCase()}</strong></p>
@@ -634,8 +636,8 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
         {/* Badge tipo de contenido */}
         {modulo.file_type && (
           <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${modulo.file_type === "pdf" ? "bg-red-600 text-white"
-              : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
-                : "bg-blue-600 text-white"
+            : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
+              : "bg-blue-600 text-white"
             }`}>
             {modulo.file_type === "presentacion" ? "PRESENTACIÓN" : modulo.file_type.toUpperCase()}
           </span>

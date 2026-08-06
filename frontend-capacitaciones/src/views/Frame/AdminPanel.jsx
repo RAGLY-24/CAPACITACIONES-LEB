@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Outlet, Link } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from 'axios';
 import logoEmpresa from '../../assets/leb_logotipo.png';
@@ -29,7 +29,6 @@ function AdminPanel({ user, routes }) {
 
   // Referencia para detectar clics fuera del menú de usuario
   const userMenuRef = useRef(null);
-  const navigate = useNavigate();
 
   // 1. Obtenemos el usuario real que inició sesión desde el almacenamiento del navegador
   // (perfilVersion se usa solo para forzar la relectura de sessionStorage tras editar el perfil)
@@ -173,7 +172,7 @@ function AdminPanel({ user, routes }) {
 
 
   return (
-    <div className="min-h-screen bg-[#f3f2f1] overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
 
       {/* --- BARRA SUPERIOR (NAVBAR) Fija arriba --- */}
       <nav className="fixed top-0 left-0 w-full z-50 flex h-14 items-center justify-between bg-white border-b border-zinc-200 px-6 ">
@@ -246,7 +245,7 @@ function AdminPanel({ user, routes }) {
       <div className={`transition-all duration-300 ease-in-out pt-14 ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
 
         {/* Dejamos el main completamente libre para que las pantallas decidan su propio tamaño */}
-        <main className="w-full">
+        <main className="w-full ">
           <Outlet />
         </main>
 

@@ -28,6 +28,8 @@ const Button = ({
             "bg-transparent text-slate-700 hover:bg-zinc-100",
         outline:
             "bg-transparent border border-zinc-300 text-slate-700 hover:bg-zinc-200",
+        link:
+            "bg-transparent text-blue-500 hover:bg-transparent hover:underline px-0 py-0",
     };
 
     const sizes = {
@@ -59,7 +61,7 @@ const Button = ({
             {isPending ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-                Icon && <Icon strokeWidth={2} size={15}  />
+                Icon && <Icon strokeWidth={2} size={15} />
             )}
 
             {!iconOnly && (isPending ? "Cargando..." : children)}

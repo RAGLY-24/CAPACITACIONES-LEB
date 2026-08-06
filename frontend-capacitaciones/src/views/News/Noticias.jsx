@@ -124,7 +124,7 @@ function Noticias() {
 
     return (
         <div
-            className="w-full p-6 font-sans text-gray-900 bg-zinc-100 bg-center bg-no-repeat bg-fixed "
+            className="w-full p-6 font-sans text-gray-900  bg-center bg-no-repeat bg-fixed "
         // style={{ backgroundImage: `url(${fondodeinterfaz})` }}
         >
 
@@ -132,7 +132,7 @@ function Noticias() {
 
                 {/* CABEZERA */}
                 {/* CABEZERA */}
-                <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-white/20 bg-white px-6 py-5 shadow-lg backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+                <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white px-6 py-5  sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex-1 w-full">
                         <h2 className="text-3xl font-medium tracking-tight text-gray-900">
                             Panel de Noticias

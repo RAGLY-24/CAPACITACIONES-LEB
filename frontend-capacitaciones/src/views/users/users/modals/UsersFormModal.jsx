@@ -6,6 +6,10 @@ import { Modal } from "../../../../components/Modal";
 import { usePositions } from "../../../../hooks/position/usePositions";
 import Button from "../../../../components/Buttons/Button";
 import { PERMISSION_CATALOG, emptyPermissions } from "../../../../utils/permissions";
+import Input from "../../../../components/Fields/Input";
+import Select from "../../../../components/Fields/Select";
+import PasswordInput from "../../../../components/Fields/PasswordInput";
+import Checkbox from "../../../../components/Fields/Checkbox";
 
 export default function UsersFormModal({
     open, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
@@ -78,6 +82,7 @@ export default function UsersFormModal({
 
     const [permissionsOpen, setPermissionsOpen] = useState(false);
 
+    /*
     const handleEsOperadorChange = (e) => {
         const esOperador = e.target.value === "si";
         setFormData({
@@ -101,6 +106,7 @@ export default function UsersFormModal({
             operador_numero_licencia: null,
         });
     };
+     */
 
     useEffect(() => {
         if (mode === "edit" && user) {
@@ -218,6 +224,20 @@ export default function UsersFormModal({
 
     const [erroresForm, setErroresForm] = useState({});
 
+    const partnerOptions = partners?.map((socio) => ({
+        value: socio.id,
+        label: `${socio.nombre}${socio.empresa ? ` - ${socio.empresa}` : ""}`,
+    }));
+
+    const puestoOptions = puestos?.map((puesto) => ({
+        value: puesto.id,
+        label: puesto.nombre,
+    }));
+    const estadoOptions = [
+        { value: "Activo", label: "Activo" },
+        { value: "Inactivo", label: "Inactivo" },
+    ];
+
     if (partnersIsLoading || puestosIsLoading) {
         return null
     }
@@ -240,59 +260,77 @@ export default function UsersFormModal({
                 </>
             }
         >
-            <form id="users-form" onSubmit={guardarUsuario} className="grid grid-cols-2 gap-6">
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                    {erroresForm.name && <p className="mt-1 text-xs text-red-500">{erroresForm.name}</p>}
-                </div>
+            <form id="users-form" onSubmit={guardarUsuario} className="grid grid-cols-2 gap-2">
 
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Apellido</label>
-                    <input type="text" name="lastname" value={formData.lastname} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                </div>
+                <Input
+                    name="name"
+                    label="Nombre"
+                    placeholder="Ej: Juan"
+                    isRequired
+                    value={formData.name}
+                    onChange={handleChange}
+                    error={erroresForm.name}
+                />
 
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Correo Electrónico <span className="text-red-500">*</span></label>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                    {erroresForm.email && <p className="mt-1 text-xs text-red-500">{erroresForm.email}</p>}
-                </div>
+                <Input
+                    name="lastname"
+                    label="Apellido"
+                    placeholder="Ej: Pérez"
+                    value={formData.lastname}
+                    onChange={handleChange}
+                />
 
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Usuario de acceso <span className="text-red-500">*</span></label>
-                    <input type="text" name="usuario" value={formData.usuario} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                    {erroresForm.usuario && <p className="mt-1 text-xs text-red-500">{erroresForm.usuario}</p>}
-                </div>
+                <Input
+                    name="email"
+                    label="Correo Electrónico"
+                    type="email"
+                    placeholder="Ej: usuario@empresa.com"
+                    isRequired
+                    value={formData.email}
+                    onChange={handleChange}
+                    error={erroresForm.email}
+                />
 
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Puesto <span className="text-red-500">*</span></label>
-                    <select name="puesto_id" value={formData.puesto_id} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
-                        <option value="">Seleccione un puesto</option>
-                        {puestos.map((puesto) => (
-                            <option key={puesto.id} value={puesto.id}>{puesto.nombre}</option>
-                        ))}
-                    </select>
-                    {erroresForm.puesto_id && <p className="mt-1 text-xs text-red-500">{erroresForm.puesto_id}</p>}
-                </div>
+                <Input
+                    name="usuario"
+                    label="Usuario de acceso"
+                    placeholder="Ej: jperez"
+                    isRequired
+                    value={formData.usuario}
+                    onChange={handleChange}
+                    error={erroresForm.usuario}
+                />
 
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Estado</label>
-                    <select name="estado" value={formData.estado} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                    </select>
-                </div>
+                <Select
+                    label="Puesto"
+                    isRequired
+                    name="puesto_id"
+                    value={formData.puesto_id}
+                    onChange={handleChange}
+                    options={puestoOptions}
+                    placeholder="Seleccione un puesto"
+                    error={erroresForm.puesto_id}
+                />
 
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Socio / Empresa</label>
-                    <select name="socio_id" value={formData.socio_id || ""} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
-                        <option value="">Sin asociación</option>
-                        {partners.map((socio) => (
-                            <option key={socio.id} value={socio.id}>{socio.nombre} {socio.empresa ? `- ${socio.empresa}` : ''}</option>
-                        ))}
-                    </select>
-                </div>
+                <Select
+                    label="Estado"
+                    name="estado"
+                    value={formData.estado}
+                    onChange={handleChange}
+                    options={estadoOptions}
+                />
 
+                <Select
+                    label="Socio / Empresa"
+                    name="socio_id"
+                    value={formData.socio_id || ""}
+                    containerClassName="col-span-2"
+                    onChange={handleChange}
+                    options={partnerOptions}
+                    placeholder="Sin asociación"
+                />
+
+                {/*
                 <div className="col-span-2">
                     <label className="mb-1 block text-sm font-semibold text-gray-700">¿Es operador?</label>
                     <div className="flex gap-6">
@@ -308,6 +346,7 @@ export default function UsersFormModal({
                         </label>
                     </div>
                 </div>
+            */}
                 {formData.es_operador && (
                     <div className="col-span-2 grid grid-cols-2 gap-6 rounded-md bg-gray-50 p-4 border border-gray-200">
                         <div className="col-span-2">
@@ -342,23 +381,34 @@ export default function UsersFormModal({
                     </div>
                 )}
 
-                <div className="col-span-2 grid grid-cols-2 gap-6 rounded-md bg-gray-50 p-4 border border-gray-200">
-                    <div>
-                        <label className="mb-1 block text-sm font-semibold text-gray-700">
-                            Contraseña {mode === 'create' && <span className="text-red-500">*</span>}
-                        </label>
-                        <input type="password" name="password" placeholder={mode === 'edit' ? "Dejar en blanco para conservar" : ""} value={formData.password} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                        {erroresForm.password && <p className="mt-1 text-xs text-red-500">{erroresForm.password}</p>}
-                    </div>
-                    <div>
-                        <label className="mb-1 block text-sm font-semibold text-gray-700">Repetir Contraseña</label>
-                        <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                        {erroresForm.confirmPassword && <p className="mt-1 text-xs text-red-500">{erroresForm.confirmPassword}</p>}
-                    </div>
+                <div className="col-span-2 grid grid-cols-2 gap-6 rounded-xl border border-gray-200  p-4">
+                    <PasswordInput
+                        label="Contraseña"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder={
+                            mode === "edit"
+                                ? "Deja en blanco para conservar la actual"
+                                : "Ingresa una contraseña"
+                        }
+                        isRequired={mode === "create"}
+                        error={erroresForm.password}
+                    />
+
+                    <PasswordInput
+                        label="Repetir Contraseña"
+                        isRequired
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Confirma la contraseña"
+                        error={erroresForm.confirmPassword}
+                    />
                 </div>
 
                 {puedeAsignarPermisos && (
-                    <div className="col-span-2 rounded-md bg-white p-4 border border-gray-200">
+                    <div className="col-span-2 rounded-xl bg-white p-4 border border-gray-200">
                         <button type="button" onClick={() => setPermissionsOpen(!permissionsOpen)} className="flex w-full items-center justify-between text-left text-sm font-semibold text-gray-800">
                             <span>Permisos del usuario</span>
                             <span className="text-xs text-gray-500">{permissionsOpen ? 'Ocultar' : 'Mostrar'}</span>
@@ -366,24 +416,28 @@ export default function UsersFormModal({
                         {permissionsOpen && (
                             <>
                                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                    {PERMISSION_CATALOG.map(permission => (
-                                        <label key={permission.key} className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-                                            <input
-                                                type="checkbox"
-                                                name={permission.key}
-                                                checked={formData.permissions?.[permission.key] || false}
-                                                onChange={handlePermissionChange}
-                                                className="h-4 w-4 rounded border-gray-300 text-[#802907] focus:ring-[#802907]"
-                                            />
-                                            {permission.label}
-                                        </label>
+                                    {PERMISSION_CATALOG.map((permission) => (
+                                        <Checkbox
+                                            key={permission.key}
+                                            name={permission.key}
+                                            label={permission.label}
+                                            checked={formData.permissions?.[permission.key] || false}
+                                            onChange={handlePermissionChange}
+                                        />
                                     ))}
+
                                 </div>
                                 {formData.puesto_id && (
-                                    <button type="button" onClick={restablecerPermisosDelPuesto}
-                                        className="mt-3 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
-                                        Restablecer a los valores predeterminados del puesto
-                                    </button>
+                                    <div className="mt-4">
+                                        <Button
+                                            type="button"
+                                            variant="link"
+                                            size="sm"
+                                            onClick={restablecerPermisosDelPuesto}
+                                        >
+                                            Restablecer permisos del puesto
+                                        </Button>
+                                    </div>
                                 )}
                             </>
                         )}
