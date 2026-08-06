@@ -444,6 +444,16 @@ function PanelExamen({ modulo, onCerrar }) {
           </div>
           <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold">✕</button>
         </div>
+        {!cargando && (() => {
+          const numOpcionMultiple = preguntas.filter(p => p.tipo !== "feedback").length;
+          const listo = numOpcionMultiple >= 15;
+          return (
+            <div className={`px-6 py-2 text-xs font-medium shrink-0 border-b ${listo ? "bg-green-50 text-green-700 border-green-100" : "bg-amber-50 text-amber-800 border-amber-100"}`}>
+              {listo ? "✓" : "⚠"} Banco de preguntas: {numOpcionMultiple} de 15 preguntas de opción múltiple mínimas
+              {!listo && ` (faltan ${15 - numOpcionMultiple} para poder generar el examen)`}
+            </div>
+          );
+        })()}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {cargando ? <p className="text-center text-sm text-gray-400 py-6">Cargando...</p> : (
             <>
