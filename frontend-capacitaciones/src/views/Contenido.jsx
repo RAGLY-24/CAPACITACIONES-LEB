@@ -5,6 +5,8 @@ import { VisorArchivo } from "../components/VisorArchivo";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 import { useMe } from "../hooks/auth/useMe";
 import { URL } from "../api/http.client";
+import Button from "../components/Buttons/Button";
+import { ListTodo, Pencil, Plus, Trash2, X } from "lucide-react";
 
 // Carga diferida: tldraw es pesado y solo se necesita al crear/editar presentaciones.
 const EditorPresentacion = lazy(() =>
@@ -563,11 +565,11 @@ function ModalVistaPrevia({ modulo, onCerrar, onEditar }) {
           <p className="text-xs text-gray-500 line-clamp-1">{modulo.descripcion}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
-          <button onClick={() => onEditar(modulo)} title="Editar módulo"
-            className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100">
-            {Ico.edit} Editar
-          </button>
-          <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold">✕</button>
+          <Button size="sm" Icon={Pencil} onClick={() => onEditar(modulo)} title="Editar módulo">
+            Editar
+          </Button>
+          <Button size="sm" variant="ghost" Icon={X} onClick={onCerrar} title="Editar módulo">
+          </Button>
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col">
@@ -662,19 +664,16 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
         )}
 
         {/* Acciones */}
-        <div className="flex gap-2 mt-auto pt-2 border-t border-gray-100" onClick={e => e.stopPropagation()}>
-          <button onClick={() => onEditar(modulo)} title="Editar módulo"
-            className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100">
-            {Ico.edit} Editar
-          </button>
-          <button onClick={() => onExamen(modulo)} title="Gestionar examen"
-            className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-purple-200 bg-purple-50 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100">
-            {Ico.qa} Examen
-          </button>
-          <button onClick={() => onEliminar(modulo)} title="Eliminar módulo"
-            className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-red-700 hover:bg-red-100">
-            {Ico.trash}
-          </button>
+        <div className="flex gap-2 mt-auto  pt-2 border-t border-gray-100" onClick={e => e.stopPropagation()}>
+
+          <Button size="sm" Icon={Pencil} onClick={() => onEditar(modulo)} title="Editar módulo">
+            Editar
+          </Button>
+          <Button size="sm" variant="outline" Icon={ListTodo} onClick={() => onExamen(modulo)} title="Gestionar examen">
+            Examen
+          </Button>
+          <Button size="sm" variant="danger" iconOnly isSoft Icon={Trash2} onClick={() => onEliminar(modulo)} title="Eliminar módulo">
+          </Button>
         </div>
       </div>
     </div>
@@ -736,14 +735,12 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
           </span>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setEditSec(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-            {Ico.edit} Editar sección
-          </button>
-          <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
-            className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-            {Ico.plus} Nuevo módulo
-          </button>
+          <Button size="sm" variant="outline" Icon={Pencil} onClick={() => setEditSec(true)}>
+            Editar sección
+          </Button>
+          <Button size="sm" Icon={Plus} onClick={() => setModalMod({ tipo: "crear", datos: null })} title="Gestionar examen">
+            Nuevo módulo
+          </Button>
         </div>
       </div>
 

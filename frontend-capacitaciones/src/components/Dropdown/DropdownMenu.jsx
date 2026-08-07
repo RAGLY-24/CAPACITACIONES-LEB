@@ -11,21 +11,22 @@ export const DropdownMenu = ({
         bg-white p-1 shadow-xl z-50
         ${className}
         `}
-            >
-                {items.map((item, index) => {
-                    const Icon = item.icon;
+        >
+            {items.map((item, index) => {
+                const Icon = item.icon;
 
-                    return (
-                        <button
-                            key={index}
-                            onClick={item.onClick}
-                            disabled={item.disabled}
-                            className={`
+                return (
+                    <button
+                        key={index}
+                        onClick={item.onClick}
+                        disabled={item.disabled}
+                        className={`
                 flex w-full items-center gap-4
-                rounded-xl px-4 py-2
+                rounded-xl px-4 py-2.5
                 text-left text-sm
+                font-medium
                 transition-colors
-                disabled:cursor-not-allowed disabled:opacity-50
+                disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer
                 ${item.variant === "danger"
                                 ? "text-red-600 hover:bg-slate-50"
                                 : "text-slate-900 hover:bg-slate-50"
