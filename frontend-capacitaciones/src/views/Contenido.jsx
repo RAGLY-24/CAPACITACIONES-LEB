@@ -63,7 +63,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h3 className="font-bold text-gray-800">{tipo === "crear" ? "Nueva Sección" : "Editar Sección"}</h3>
+          <h3 className="font-bold text-gray-800">{tipo === "crear" ? "Nuevo Curso" : "Editar Curso"}</h3>
           <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl">✕</button>
         </div>
         <form onSubmit={submit} className="p-6 space-y-4">
@@ -78,7 +78,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
             <label className="text-sm font-semibold text-gray-700">Descripción</label>
             <textarea name="descripcion" value={form.descripcion} onChange={handle} rows={3} maxLength={1000}
               className="mt-1 w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]"
-              placeholder="Descripción breve de la sección..." />
+              placeholder="Descripción breve del curso..." />
           </div>
           <div>
             <label className="text-sm font-semibold text-gray-700">Estado</label>
@@ -89,7 +89,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
             </select>
           </div>
           <div>
-            <label className="text-sm font-semibold text-gray-700">Sección requerida antes de esta</label>
+            <label className="text-sm font-semibold text-gray-700">Curso requerido antes de este</label>
             <select name="seccion_requerida_id" value={form.seccion_requerida_id || ""} onChange={handle}
               className="mt-1 w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]">
               <option value="">Ninguna (no depende de otra)</option>
@@ -103,7 +103,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
             <button type="button" onClick={onCerrar} className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancelar</button>
             <button type="submit" disabled={saving}
               className="rounded bg-brand-primary px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
-              {saving ? "Guardando..." : tipo === "crear" ? "Crear Sección" : "Guardar"}
+              {saving ? "Guardando..." : tipo === "crear" ? "Crear Curso" : "Guardar"}
             </button>
           </div>
         </form>
@@ -736,7 +736,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" Icon={Pencil} onClick={() => setEditSec(true)}>
-            Editar sección
+            Editar curso
           </Button>
           <Button size="sm" Icon={Plus} onClick={() => setModalMod({ tipo: "crear", datos: null })} title="Gestionar examen">
             Nuevo módulo
@@ -751,7 +751,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
       {/* Grid de tarjetas de módulo */}
       {(seccion.modulos || []).length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
-          <p className="text-gray-400 text-sm mb-4">Esta sección no tiene módulos todavía.</p>
+          <p className="text-gray-400 text-sm mb-4">Este curso  no tiene módulos todavía.</p>
           <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
             className="rounded-lg bg-brand-primary px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
             + Nuevo módulo
@@ -800,7 +800,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
       )}
       {editSec && (
         <ModalSeccion tipo="editar" datos={seccion} secciones={secciones}
-          onGuardar={() => { setEditSec(false); onRefrescar(); Swal.fire({ icon: "success", title: "Sección actualizada.", confirmButtonColor: "#802907" }); }}
+          onGuardar={() => { setEditSec(false); onRefrescar(); Swal.fire({ icon: "success", title: "Curso actualizado.", confirmButtonColor: "#802907" }); }}
           onCerrar={() => setEditSec(false)} />
       )}
     </div>
@@ -831,11 +831,11 @@ function TarjetaSeccion({ seccion, onClick, onEditar, onEliminar }) {
         </div>
         {/* Botones de acción (no propagan el click a la tarjeta) */}
         <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-          <button onClick={() => onEditar(seccion)} title="Editar sección"
+          <button onClick={() => onEditar(seccion)} title="Editar curso"
             className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600">
             {Ico.edit}
           </button>
-          <button onClick={() => onEliminar(seccion)} title="Eliminar sección"
+          <button onClick={() => onEliminar(seccion)} title="Eliminar curso"
             className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600">
             {Ico.trash}
           </button>
@@ -904,7 +904,7 @@ function Contenido() {
       await axios.delete(`${API}/api/secciones/${seccion.id}`);
       if (seccionActiva?.id === seccion.id) setActiva(null);
       cargar();
-      Swal.fire({ icon: "success", title: "Sección eliminada.", confirmButtonColor: "#802907" });
+      Swal.fire({ icon: "success", title: "Curso eliminado.", confirmButtonColor: "#802907" });
     } catch (err) {
       Swal.fire({ icon: "error", title: err.response?.data?.message || "No se pudo eliminar.", confirmButtonColor: "#802907" });
     }
@@ -939,11 +939,11 @@ function Contenido() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Editar Contenido</h2>
-          <p className="text-sm text-gray-500">Selecciona una sección para ver y gestionar sus módulos.</p>
+          <p className="text-sm text-gray-500">Selecciona un curso para ver y gestionar sus módulos.</p>
         </div>
         <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
           className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-          {Ico.plus} Nueva Sección
+          {Ico.plus} Nuevo Curso
         </button>
       </div>
 
@@ -954,10 +954,10 @@ function Contenido() {
       ) : secciones.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white p-16 text-center">
           <p className="text-lg font-semibold text-gray-600 mb-1">Sin secciones</p>
-          <p className="text-sm text-gray-400 mb-5">Crea la primera sección para organizar los módulos.</p>
+          <p className="text-sm text-gray-400 mb-5">Crea el primer curso para organizar los módulos.</p>
           <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
             className="rounded-lg bg-brand-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-            Crear primera sección
+            Crear primer curso
           </button>
         </div>
       ) : (
@@ -982,7 +982,7 @@ function Contenido() {
           onGuardar={() => {
             setModalSec(null);
             cargar();
-            Swal.fire({ icon: "success", title: modalSec.tipo === "crear" ? "Sección creada." : "Sección actualizada.", confirmButtonColor: "#802907" });
+            Swal.fire({ icon: "success", title: modalSec.tipo === "crear" ? "Curso creado" : "Curso actualizado.", confirmButtonColor: "#802907" });
           }}
           onCerrar={() => setModalSec(null)}
         />
