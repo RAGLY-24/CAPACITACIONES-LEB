@@ -26,7 +26,7 @@ export default function PartnerViewModal({
         >
             <div id="partners-form" className="space-y-6">
                 {/* Información del socio */}
-                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="rounded-xl border border-gray-200 bg-white p-5">
                     <h3 className="text-2xl font-bold text-gray-800">
                         {partner.nombre}
                     </h3>

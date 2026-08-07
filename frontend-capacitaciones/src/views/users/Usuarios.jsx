@@ -633,7 +633,7 @@ function Usuarios() {
             ) : socios && socios.map((socio) => (
               <div
                 key={socio.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-zinc-400 hover:bg-zinc-100 bg-white"
+                className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50 bg-white"
               >
                 <button
                   type="button"

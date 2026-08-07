@@ -10,6 +10,7 @@ import { URL } from "../../api/http.client";
 import ProfileFormModal from "./ProfileFormModal";
 import { Avatar } from "../../components/Avatar/Avatar";
 import { DropdownMenu } from "../../components/Dropdown/DropdownMenu";
+import Button from "../../components/Buttons/Button";
 
 const API_URL = URL
 
@@ -184,16 +185,10 @@ function AdminPanel({ user, routes }) {
             <img
               src={logoEmpresa}
               alt="Logotipo LEB"
-              className="h-8 w-auto cursor-pointer object-contain transition-transform hover:scale-105"
+              className="h-6 w-auto cursor-pointer object-contain transition-transform hover:scale-101"
             />
           </Link>
-
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="rounded-md p-2 text-zinc-600 transition-colors hover:bg-gray-100 focus:outline-none"
-          >
-            <Menu />
-          </button>
+          <Button onClick={() => setIsSidebarOpen(!isSidebarOpen)} iconOnly Icon={Menu} variant="ghost" />
         </div>
 
         {/* Lado Derecho: Avatar del Usuario */}
@@ -216,7 +211,7 @@ function AdminPanel({ user, routes }) {
 
       {/* --- BARRA LATERAL (SIDEBAR) A la Izquierda --- */}
       <div
-        className={`fixed left-0 top-13 z-40 h-[calc(100vh-54px)] w-72 bg-white border-r border-zinc-200 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed left-0 top-10 z-40 h-[calc(100vh-54px)] w-64 bg-white border-r border-zinc-200 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         <div className="flex flex-col gap-2 p-4 mt-4">
@@ -242,7 +237,7 @@ function AdminPanel({ user, routes }) {
 
       {/* --- CONTENIDO PRINCIPAL DINÁMICO --- */}
       {/* Cambié pt-[90px] a pt-[72px] para que pegue exacto con tu barra de arriba que mide 72px */}
-      <div className={`transition-all duration-300 ease-in-out pt-14 ${isSidebarOpen ? 'md:ml-72' : 'ml-0'}`}>
+      <div className={`transition-all duration-300 ease-in-out pt-14 ${isSidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
 
         {/* Dejamos el main completamente libre para que las pantallas decidan su propio tamaño */}
         <main className="w-full ">
