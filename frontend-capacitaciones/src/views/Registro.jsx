@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import logoEmpresa from '../assets/leb_logotipo.png';
-import fondoLogin from '../assets/paisaje-fondo-2.jpg';
 import { URL } from "../api/http.client";
+import Button from "../components/Buttons/Button";
+
+
+import bg from "../assets/bg.jpeg";
+import PasswordInput from "../components/Fields/PasswordInput";
+import Input from "../components/Fields/Input";
+import Select from "../components/Fields/Select";
+import { useAuth } from "../context/AuthContext";
 
 const API_URL = URL
+
 
 const estadoInicialForm = {
   name: "", lastname: "", email: "", usuario: "", socio_id: "",
@@ -26,7 +34,9 @@ function Registro() {
   const [searchParams] = useSearchParams();
   const enlaceToken = searchParams.get("enlace");
   const [estadoEnlace, setEstadoEnlace] = useState("cargando"); // cargando | valido | invalido
-  const navigate = useNavigate();
+
+  const { setToken } = useAuth();
+
 
   useEffect(() => {
     axios.get(`${API_URL}/api/socios-publico`)
@@ -36,6 +46,7 @@ function Registro() {
 
   useEffect(() => {
     if (!enlaceToken) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEstadoEnlace("invalido");
       return;
     }
@@ -50,6 +61,7 @@ function Registro() {
     if (erroresForm[name]) setErroresForm({ ...erroresForm, [name]: null });
   };
 
+  /*
   const handleEsOperadorChange = (e) => {
     const esOperador = e.target.value === "si";
     setFormData({
@@ -73,6 +85,7 @@ function Registro() {
     });
   };
 
+   */
   const validarFormulario = () => {
     const nuevosErrores = {};
     const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -126,14 +139,16 @@ function Registro() {
         } : {}),
       });
 
-      sessionStorage.setItem("token", response.data.token);
-      sessionStorage.setItem("user", JSON.stringify(response.data.user));
-      sessionStorage.removeItem("aviso_colapsado");
+      //sessionStorage.setItem("token", response.data.token);
+      //sessionStorage.setItem("user", JSON.stringify(response.data.user));
+      //sessionStorage.removeItem("aviso_colapsado");
 
       Swal.close();
-      navigate('/noticias', { replace: true });
+      //navigate('/noticias', { replace: true });
+      setToken(response.data.token)
     } catch (err) {
       Swal.close();
+      console.log(err.response.status)
       if (err.response?.status === 422) {
         const erroresBackend = err.response.data.errors || {};
         const mapeoErrores = {};
@@ -149,159 +164,199 @@ function Registro() {
   };
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat px-4 py-10"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${fondoLogin})`
-      }}
-    >
-      <div className="w-full max-w-[520px] bg-white p-11 shadow-[0_2px_6px_rgba(0,0,0,0.2)] rounded-2xl">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
 
-        <div className="mb-8 flex flex-col items-center justify-center">
-          <img src={logoEmpresa} alt="Logotipo de la empresa" className="mb-2 h-20 w-auto" />
-          <span className="mb-6 text-center font-['Segoe_UI',Arial,sans-serif] text-[18px] font-semibold text-[#737373]">
+      {/* Fondo */}
+      <div
+        className="absolute inset-0 scale-110 bg-cover bg-center blur-xl"
+        style={{ backgroundImage: `url(${bg})` }}
+      />
+
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-slate-200/80" />
+
+      {/* Grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.08)_1px,transparent_1px)] bg-[size:48px_48px]" />
+
+
+      {/* Card */}
+      <div className="
+      relative z-10 
+      w-full max-w-3xl
+      rounded-3xl 
+      border border-white/50
+      bg-white 
+      p-8
+      shadow-[0_25px_80px_rgba(0,0,0,.35)]
+    ">
+
+        {/* Header */}
+        <div className="mb-8 flex flex-col items-center gap-2">
+          <img
+            src={logoEmpresa}
+            alt="Logo empresa"
+            className="h-16 w-auto"
+          />
+
+          <h1 className="
+          text-center 
+          text-[28px]
+          font-semibold
+          tracking-tight
+          text-[#1b1b1b]
+        ">
+            Crear cuenta
+          </h1>
+
+          <span className="text-center text-md text-slate-500">
             Capacitaciones
           </span>
         </div>
 
-        <h1 className="mb-1 text-[24px] font-semibold text-[#1b1b1b]">Crear cuenta</h1>
 
         {estadoEnlace === "cargando" && (
-          <p className="mb-6 text-sm text-gray-500">Verificando enlace de registro...</p>
+          <p className="mb-6 text-center text-sm text-gray-500">
+            Verificando enlace de registro...
+          </p>
         )}
+
 
         {estadoEnlace === "invalido" && (
-          <div className="mb-2 rounded-md bg-red-50 p-4 text-sm text-red-600 border border-red-200">
-            Este enlace de registro no es válido, ya fue utilizado o ha expirado. Solicita uno nuevo a un administrador.
+          <div className="
+          mb-5
+          rounded-xl
+          border border-red-200
+          bg-red-50
+          p-4
+          text-sm
+          text-red-600
+        ">
+            Este enlace de registro no es válido, ya fue utilizado o ha expirado.
           </div>
         )}
+
+
+
 
         {estadoEnlace === "valido" && (
-          <>
-            <p className="mb-6 text-sm text-gray-500">Tu cuenta tendrá acceso a Noticias y a tus Capacitaciones.</p>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
-            <input type="text" name="name" value={formData.name} onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-            {erroresForm.name && <p className="mt-1 text-xs text-red-500">{erroresForm.name}</p>}
-          </div>
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-2 gap-4 "
+          >
 
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Apellido</label>
-            <input type="text" name="lastname" value={formData.lastname} onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-          </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Correo Electrónico <span className="text-red-500">*</span></label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-            {erroresForm.email && <p className="mt-1 text-xs text-red-500">{erroresForm.email}</p>}
-          </div>
+            <Input
+              label="Nombre"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Ej: Juan"
+              required
+            />
 
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Usuario de acceso <span className="text-red-500">*</span></label>
-            <input type="text" name="usuario" value={formData.usuario} onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-            {erroresForm.usuario && <p className="mt-1 text-xs text-red-500">{erroresForm.usuario}</p>}
-          </div>
 
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Socio / Empresa</label>
-            <select name="socio_id" value={formData.socio_id} onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none">
-              <option value="">Sin asociación</option>
-              {socios.map((socio) => (
-                <option key={socio.id} value={socio.id}>{socio.nombre}</option>
-              ))}
-            </select>
-          </div>
+            <Input
+              label="Apellido"
+              name="lastname"
+              value={formData.lastname}
+              onChange={handleChange}
+              placeholder="Ej: Pérez"
+            />
 
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-semibold text-gray-700">¿Eres operador?</label>
-            <div className="flex gap-6">
-              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                <input type="radio" name="es_operador" value="si" checked={formData.es_operador === true} onChange={handleEsOperadorChange}
-                  className="h-4 w-4 text-[#802907] focus:ring-[#802907]" />
-                Sí
-              </label>
-              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                <input type="radio" name="es_operador" value="no" checked={formData.es_operador === false} onChange={handleEsOperadorChange}
-                  className="h-4 w-4 text-[#802907] focus:ring-[#802907]" />
-                No
-              </label>
+
+            <Input
+              label="Correo Electrónico"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              error={erroresForm.email}
+
+            />
+
+
+            <Input
+              label="Usuario de acceso"
+              name="usuario"
+              value={formData.usuario}
+              onChange={handleChange}
+              required
+              error={erroresForm.usuario}
+            />
+
+            <Select
+              label="Socio / Empresa"
+              name="socio_id"
+              value={formData.socio_id}
+              onChange={handleChange}
+              containerClassName="col-span-2"
+              options={[
+                {
+                  value: "",
+                  label: "Sin asociación"
+                },
+                ...socios.map((socio) => ({
+                  value: socio.id,
+                  label: socio.nombre
+                }))
+              ]}
+            />
+
+
+
+            <PasswordInput
+              label="Contraseña"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+
+
+            <PasswordInput
+              label="Repetir Contraseña"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+
+
+
+            <div className="flex col-span-2 mt-3 w-full  items-center justify-center">
+
+              <Button type="submit" className="w-full">
+                Crear cuenta
+              </Button>
+
             </div>
-          </div>
 
-          {formData.es_operador && (
-            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-md bg-gray-50 p-4 border border-gray-200">
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre completo de operador <span className="text-red-500">*</span></label>
-                <input type="text" name="operador_nombre_completo" value={formData.operador_nombre_completo} onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-                {erroresForm.operador_nombre_completo && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_nombre_completo}</p>}
-              </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-700">Número de económico del tracto <span className="text-red-500">*</span></label>
-                <input type="text" name="operador_numero_economico_tractor" value={formData.operador_numero_economico_tractor} onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-                {erroresForm.operador_numero_economico_tractor && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_numero_economico_tractor}</p>}
-              </div>
+          </form>
 
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-700">Placas del remolque <span className="text-red-500">*</span></label>
-                <input type="text" name="operador_placas_remolque" value={formData.operador_placas_remolque} onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-                {erroresForm.operador_placas_remolque && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_placas_remolque}</p>}
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-700">Folio <span className="text-red-500">*</span></label>
-                <input type="text" name="operador_folio" value={formData.operador_folio} onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-                {erroresForm.operador_folio && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_folio}</p>}
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-700">Número de licencia <span className="text-red-500">*</span></label>
-                <input type="text" name="operador_numero_licencia" value={formData.operador_numero_licencia} onChange={handleChange}
-                  className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-                {erroresForm.operador_numero_licencia && <p className="mt-1 text-xs text-red-500">{erroresForm.operador_numero_licencia}</p>}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Contraseña <span className="text-red-500">*</span></label>
-            <input type="password" name="password" value={formData.password} onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-            {erroresForm.password && <p className="mt-1 text-xs text-red-500">{erroresForm.password}</p>}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Repetir Contraseña <span className="text-red-500">*</span></label>
-            <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none" />
-            {erroresForm.confirmPassword && <p className="mt-1 text-xs text-red-500">{erroresForm.confirmPassword}</p>}
-          </div>
-
-          <div className="sm:col-span-2 mt-2 flex items-center justify-center">
-            <button type="submit"
-              className="rounded-md bg-brand-primary px-8 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-[#4e1802]">
-              Crear cuenta
-            </button>
-          </div>
-            </form>
-          </>
         )}
 
+
+
         <p className="mt-6 text-center text-sm text-gray-500">
-          ¿Ya tienes cuenta? <Link to="/" className="font-semibold text-[#802907] hover:underline">Inicia sesión</Link>
+          ¿Ya tienes cuenta?{" "}
+          <Link
+            to="/"
+            className="
+            font-semibold 
+            text-[#802907]
+            hover:underline
+          "
+          >
+            Inicia sesión
+          </Link>
         </p>
+
+
       </div>
+
     </div>
   );
 }
