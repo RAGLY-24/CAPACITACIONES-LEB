@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -16,21 +15,6 @@ function Login() {
   const [error, setError] = useState("");
 
   const login = useLogin();
-  const navigate = useNavigate();
-
-  const getDefaultAdminPath = () => "/noticias";
-
-  useEffect(() => {
-    const token = sessionStorage.getItem("token");
-    if (token) {
-      const datosUsuario = sessionStorage.getItem("user");
-      const usuarioLogueado = datosUsuario ? JSON.parse(datosUsuario) : null;
-
-      if (usuarioLogueado) {
-        navigate(getDefaultAdminPath(), { replace: true });
-      }
-    }
-  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -481,12 +481,14 @@ function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizad
                       </>
                     ) : (
                       <>
+                        {/*
                         <p className="text-sm text-amber-800 font-medium">🔒 El examen está bloqueado</p>
                         <p className="text-xs text-amber-700 mt-1">
                           {modulo.file_type === "video"
                             ? "Deja que el video termine para desbloquearlo."
                             : "Desplázate hasta el final del contenido para desbloquearlo."}
                         </p>
+                         */}
                       </>
                     )}
                   </div>
