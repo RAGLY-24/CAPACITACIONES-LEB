@@ -80,12 +80,6 @@ export function VisorPDF({ src, onScrollFinal }) {
         </div>
       )}
       <div ref={contenedorRef} onScroll={verificarFinal} className="flex-1 min-h-0 overflow-y-auto p-3" />
-      <p className="text-xs text-center text-gray-400 py-1 shrink-0 border-t bg-white">
-        Desplázate hasta el final del documento para habilitar el examen.{" "}
-        <a href={src} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-          Abrir en pestaña nueva
-        </a>.
-      </p>
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { Modal } from "../../../components/Modal";
 import Button from "../../../components/Buttons/Button";
+import Input from "../../../components/Fields/Input";
+import Select from "../../../components/Fields/Select";
 
 export default function PartnerFormModal({
     open, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
@@ -111,25 +113,47 @@ export default function PartnerFormModal({
             }
         >
             <form id="partners-form" onSubmit={guardarUsuario} className="grid grid-rows gap-4">
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
-                    <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                </div>
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Número <span className="text-red-500">*</span></label>
-                    <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                </div>
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Correo <span className="text-red-500">*</span></label>
-                    <input type="email" name="correo" value={formData.correo} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                </div>
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Estado</label>
-                    <select name="estado" value={formData.estado} onChange={handleChange} className="w-full h-11 rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                    </select>
-                </div>
+                <Input
+                    name="nombre"
+                    label="Nombre"
+                    placeholder="Ej: Juan Pérez"
+                    isRequired
+                    value={formData.nombre}
+                    onChange={handleChange}
+                    error={erroresForm.nombre}
+                />
+
+                <Input
+                    name="telefono"
+                    label="Número"
+                    placeholder="Ej: 5551234567"
+                    isRequired
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    error={erroresForm.telefono}
+                />
+
+                <Input
+                    name="correo"
+                    label="Correo"
+                    type="email"
+                    placeholder="Ej: usuario@empresa.com"
+                    isRequired
+                    value={formData.correo}
+                    onChange={handleChange}
+                    error={erroresForm.correo}
+                />
+
+                <Select
+                    label="Estado"
+                    name="estado"
+                    value={formData.estado}
+                    onChange={handleChange}
+                    options={[
+                        { value: "Activo", label: "Activo" },
+                        { value: "Inactivo", label: "Inactivo" },
+                    ]}
+                />
             </form>
         </Modal>
     );

@@ -3,7 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { useSearchParams } from "react-router-dom";
-import { Check, Link, Pencil,ShieldCheck, PlusIcon, Trash2, X } from "lucide-react";
+import { Check, Link, Pencil, ShieldCheck, PlusIcon, Trash2, X } from "lucide-react";
 
 import { URL } from "../../api/http.client";
 
@@ -34,6 +34,7 @@ import PositionPermissionsModal from "./puestos/PositionPermissionsModal";
 import { useMe } from "../../hooks/auth/useMe";
 import { IconButton } from "../../components/IconButton";
 import Button from "../../components/Buttons/Button";
+import Input from "../../components/Fields/Input";
 
 function Usuarios() {
 
@@ -578,7 +579,7 @@ function Usuarios() {
     <div className="p-6 relative">
 
       {/* TABLA USUARIOS CON ESTILO DATATABLES */}
-      <div className=" rounded-xl border border-gray-200 bg-gray-50 p-6 flex flex-col">
+      <div className=" rounded-3xl border border-gray-200 bg-white p-6 flex flex-col">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-gray-800">Directorio de Usuarios</h3>
@@ -614,7 +615,7 @@ function Usuarios() {
 
 
       {/* SECCIÓN DE SOCIOS */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+      <div className="mt-8 rounded-3xl border border-gray-200 bg-white p-6">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-gray-800">Directorio de Socios</h3>
@@ -666,23 +667,14 @@ function Usuarios() {
       </div>
 
       {/* SECCIÓN DE PUESTOS */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+      <div className="mt-8 rounded-3xl border border-gray-200 bg-white p-6">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-gray-800">Directorio de Puestos</h3>
             <p className="text-sm text-gray-500">Los puestos creados aquí no tendrán permisos de SistemasAdmin.</p>
           </div>
           <div className="flex w-full md:w-auto gap-4">
-            <div className="flex-grow">
-              <input
-                type="text"
-                value={nuevoPuesto}
-                onChange={handleNuevoPuestoChange}
-                placeholder="Nombre del nuevo puesto"
-                className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none shadow-sm"
-              />
-              {errorPuesto && <p className="mt-1 text-xs text-red-500">{errorPuesto}</p>}
-            </div>
+            <Input type="text" value={nuevoPuesto} onChange={handleNuevoPuestoChange} placeholder="Nombre del nuevo puesto" error={errorPuesto} />
             <Button Icon={PlusIcon} onClick={crearPuesto}>
               Agregar
             </Button>
