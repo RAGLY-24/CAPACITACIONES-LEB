@@ -408,22 +408,24 @@ export default function UsersFormModal({
                 </div>
 
                 {puedeAsignarPermisos && (
-                    <div className="col-span-2 rounded-xl bg-white p-4 border border-gray-200">
+                    <div className="col-span-2 rounded-xl bg-white p-4 border border-gray-200 ">
                         <button type="button" onClick={() => setPermissionsOpen(!permissionsOpen)} className="flex w-full items-center justify-between text-left text-sm font-semibold text-gray-800">
                             <span>Permisos del usuario</span>
                             <span className="text-xs text-gray-500">{permissionsOpen ? 'Ocultar' : 'Mostrar'}</span>
                         </button>
                         {permissionsOpen && (
                             <>
-                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                <div className="mt-3 grid gap-3 sm:grid-cols-2 ">
                                     {PERMISSION_CATALOG.map((permission) => (
-                                        <Checkbox
-                                            key={permission.key}
-                                            name={permission.key}
-                                            label={permission.label}
-                                            checked={formData.permissions?.[permission.key] || false}
-                                            onChange={handlePermissionChange}
-                                        />
+                                        <>
+                                            <Checkbox
+                                                key={permission.key}
+                                                name={permission.key}
+                                                label={permission.label}
+                                                checked={formData.permissions?.[permission.key] || false}
+                                                onChange={handlePermissionChange}
+                                            />
+                                        </>
                                     ))}
 
                                 </div>

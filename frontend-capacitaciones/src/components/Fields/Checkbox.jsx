@@ -20,8 +20,8 @@ const Checkbox = forwardRef(
                     ref={ref}
                     id={inputId}
                     type="checkbox"
+                    className="peer absolute opacity-0 h-0 w-0"
                     checked={checked}
-                    className="sr-only"
                     {...props}
                 />
 

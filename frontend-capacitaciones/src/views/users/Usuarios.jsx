@@ -586,7 +586,7 @@ function Usuarios() {
           </div>
           {puedeCrearUsuarios && (
             <div className="flex gap-2">
-              <Button variant="secondary" Icon={Link} onClick={generarEnlaceRegistro}>
+              <Button variant="outline" Icon={Link} onClick={generarEnlaceRegistro}>
                 Crear Nuevo Usuario
               </Button>
               <Button Icon={PlusIcon} onClick={abrirModalCrear}>
