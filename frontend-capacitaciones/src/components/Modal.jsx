@@ -58,11 +58,11 @@ export function Modal({
             >
                 {/* Header (Prop) */}
                 {title && (
-                    <div className="flex justify-between items-center border-b border-zinc-200 px-4 py-4 bg-zinc-50 shrink-0">
-                        <h3 className="text-lg text-black font-medium">{title}</h3>
+                    <div className="flex justify-between items-center border-b border-slate-200 px-4 py-4 bg-slate-50 shrink-0">
+                        <h3 className="text-lg text-black ">{title}</h3>
                         <button
                             onClick={onClose}
-                            className="text-zinc-500 hover:text-zinc-700 cursor-pointer p-1 rounded-lg hover:bg-zinc-200/50 transition-colors"
+                            className="text-slate-500 hover:text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-200/50 transition-colors"
                         >
                             <X size={18} />
                         </button>
@@ -76,7 +76,7 @@ export function Modal({
 
                 {/* Footer (Prop) */}
                 {footer && (
-                    <div className="flex justify-end gap-2 items-center border-t border-zinc-200 px-4 py-4 bg-zinc-50 shrink-0">
+                    <div className="flex justify-end gap-2 items-center border-t border-slate-200 px-4 py-4 bg-slate-50 shrink-0">
                         {footer}
                     </div>
                 )}
