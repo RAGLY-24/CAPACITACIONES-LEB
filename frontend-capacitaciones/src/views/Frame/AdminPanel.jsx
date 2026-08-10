@@ -146,8 +146,6 @@ function AdminPanel({ user, routes }) {
   const currentPath = location.pathname;
 
   const isCurrentPath = (item) => {
-    console.log(item)
-    console.log(currentPath)
     return currentPath.startsWith(item.path);
   };
 
