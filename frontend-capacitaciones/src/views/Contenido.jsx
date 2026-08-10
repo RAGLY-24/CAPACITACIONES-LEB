@@ -1,9 +1,10 @@
 import { useMe } from "../hooks/auth/useMe";
 import { useSecciones } from "../hooks/contenido/useSecciones";
 import { ModalSeccion } from "./Contenido/ModalSeccion";
-import { Ico } from "./Contenido/icons";
 import { TarjetaSeccion } from "./Contenido/TarjetaSeccion";
 import { VistaModulos } from "./Contenido/VistaModulos";
+import Button from "../components/Buttons/Button";
+import { BookText, Plus } from "lucide-react";
 
 function Contenido() {
     const { data } = useMe();
@@ -44,29 +45,35 @@ function Contenido() {
     // ── Vista lista de secciones ──
     return (
         <div className="p-6 space-y-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 className="text-xl font-bold text-gray-800">Editar Contenido</h2>
-                    <p className="text-sm text-gray-500">Selecciona una sección para ver y gestionar sus módulos.</p>
+                    <p className="text-sm text-gray-500">
+                        Selecciona una sección para ver y gestionar sus módulos.
+                    </p>
                 </div>
-                <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
-                    className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-                    {Ico.plus} Nueva Sección
-                </button>
+
+                <Button
+                    Icon={Plus}
+                    size="sm"
+                    onClick={() => setModalSec({ tipo: "crear", datos: null })}
+                >
+                    Nueva Sección
+                </Button>
             </div>
 
             {cargando ? (
-                <div className="rounded-xl bg-white p-12 text-center shadow-sm border border-gray-200">
+                <div className="rounded-xl bg-white p-12 text-center shadow-sm border border-zinc-200">
                     <p className="text-sm text-gray-400">Cargando...</p>
                 </div>
             ) : secciones.length === 0 ? (
-                <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white p-16 text-center">
-                    <p className="text-lg font-semibold text-gray-600 mb-1">Sin secciones</p>
-                    <p className="text-sm text-gray-400 mb-5">Crea la primera sección para organizar los módulos.</p>
-                    <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
-                        className="rounded-lg bg-brand-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-                        Crear primera sección
-                    </button>
+                <div className="rounded-xl gap-4 flex flex-col items-center border border-zinc-200 bg-white p-16 text-center">
+                    <BookText size={40} />
+                    <p className="text-lg font-semibold text-gray-800 ">Sin cursos</p>
+                    <p className="text-sm text-gray-400 ">Crea la primera sección para organizar los módulos.</p>
+                    <Button variant="secondary" onClick={() => setModalSec({ tipo: "crear", datos: null })}>
+                        Crear primer curso
+                    </Button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -82,15 +89,16 @@ function Contenido() {
                 </div>
             )}
 
-            {modalSec && (
-                <ModalSeccion
+            {modalSec &&
+                (<ModalSeccion
+                    open={true}
                     tipo={modalSec.tipo}
                     datos={modalSec.datos}
                     secciones={secciones}
                     onGuardar={alGuardarSeccion}
                     onCerrar={() => setModalSec(null)}
-                />
-            )}
+                />)
+            }
         </div>
     );
 }

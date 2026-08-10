@@ -49,6 +49,11 @@ const Button = ({
     };
 
     const sizes = {
+        xs: {
+            className: "h-7 px-3 text-xs",
+            iconOnly: "h-7 w-7 aspect-square",
+            icon: 12,
+        },
         sm: {
             className: "h-9 px-3 text-xs",
             iconOnly: "h-9 w-9 aspect-square",

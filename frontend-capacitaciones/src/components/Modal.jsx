@@ -26,7 +26,8 @@ export function Modal({
     children,
     size = "md",
     aspect = "default",
-    onClose
+    onClose,
+    contentRef
 }) {
 
     // Efecto para cerrar el modal al presionar la tecla Escape
@@ -70,7 +71,7 @@ export function Modal({
                 )}
 
                 {/* Contenido principal (Children) - flex-1 y overflow-y-auto manejan el scroll interno */}
-                <div className="text-gray-600 p-4 overflow-y-auto flex-1">
+                <div className="text-gray-600 p-4 overflow-y-auto flex-1"  ref={contentRef}>
                     {children}
                 </div>
 
