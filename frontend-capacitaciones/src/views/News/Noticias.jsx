@@ -162,7 +162,7 @@ function Noticias() {
                     /* --- NUEVO GRID: 2 Columnas para mejor proporción --- */
                     <div className="grid grid-cols-2 md:grid-cols-3  gap-4 mb-20">
                         {news.map((noticia, index) => {
-                            return (<NewsCard noticia={noticia} isFeatured={index === 0} onClick={() => abrirModalVer(noticia)} canEdit={puedeAdministrarNoticias || noticia.created_by === storedUser?.id} canDelete={puedeAdministrarNoticias} onActions={(a) => { handleOnClickActions(a, noticia) }} />)
+                            return (<NewsCard key={noticia.id} noticia={noticia} isFeatured={index === 0} onClick={() => abrirModalVer(noticia)} canEdit={puedeAdministrarNoticias || noticia.created_by === storedUser?.id} canDelete={puedeAdministrarNoticias} onActions={(a) => { handleOnClickActions(a, noticia) }} />)
                         })}
                     </div>
                 )}
