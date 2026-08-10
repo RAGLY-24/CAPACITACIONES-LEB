@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { Modal } from "../../../components/Modal";
+import Button from "../../../components/Buttons/Button";
+import Input from "../../../components/Fields/Input";
+import Select from "../../../components/Fields/Select";
 
 export default function PartnerFormModal({
     open, // Recibe el objeto state del hook de overlay en lugar de open/onClose sueltos
@@ -98,44 +101,59 @@ export default function PartnerFormModal({
             onClose={handleClose}
             footer={
                 <>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 cursor-pointer"
-                    >
-                        Cancelar
-                    </button>
-
-                    <button
-                        type="submit"
-                        form="partners-form"
-                        className="rounded-lg bg-red-900 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800 cursor-pointer"
-                    >
-                        {mode === "create" ? "Crear" : "Guardar cambios"}
-                    </button>
+                    <>
+                        <Button variant="outline" onClick={handleClose} type="button">
+                            Cancelar
+                        </Button>
+                        <Button type="submit" form="users-form">
+                            {mode === "create" ? "Crear" : "Guardar"}
+                        </Button>
+                    </>
                 </>
             }
         >
             <form id="partners-form" onSubmit={guardarUsuario} className="grid grid-rows gap-4">
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
-                    <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                </div>
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Número <span className="text-red-500">*</span></label>
-                    <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                </div>
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Correo <span className="text-red-500">*</span></label>
-                    <input type="email" name="correo" value={formData.correo} onChange={handleChange} className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none" />
-                </div>
-                <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Estado</label>
-                    <select name="estado" value={formData.estado} onChange={handleChange} className="w-full h-11 rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none">
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                    </select>
-                </div>
+                <Input
+                    name="nombre"
+                    label="Nombre"
+                    placeholder="Ej: Juan Pérez"
+                    isRequired
+                    value={formData.nombre}
+                    onChange={handleChange}
+                    error={erroresForm.nombre}
+                />
+
+                <Input
+                    name="telefono"
+                    label="Número"
+                    placeholder="Ej: 5551234567"
+                    isRequired
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    error={erroresForm.telefono}
+                />
+
+                <Input
+                    name="correo"
+                    label="Correo"
+                    type="email"
+                    placeholder="Ej: usuario@empresa.com"
+                    isRequired
+                    value={formData.correo}
+                    onChange={handleChange}
+                    error={erroresForm.correo}
+                />
+
+                <Select
+                    label="Estado"
+                    name="estado"
+                    value={formData.estado}
+                    onChange={handleChange}
+                    options={[
+                        { value: "Activo", label: "Activo" },
+                        { value: "Inactivo", label: "Inactivo" },
+                    ]}
+                />
             </form>
         </Modal>
     );
