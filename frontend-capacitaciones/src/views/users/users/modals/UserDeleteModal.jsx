@@ -1,3 +1,4 @@
+import Button from "../../../../components/Buttons/Button";
 import { Modal } from "../../../../components/Modal";
 import { AlertTriangle } from "lucide-react";
 
@@ -21,21 +22,12 @@ export default function UserDeleteModal({
             onClose={onClose}
             footer={
                 <>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 cursor-pointer"
-                    >
+                    <Button variant="outline" onClick={onClose} type="button">
                         Cancelar
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={handleSumbit}
-                        className="rounded-lg bg-red-500 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800 cursor-pointer"
-                    >
+                    </Button>
+                    <Button variant="danger" onClick={handleSumbit}>
                         Eliminar
-                    </button>
+                    </Button>
                 </>
             }
         >

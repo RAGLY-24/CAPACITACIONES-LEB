@@ -5,6 +5,8 @@ import { VisorArchivo } from "../components/VisorArchivo";
 import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 import { useMe } from "../hooks/auth/useMe";
 import { URL } from "../api/http.client";
+import Button from "../components/Buttons/Button";
+import { ListTodo, Pencil, Plus, Trash2, X } from "lucide-react";
 
 // Carga diferida: tldraw es pesado y solo se necesita al crear/editar presentaciones.
 const EditorPresentacion = lazy(() =>
@@ -61,7 +63,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h3 className="font-bold text-gray-800">{tipo === "crear" ? "Nueva Sección" : "Editar Sección"}</h3>
+          <h3 className="font-bold text-gray-800">{tipo === "crear" ? "Nuevo Curso" : "Editar Curso"}</h3>
           <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl">✕</button>
         </div>
         <form onSubmit={submit} className="p-6 space-y-4">
@@ -76,7 +78,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
             <label className="text-sm font-semibold text-gray-700">Descripción</label>
             <textarea name="descripcion" value={form.descripcion} onChange={handle} rows={3} maxLength={1000}
               className="mt-1 w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]"
-              placeholder="Descripción breve de la sección..." />
+              placeholder="Descripción breve del curso..." />
           </div>
           <div>
             <label className="text-sm font-semibold text-gray-700">Estado</label>
@@ -87,7 +89,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
             </select>
           </div>
           <div>
-            <label className="text-sm font-semibold text-gray-700">Sección requerida antes de esta</label>
+            <label className="text-sm font-semibold text-gray-700">Curso requerido antes de este</label>
             <select name="seccion_requerida_id" value={form.seccion_requerida_id || ""} onChange={handle}
               className="mt-1 w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]">
               <option value="">Ninguna (no depende de otra)</option>
@@ -101,7 +103,7 @@ function ModalSeccion({ tipo, datos, secciones, onGuardar, onCerrar }) {
             <button type="button" onClick={onCerrar} className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancelar</button>
             <button type="submit" disabled={saving}
               className="rounded bg-brand-primary px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04] disabled:opacity-60">
-              {saving ? "Guardando..." : tipo === "crear" ? "Crear Sección" : "Guardar"}
+              {saving ? "Guardando..." : tipo === "crear" ? "Crear Curso" : "Guardar"}
             </button>
           </div>
         </form>
@@ -275,13 +277,14 @@ function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo
             <label className="text-sm font-semibold text-gray-700">Contenido del módulo</label>
             <p className="text-xs text-gray-400 mt-0.5 mb-2">Elige una de las dos opciones para el contenido que verá el empleado.</p>
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#802907] cursor-pointer transition-colors py-4 px-2 text-center">
+              <label className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#802907] cursor-pointer transition-colors py-4 px-2 text-center col-span-2">
                 {Ico.file}
                 <span className="text-xs font-medium text-gray-600 line-clamp-1">
                   {form.archivo ? form.archivo.name : "Subir PDF / Video"}
                 </span>
                 <input type="file" name="archivo" accept=".pdf,.mp4,.webm" onChange={handle} className="hidden" />
               </label>
+              {/*
               <button type="button" onClick={irAlLienzo} disabled={saving}
                 className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-purple-300 hover:border-purple-500 bg-purple-50 py-4 px-2 text-center disabled:opacity-60">
                 {Ico.img}
@@ -289,6 +292,7 @@ function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbrirLienzo
                   {tienePresentacion ? "Editar presentación" : "Crear presentación"}
                 </span>
               </button>
+               */}
             </div>
             {datos?.file_type && datos.file_type !== "presentacion" && !form.archivo && (
               <p className="text-xs text-gray-400 mt-1.5">Actual: <strong>{datos.file_type.toUpperCase()}</strong></p>
@@ -368,9 +372,11 @@ function PanelExamen({ modulo, onCerrar }) {
   const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [nueva, setNueva] = useState(false);
+  const [npTipo, setNpTipo] = useState("opcion_multiple");
   const [npTexto, setNpTexto] = useState("");
   const [npOps, setNpOps] = useState([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]);
   const [editId, setEditId] = useState(null);
+  const [editTipo, setEditTipo] = useState("opcion_multiple");
   const [editTexto, setEditTexto] = useState("");
   const [editOps, setEditOps] = useState([]);
 
@@ -395,11 +401,18 @@ function PanelExamen({ modulo, onCerrar }) {
     return true;
   };
 
+  const validarTexto = texto => {
+    if (!texto.trim()) { Swal.fire({ icon: "warning", title: "Escribe el texto de la pregunta.", confirmButtonColor: "#802907" }); return false; }
+    return true;
+  };
+
   const guardarNueva = async () => {
-    if (!validarOps(npOps, npTexto)) return;
+    const esFeedback = npTipo === "feedback";
+    if (esFeedback ? !validarTexto(npTexto) : !validarOps(npOps, npTexto)) return;
     try {
-      await axios.post(`${API}/api/modulos/${modulo.id}/preguntas`, { texto: npTexto, opciones: npOps });
-      setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]);
+      const payload = esFeedback ? { texto: npTexto, tipo: "feedback" } : { texto: npTexto, opciones: npOps };
+      await axios.post(`${API}/api/modulos/${modulo.id}/preguntas`, payload);
+      setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]); setNpTipo("opcion_multiple");
       setNueva(false); cargar();
     } catch (err) {
       Swal.fire({ icon: "error", title: err.response?.data?.message || "Error.", confirmButtonColor: "#802907" });
@@ -407,9 +420,11 @@ function PanelExamen({ modulo, onCerrar }) {
   };
 
   const guardarEdicion = async () => {
-    if (!validarOps(editOps, editTexto)) return;
+    const esFeedback = editTipo === "feedback";
+    if (esFeedback ? !validarTexto(editTexto) : !validarOps(editOps, editTexto)) return;
     try {
-      await axios.put(`${API}/api/preguntas/${editId}`, { texto: editTexto, opciones: editOps });
+      const payload = esFeedback ? { texto: editTexto } : { texto: editTexto, opciones: editOps };
+      await axios.put(`${API}/api/preguntas/${editId}`, payload);
       setEditId(null); cargar();
     } catch (err) {
       Swal.fire({ icon: "error", title: err.response?.data?.message || "Error.", confirmButtonColor: "#802907" });
@@ -433,6 +448,16 @@ function PanelExamen({ modulo, onCerrar }) {
           </div>
           <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold">✕</button>
         </div>
+        {!cargando && (() => {
+          const numOpcionMultiple = preguntas.filter(p => p.tipo !== "feedback").length;
+          const listo = numOpcionMultiple >= 15;
+          return (
+            <div className={`px-6 py-2 text-xs font-medium shrink-0 border-b ${listo ? "bg-green-50 text-green-700 border-green-100" : "bg-amber-50 text-amber-800 border-amber-100"}`}>
+              {listo ? "✓" : "⚠"} Banco de preguntas: {numOpcionMultiple} de 15 preguntas de opción múltiple mínimas
+              {!listo && ` (faltan ${15 - numOpcionMultiple} para poder generar el examen)`}
+            </div>
+          );
+        })()}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {cargando ? <p className="text-center text-sm text-gray-400 py-6">Cargando...</p> : (
             <>
@@ -445,7 +470,11 @@ function PanelExamen({ modulo, onCerrar }) {
                     <div className="space-y-2">
                       <input value={editTexto} onChange={e => setEditTexto(e.target.value)}
                         className="w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]" />
-                      <EditorOpciones ops={editOps} setOps={setEditOps} setCorrecta={setCorrectaEdit} />
+                      {editTipo === "feedback" ? (
+                        <p className="text-xs text-gray-400">Pregunta de retroalimentación: el operador responderá con texto libre, no se califica.</p>
+                      ) : (
+                        <EditorOpciones ops={editOps} setOps={setEditOps} setCorrecta={setCorrectaEdit} />
+                      )}
                       <div className="flex gap-2 pt-1">
                         <button onClick={guardarEdicion} className="text-xs rounded bg-brand-primary text-white px-3 py-1 hover:bg-[#5a1b04]">Guardar</button>
                         <button onClick={() => setEditId(null)} className="text-xs rounded border px-3 py-1 text-gray-600 hover:bg-gray-100">Cancelar</button>
@@ -454,22 +483,31 @@ function PanelExamen({ modulo, onCerrar }) {
                   ) : (
                     <>
                       <div className="flex items-start justify-between">
-                        <p className="text-sm font-semibold text-gray-800">{idx + 1}. {p.texto}</p>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {idx + 1}. {p.texto}
+                          {p.tipo === "feedback" && <span className="ml-2 align-middle text-[10px] font-normal bg-gray-100 text-gray-500 rounded px-1.5 py-0.5">💬 Retroalimentación</span>}
+                        </p>
                         <div className="flex gap-1 shrink-0 ml-2">
-                          <button onClick={() => { setEditId(p.id); setEditTexto(p.texto); setEditOps(p.opciones.map(o => ({ texto: o.texto, es_correcta: o.es_correcta }))); }}
-                            className="rounded p-1 text-blue-600 hover:bg-blue-50">{Ico.edit}</button>
+                          <button onClick={() => {
+                            setEditId(p.id); setEditTexto(p.texto); setEditTipo(p.tipo);
+                            if (p.tipo !== "feedback") setEditOps(p.opciones.map(o => ({ texto: o.texto, es_correcta: o.es_correcta })));
+                          }} className="rounded p-1 text-blue-600 hover:bg-blue-50">{Ico.edit}</button>
                           <button onClick={() => eliminar(p.id)} className="rounded p-1 text-red-600 hover:bg-red-50">{Ico.trash}</button>
                         </div>
                       </div>
-                      <ul className="mt-2 space-y-1 pl-2">
-                        {p.opciones.map(op => (
-                          <li key={op.id} className={`text-xs flex items-center gap-2 ${op.es_correcta ? "text-green-700 font-semibold" : "text-gray-500"}`}>
-                            <span className={`h-2 w-2 rounded-full shrink-0 ${op.es_correcta ? "bg-green-500" : "bg-gray-300"}`} />
-                            {op.texto}
-                            {op.es_correcta && <span className="ml-1 text-[10px] bg-green-100 text-green-700 rounded px-1">Correcta</span>}
-                          </li>
-                        ))}
-                      </ul>
+                      {p.tipo === "feedback" ? (
+                        <p className="mt-2 pl-2 text-xs text-gray-400">Respuesta de texto libre, no se califica.</p>
+                      ) : (
+                        <ul className="mt-2 space-y-1 pl-2">
+                          {p.opciones.map(op => (
+                            <li key={op.id} className={`text-xs flex items-center gap-2 ${op.es_correcta ? "text-green-700 font-semibold" : "text-gray-500"}`}>
+                              <span className={`h-2 w-2 rounded-full shrink-0 ${op.es_correcta ? "bg-green-500" : "bg-gray-300"}`} />
+                              {op.texto}
+                              {op.es_correcta && <span className="ml-1 text-[10px] bg-green-100 text-green-700 rounded px-1">Correcta</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </>
                   )}
                 </div>
@@ -477,13 +515,27 @@ function PanelExamen({ modulo, onCerrar }) {
               {nueva && (
                 <div className="rounded-lg border-2 border-dashed border-[#802907] bg-white p-4 space-y-2">
                   <p className="text-sm font-semibold text-gray-700">Nueva pregunta</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setNpTipo("opcion_multiple")}
+                      className={`flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${npTipo === "opcion_multiple" ? "border-[#802907] bg-brand-primary/5 text-[#802907]" : "border-gray-200 text-gray-500 hover:border-gray-400"}`}>
+                      Opción múltiple
+                    </button>
+                    <button type="button" onClick={() => setNpTipo("feedback")}
+                      className={`flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${npTipo === "feedback" ? "border-[#802907] bg-brand-primary/5 text-[#802907]" : "border-gray-200 text-gray-500 hover:border-gray-400"}`}>
+                      💬 Retroalimentación
+                    </button>
+                  </div>
                   <input value={npTexto} onChange={e => setNpTexto(e.target.value)}
                     placeholder="Escribe la pregunta aquí..."
                     className="w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#802907]" />
-                  <EditorOpciones ops={npOps} setOps={setNpOps} setCorrecta={setCorrectaNueva} />
+                  {npTipo === "feedback" ? (
+                    <p className="text-xs text-gray-400">El operador responderá con texto libre; esta pregunta no se califica.</p>
+                  ) : (
+                    <EditorOpciones ops={npOps} setOps={setNpOps} setCorrecta={setCorrectaNueva} />
+                  )}
                   <div className="flex gap-2 pt-1">
                     <button onClick={guardarNueva} className="text-xs rounded bg-brand-primary text-white px-3 py-1.5 hover:bg-[#5a1b04]">Guardar pregunta</button>
-                    <button onClick={() => { setNueva(false); setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]); }}
+                    <button onClick={() => { setNueva(false); setNpTexto(""); setNpOps([{ texto: "", es_correcta: true }, { texto: "", es_correcta: false }]); setNpTipo("opcion_multiple"); }}
                       className="text-xs rounded border px-3 py-1.5 text-gray-600 hover:bg-gray-100">Cancelar</button>
                   </div>
                 </div>
@@ -513,11 +565,11 @@ function ModalVistaPrevia({ modulo, onCerrar, onEditar }) {
           <p className="text-xs text-gray-500 line-clamp-1">{modulo.descripcion}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
-          <button onClick={() => onEditar(modulo)} title="Editar módulo"
-            className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100">
-            {Ico.edit} Editar
-          </button>
-          <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold">✕</button>
+          <Button size="sm" Icon={Pencil} onClick={() => onEditar(modulo)} title="Editar módulo">
+            Editar
+          </Button>
+          <Button size="sm" variant="ghost" Icon={X} onClick={onCerrar} title="Editar módulo">
+          </Button>
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col">
@@ -586,8 +638,8 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
         {/* Badge tipo de contenido */}
         {modulo.file_type && (
           <span className={`absolute top-2 left-2 text-[10px] font-bold rounded px-1.5 py-0.5 ${modulo.file_type === "pdf" ? "bg-red-600 text-white"
-              : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
-                : "bg-blue-600 text-white"
+            : modulo.file_type === "presentacion" ? "bg-purple-600 text-white"
+              : "bg-blue-600 text-white"
             }`}>
             {modulo.file_type === "presentacion" ? "PRESENTACIÓN" : modulo.file_type.toUpperCase()}
           </span>
@@ -612,19 +664,16 @@ function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagenCambiad
         )}
 
         {/* Acciones */}
-        <div className="flex gap-2 mt-auto pt-2 border-t border-gray-100" onClick={e => e.stopPropagation()}>
-          <button onClick={() => onEditar(modulo)} title="Editar módulo"
-            className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100">
-            {Ico.edit} Editar
-          </button>
-          <button onClick={() => onExamen(modulo)} title="Gestionar examen"
-            className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-purple-200 bg-purple-50 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100">
-            {Ico.qa} Examen
-          </button>
-          <button onClick={() => onEliminar(modulo)} title="Eliminar módulo"
-            className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-red-700 hover:bg-red-100">
-            {Ico.trash}
-          </button>
+        <div className="flex gap-2 mt-auto  pt-2 border-t border-gray-100" onClick={e => e.stopPropagation()}>
+
+          <Button size="sm" Icon={Pencil} onClick={() => onEditar(modulo)} title="Editar módulo">
+            Editar
+          </Button>
+          <Button size="sm" variant="outline" Icon={ListTodo} onClick={() => onExamen(modulo)} title="Gestionar examen">
+            Examen
+          </Button>
+          <Button size="sm" variant="danger" iconOnly isSoft Icon={Trash2} onClick={() => onEliminar(modulo)} title="Eliminar módulo">
+          </Button>
         </div>
       </div>
     </div>
@@ -686,14 +735,12 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
           </span>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setEditSec(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-            {Ico.edit} Editar sección
-          </button>
-          <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
-            className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-            {Ico.plus} Nuevo módulo
-          </button>
+          <Button size="sm" variant="outline" Icon={Pencil} onClick={() => setEditSec(true)}>
+            Editar curso
+          </Button>
+          <Button size="sm" Icon={Plus} onClick={() => setModalMod({ tipo: "crear", datos: null })} title="Gestionar examen">
+            Nuevo módulo
+          </Button>
         </div>
       </div>
 
@@ -704,7 +751,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
       {/* Grid de tarjetas de módulo */}
       {(seccion.modulos || []).length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
-          <p className="text-gray-400 text-sm mb-4">Esta sección no tiene módulos todavía.</p>
+          <p className="text-gray-400 text-sm mb-4">Este curso  no tiene módulos todavía.</p>
           <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
             className="rounded-lg bg-brand-primary px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
             + Nuevo módulo
@@ -753,7 +800,7 @@ function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
       )}
       {editSec && (
         <ModalSeccion tipo="editar" datos={seccion} secciones={secciones}
-          onGuardar={() => { setEditSec(false); onRefrescar(); Swal.fire({ icon: "success", title: "Sección actualizada.", confirmButtonColor: "#802907" }); }}
+          onGuardar={() => { setEditSec(false); onRefrescar(); Swal.fire({ icon: "success", title: "Curso actualizado.", confirmButtonColor: "#802907" }); }}
           onCerrar={() => setEditSec(false)} />
       )}
     </div>
@@ -784,11 +831,11 @@ function TarjetaSeccion({ seccion, onClick, onEditar, onEliminar }) {
         </div>
         {/* Botones de acción (no propagan el click a la tarjeta) */}
         <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-          <button onClick={() => onEditar(seccion)} title="Editar sección"
+          <button onClick={() => onEditar(seccion)} title="Editar curso"
             className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600">
             {Ico.edit}
           </button>
-          <button onClick={() => onEliminar(seccion)} title="Eliminar sección"
+          <button onClick={() => onEliminar(seccion)} title="Eliminar curso"
             className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600">
             {Ico.trash}
           </button>
@@ -857,7 +904,7 @@ function Contenido() {
       await axios.delete(`${API}/api/secciones/${seccion.id}`);
       if (seccionActiva?.id === seccion.id) setActiva(null);
       cargar();
-      Swal.fire({ icon: "success", title: "Sección eliminada.", confirmButtonColor: "#802907" });
+      Swal.fire({ icon: "success", title: "Curso eliminado.", confirmButtonColor: "#802907" });
     } catch (err) {
       Swal.fire({ icon: "error", title: err.response?.data?.message || "No se pudo eliminar.", confirmButtonColor: "#802907" });
     }
@@ -892,11 +939,11 @@ function Contenido() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Editar Contenido</h2>
-          <p className="text-sm text-gray-500">Selecciona una sección para ver y gestionar sus módulos.</p>
+          <p className="text-sm text-gray-500">Selecciona un curso para ver y gestionar sus módulos.</p>
         </div>
         <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
           className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-          {Ico.plus} Nueva Sección
+          {Ico.plus} Nuevo Curso
         </button>
       </div>
 
@@ -907,10 +954,10 @@ function Contenido() {
       ) : secciones.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white p-16 text-center">
           <p className="text-lg font-semibold text-gray-600 mb-1">Sin secciones</p>
-          <p className="text-sm text-gray-400 mb-5">Crea la primera sección para organizar los módulos.</p>
+          <p className="text-sm text-gray-400 mb-5">Crea el primer curso para organizar los módulos.</p>
           <button onClick={() => setModalSec({ tipo: "crear", datos: null })}
             className="rounded-lg bg-brand-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-            Crear primera sección
+            Crear primer curso
           </button>
         </div>
       ) : (
@@ -935,7 +982,7 @@ function Contenido() {
           onGuardar={() => {
             setModalSec(null);
             cargar();
-            Swal.fire({ icon: "success", title: modalSec.tipo === "crear" ? "Sección creada." : "Sección actualizada.", confirmButtonColor: "#802907" });
+            Swal.fire({ icon: "success", title: modalSec.tipo === "crear" ? "Curso creado" : "Curso actualizado.", confirmButtonColor: "#802907" });
           }}
           onCerrar={() => setModalSec(null)}
         />

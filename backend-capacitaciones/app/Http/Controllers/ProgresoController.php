@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Modulo;
+use App\Models\Pregunta;
 use App\Models\Seccion;
 use App\Models\ProgresoModulo;
 use App\Models\User;
@@ -65,6 +66,8 @@ class ProgresoController extends Controller
         );
 
         $progreso->intentos_ciclo = 0;
+        $progreso->preguntas_usadas_ciclo = []; // Reinicia el ciclo de preguntas usadas
+        $progreso->intento_pendiente = false; // Reinicia el estado de intento pendiente
         $progreso->save();
 
         return response()->json(['intentos_restantes' => 2], 200);
@@ -310,8 +313,14 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'Este operador aún no ha contestado este examen.'], 404);
         }
 
+        // Reconstruir exactamente el subconjunto de preguntas que se mostró
+        // en el intento (ver ExamenController::retroalimentacion).
+        $idsExamenActual = $progreso->preguntas_examen_actual ?? array_keys($progreso->respuestas);
+        $feedbackIds = $progreso->modulo->preguntas->where('tipo', Pregunta::TIPO_FEEDBACK)->pluck('id')->all();
+        $preguntasDelIntento = $progreso->modulo->preguntas->whereIn('id', array_merge($idsExamenActual, $feedbackIds));
+
         ['aciertos' => $aciertos, 'total' => $total, 'resultados' => $resultados] =
-            $this->calificador->calificar($progreso->modulo, $progreso->respuestas);
+            $this->calificador->calificar($preguntasDelIntento, $progreso->respuestas);
 
         return response()->json([
             'usuario'       => trim($progreso->user?->name . ' ' . $progreso->user?->lastname),

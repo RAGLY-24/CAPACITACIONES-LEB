@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Puesto extends Model
 {
-    protected $fillable = ['nombre'];
+    protected $fillable = ['nombre', 'default_permissions'];
+
+    protected $casts = [
+        'default_permissions' => 'array',
+    ];
 
     public function usuarios()
     {

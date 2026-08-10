@@ -71,40 +71,43 @@ class User extends Authenticatable
         return Attribute::get(fn () => (new ArchivoStorageService())->urlPublica($this->foto, 'perfiles'));
     }
 
+    // Resuelve un permiso en cascada: el override explícito del usuario
+    // manda; si el usuario nunca tocó esa llave, se hereda el default del
+    // puesto (rol). Así, cambiar los defaults de un rol afecta de inmediato
+    // a cualquier usuario de ese rol que no tenga un permiso especial dado
+    // a mano.
     public function hasPermission(string $permission): bool
     {
         if ($this->puesto?->nombre === 'SistemasAdmin') {
             return true;
         }
 
-        return data_get($this->permissions, $permission, false) === true;
+        if (is_array($this->permissions) && array_key_exists($permission, $this->permissions)) {
+            return $this->permissions[$permission] === true;
+        }
+
+        return data_get($this->puesto?->default_permissions, $permission, false) === true;
     }
 
+    // A diferencia de los demás permisos (opt-in, default false), el acceso
+    // a noticias es opt-out: si nadie lo definió ni a nivel usuario ni a
+    // nivel rol, se asume otorgado.
     public function canAccessNews(): bool
     {
         if ($this->puesto?->nombre === 'SistemasAdmin') {
             return true;
         }
 
-        return data_get($this->permissions, 'news_access', true) !== false;
+        if (is_array($this->permissions) && array_key_exists('news_access', $this->permissions)) {
+            return $this->permissions['news_access'] !== false;
+        }
+
+        return data_get($this->puesto?->default_permissions, 'news_access', true) !== false;
     }
 
     public function canManageNews(): bool
     {
-        if ($this->puesto?->nombre === 'SistemasAdmin') {
-            return true;
-        }
-
-        return data_get($this->permissions, 'manage_news', false) === true;
-    }
-
-    public function canEditCapacitaciones(): bool
-    {
-        if ($this->puesto?->nombre === 'SistemasAdmin') {
-            return true;
-        }
-
-        return data_get($this->permissions, 'edit_capacitaciones_course', false) === true;
+        return $this->hasPermission('manage_news');
     }
 
     public function puesto()

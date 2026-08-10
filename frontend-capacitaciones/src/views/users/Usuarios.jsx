@@ -3,7 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { useSearchParams } from "react-router-dom";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { Check, Link, Pencil, ShieldCheck, PlusIcon, Trash2, X } from "lucide-react";
 
 import { URL } from "../../api/http.client";
 
@@ -30,8 +30,11 @@ import PartnerDeleteModal from "./socios/PartnerDeleteModal";
 import PartnerViewModal from "./socios/PartnerViewModal";
 
 import PositionDeleteModal from "./puestos/PositionDeleteModal";
+import PositionPermissionsModal from "./puestos/PositionPermissionsModal";
 import { useMe } from "../../hooks/auth/useMe";
 import { IconButton } from "../../components/IconButton";
+import Button from "../../components/Buttons/Button";
+import Input from "../../components/Fields/Input";
 
 function Usuarios() {
 
@@ -46,6 +49,7 @@ function Usuarios() {
   const isDelete = action === "delete";
   const isCreate = action === "create";
   const isView = action === "view";
+  const isPermisos = action === "permisos";
 
 
   const shouldOpenUserModal = actionType == "user"
@@ -153,7 +157,7 @@ function Usuarios() {
           await createPosition(payload)
         } else if (mode == "edit") {
           isValidAction = true
-          await updatePosition({ id: payload.id, data: { nombre: payload.nombre } })
+          await updatePosition({ id: payload.id, data: { nombre: payload.nombre, default_permissions: payload.default_permissions } })
         }
         else if (mode == "delete") {
           isValidAction = true
@@ -451,6 +455,10 @@ function Usuarios() {
       return
     };
 
+    const editarPermisosPuesto = (id) => {
+      setSearchParams({ type: "position", action: "permisos", id: id })
+    };
+
     return [
       {
         name: 'Nombre del Puesto',
@@ -502,6 +510,15 @@ function Usuarios() {
                 filled={false}
                 onClick={() => editarPuesto(row)}
               />
+              {row.nombre !== 'SistemasAdmin' && (
+                <IconButton
+                  icon={ShieldCheck}
+                  variant="secondary"
+                  title="Permisos predeterminados"
+                  filled={false}
+                  onClick={() => editarPermisosPuesto(row.id)}
+                />
+              )}
               <IconButton
                 icon={Trash2}
                 variant="danger"
@@ -562,19 +579,19 @@ function Usuarios() {
     <div className="p-6 relative">
 
       {/* TABLA USUARIOS CON ESTILO DATATABLES */}
-      <div className=" rounded-xl border border-gray-200 bg-gray-50 p-6 flex flex-col">
+      <div className=" rounded-3xl border border-gray-200 bg-white p-6 flex flex-col">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-gray-800">Directorio de Usuarios</h3>
           </div>
           {puedeCrearUsuarios && (
             <div className="flex gap-2">
-              <button onClick={generarEnlaceRegistro} className="rounded-md border border-[#802907] px-4 py-2 text-sm font-semibold text-[#802907] transition-colors hover:bg-[#fdf7f3] shadow-sm w-full md:w-auto">
-                Generar link de registro
-              </button>
-              <button onClick={abrirModalCrear} className="rounded-md bg-[#802907] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4e1802] shadow-sm w-full md:w-auto">
-                + Crear Nuevo Usuario
-              </button>
+              <Button variant="outline" Icon={Link} onClick={generarEnlaceRegistro}>
+                Crear Nuevo Usuario
+              </Button>
+              <Button Icon={PlusIcon} onClick={abrirModalCrear}>
+                Crear Nuevo Usuario
+              </Button>
             </div>
           )}
         </div>
@@ -598,15 +615,15 @@ function Usuarios() {
 
 
       {/* SECCIÓN DE SOCIOS */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+      <div className="mt-8 rounded-3xl border border-gray-200 bg-white p-6">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-gray-800">Directorio de Socios</h3>
             <p className="text-sm text-gray-500">Asocia a un operador con su socio y revisa los usuarios vinculados.</p>
           </div>
-          <button onClick={abrirModalSocio} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
-            + Agregar socio
-          </button>
+          <Button Icon={PlusIcon} onClick={abrirModalSocio}>
+            Agregar socio
+          </Button>
         </div>
 
         <div className="mt-4  ">
@@ -616,7 +633,7 @@ function Usuarios() {
             ) : socios && socios.map((socio) => (
               <div
                 key={socio.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-3 transition hover:border-zinc-400 hover:bg-zinc-100 bg-white"
+                className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50 bg-white"
               >
                 <button
                   type="button"
@@ -650,26 +667,17 @@ function Usuarios() {
       </div>
 
       {/* SECCIÓN DE PUESTOS */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6">
+      <div className="mt-8 rounded-3xl border border-gray-200 bg-white p-6">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-gray-800">Directorio de Puestos</h3>
             <p className="text-sm text-gray-500">Los puestos creados aquí no tendrán permisos de SistemasAdmin.</p>
           </div>
           <div className="flex w-full md:w-auto gap-4">
-            <div className="flex-grow">
-              <input
-                type="text"
-                value={nuevoPuesto}
-                onChange={handleNuevoPuestoChange}
-                placeholder="Nombre del nuevo puesto"
-                className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-[#802907] focus:outline-none shadow-sm"
-              />
-              {errorPuesto && <p className="mt-1 text-xs text-red-500">{errorPuesto}</p>}
-            </div>
-            <button onClick={crearPuesto} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-[#4e1802] shadow-sm whitespace-nowrap">
-              + Agregar
-            </button>
+            <Input type="text" value={nuevoPuesto} onChange={handleNuevoPuestoChange} placeholder="Nombre del nuevo puesto" error={errorPuesto} />
+            <Button Icon={PlusIcon} onClick={crearPuesto}>
+              Agregar
+            </Button>
           </div>
         </div>
         <DataTable
@@ -695,6 +703,7 @@ function Usuarios() {
       <PartnerViewModal open={shouldOpenPartnerModal && isView} partner={socios?.find(u => u.id == actionId)} onClose={cerrarModal} />
 
       <PositionDeleteModal open={shouldOpenPositionModal && isDelete} position={puestos?.find(u => u.id == actionId)} onClose={cerrarModal} onSubmit={handleSaveChanges} />
+      <PositionPermissionsModal open={shouldOpenPositionModal && isPermisos} position={puestos?.find(u => u.id == actionId)} onClose={cerrarModal} onSubmit={handleSaveChanges} />
     </div>
   );
 }
