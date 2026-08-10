@@ -467,12 +467,12 @@ function Usuarios() {
         cell: row => {
           if (editarPuestoId === row.id) {
             return (
-              <input
+
+              <Input
                 autoFocus
                 type="text"
                 value={editarPuestoNombre}
                 onChange={(e) => setEditarPuestoNombre(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none"
               />
             );
           }

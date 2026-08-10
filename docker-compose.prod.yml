@@ -4,7 +4,9 @@ services:
       context: ./frontend-capacitaciones
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL}
+          VITE_API_URL: ${VITE_API_URL}
+          VITE_APP_TITLE: ${VITE_APP_TITLE}
+          VITE_APP_LOGO: ${VITE_APP_LOGO}
     ports:
       - "${WEB_PORT:-4000}:80"
     
