@@ -8,6 +8,7 @@ const TextArea = forwardRef(
             id,
             isRequired = false,
             variant = "primary",
+            error = null,
             ...props
         },
         ref
@@ -48,6 +49,9 @@ const TextArea = forwardRef(
                 `}
                     {...props}
                 />
+                {error && (
+                    <p className="mb-2 text-xs text-red-500">{error}</p>
+                )}
             </div>
         );
     }

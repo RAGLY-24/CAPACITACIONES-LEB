@@ -34,6 +34,7 @@ export function useSecciones() {
         }
     }, []);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { cargar(); }, [cargar]);
 
     const confirmarEliminar = async seccion => {
