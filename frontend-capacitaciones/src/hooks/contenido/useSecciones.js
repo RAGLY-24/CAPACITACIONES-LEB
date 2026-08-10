@@ -20,19 +20,15 @@ export function useSecciones() {
         } finally { setCargando(false); }
     }, []);
 
-    // Recarga y actualiza la sección activa (para cuando se crean/editan módulos)
+    // Recarga solo la sección activa (para cuando se crean/editan sus módulos)
     const refrescar = useCallback(async () => {
+        if (!seccionActiva) return;
         try {
-            const data = await contenidoApi.getSecciones();
-            setSecciones(data);
-            setActiva(prev => {
-                if (!prev) return null;
-                return data.find(s => s.id === prev.id) ?? prev;
-            });
+            setActiva(await contenidoApi.getSeccion(seccionActiva.id));
         } catch {
             Swal.fire({ icon: "error", title: "Error al cargar.", confirmButtonColor: "#802907" });
         }
-    }, []);
+    }, [seccionActiva]);
 
     useEffect(() => { cargar(); }, [cargar]);
 

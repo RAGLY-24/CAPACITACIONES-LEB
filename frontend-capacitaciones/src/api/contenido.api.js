@@ -7,6 +7,11 @@ export const contenidoApi = {
         return data;
     },
 
+    getSeccion: async (id) => {
+        const { data } = await httpClient.get(`/secciones/${id}`);
+        return data;
+    },
+
     crearSeccion: async (payload) => {
         const { data } = await httpClient.post("/secciones", payload);
         return data;
