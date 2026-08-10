@@ -352,11 +352,9 @@ function Usuarios() {
         fontSize: '0.875rem', // text-sm
         color: '#4b5563', // text-gray-600
         backgroundColor: '#ffffff',
-        '&:not(:last-of-type)': {
-          borderBottomStyle: 'solid',
-          borderBottomWidth: '1px',
-          borderBottomColor: '#e5e7eb',
-        },
+        borderBottomStyle: 'solid',
+        borderBottomWidth: '1px',
+        borderBottomColor: '#e5e7eb',
       },
     },
     pagination: {
