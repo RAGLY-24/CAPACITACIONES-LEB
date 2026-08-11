@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Seccion;
 use App\Models\User;
+use App\Services\NotificacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SeccionController extends Controller
 {
+    public function __construct(private NotificacionService $notificaciones)
+    {
+    }
+
     private function esAdmin(): bool
     {
         $user = Auth::user();
@@ -84,6 +89,17 @@ class SeccionController extends Controller
             'created_by'  => Auth::id(),
         ]);
 
+        if ($seccion->estado === 'Activo') {
+            $this->notificaciones->notificarContenido(
+                'seccion_creada',
+                "Nueva sección: {$seccion->nombre}",
+                $seccion->descripcion,
+                $seccion->id,
+                null,
+                Auth::id(),
+            );
+        }
+
         return response()->json(['message' => 'Sección creada.', 'seccion' => $seccion], 201);
     }
 
@@ -111,6 +127,17 @@ class SeccionController extends Controller
             'estado'      => $request->estado,
             'seccion_requerida_id' => $request->seccion_requerida_id,
         ]);
+
+        if ($seccion->estado === 'Activo') {
+            $this->notificaciones->notificarContenido(
+                'seccion_actualizada',
+                "Sección actualizada: {$seccion->nombre}",
+                $seccion->descripcion,
+                $seccion->id,
+                null,
+                Auth::id(),
+            );
+        }
 
         return response()->json(['message' => 'Sección actualizada.', 'seccion' => $seccion], 200);
     }

@@ -16,6 +16,7 @@ use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\SocioController;
 use App\Http\Controllers\AvisoEmergenciaController;
 use App\Http\Controllers\EnlaceRegistroController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Middleware\CheckSistemasAdmin;
 
 /*
@@ -47,6 +48,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Aviso de emergencia fijo en la sección de Noticias
     Route::get('/aviso-emergencia', [AvisoEmergenciaController::class, 'show']);
     Route::put('/aviso-emergencia', [AvisoEmergenciaController::class, 'update']);
+
+    // Notificaciones de contenido (nuevas/actualizadas secciones y módulos)
+    Route::get('/notificaciones', [NotificacionController::class, 'index']);
+    Route::get('/notificaciones/no-leidas/count', [NotificacionController::class, 'noLeidasCount']);
+    Route::put('/notificaciones/{id}/leer', [NotificacionController::class, 'marcarLeida']);
+    Route::put('/notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas']);
 
     // Cursos - Gestión del módulo de Capacitaciones
     Route::get('/cursos', [CursoController::class, 'index']);

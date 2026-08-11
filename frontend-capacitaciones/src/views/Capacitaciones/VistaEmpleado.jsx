@@ -4,13 +4,13 @@ import { TarjetaModuloEmpleado } from "./TarjetaModuloEmpleado";
 import { TarjetaSeccionEmpleado } from "./TarjetaSeccionEmpleado";
 import { VisorCurso } from "./VisorCurso";
 
-export function VistaEmpleado() {
+export function VistaEmpleado({ seccionInicialId = null, moduloInicialId = null } = {}) {
     const {
         secciones, cargando, hayModulos,
         setSeccionActivaId, seccionActiva,
         cursoModuloId, setCursoModuloId,
         cargar,
-    } = useVistaEmpleado();
+    } = useVistaEmpleado({ seccionInicialId, moduloInicialId });
 
     if (cargando) return <p className="text-center text-sm text-gray-400 py-12">Cargando módulos...</p>;
 
