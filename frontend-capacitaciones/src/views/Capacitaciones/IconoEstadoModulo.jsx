@@ -16,9 +16,11 @@ export function IconoEstadoModulo({ estado, desbloqueado }) {
             <X size={10} strokeWidth={3} className="text-white" />
         </span>
     );
-    if (estado === "en_progreso") return <span className="text-yellow-600">●</span>;
+    if (estado === "en_progreso") return (<span className="h-5 w-5 rounded-md flex items-center justify-center">
+        <Circle size={10} strokeWidth={3} className="text-yellow-500 fill-yellow-500" />
+    </span>);
 
     return (<span className="h-5 w-5 rounded-md flex items-center justify-center">
-        <Circle size={10} strokeWidth={3} className="text-yellow-500 fill-yellow-500" />
+        <Circle size={10} strokeWidth={3} className="text-zinc-500 fill-zinc-500" />
     </span>);
 }

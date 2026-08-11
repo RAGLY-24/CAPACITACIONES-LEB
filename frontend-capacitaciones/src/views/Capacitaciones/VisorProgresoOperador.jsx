@@ -3,6 +3,8 @@ import { useVisorProgresoOperador } from "../../hooks/capacitaciones/useVisorPro
 import { RetroalimentacionExamen } from "./RetroalimentacionExamen";
 import { TarjetaModuloOperador } from "./TarjetaModuloOperador";
 import { TarjetaSeccionEmpleado } from "./TarjetaSeccionEmpleado";
+import Button from "../../components/Buttons/Button";
+import { ChevronLeft, X } from "lucide-react";
 
 // Visor de progreso de un operador para el admin: navega por tarjetas de
 // secciones y módulos igual que la vista del empleado (con su barra de
@@ -17,16 +19,15 @@ export function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialI
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col bg-white">
-            <div className="flex items-center justify-between border-b px-6 py-3 shrink-0 bg-gray-50 shadow-sm">
+            <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-3 shrink-0 bg-zinc-50 ">
                 <div className="min-w-0 flex items-center gap-2 flex-wrap text-sm">
-                    <span className="font-bold text-gray-800">Capacitaciones de {usuarioNombre}</span>
+                    <span className="font-semibold text-zinc-700">Capacitaciones de {usuarioNombre}</span>
                     {seccionActiva && (
                         <>
                             <span className="text-gray-400">/</span>
-                            <button onClick={volverASecciones}
-                                className="text-gray-600 hover:text-[#802907] hover:underline">
+                            <Button size="md" onClick={volverASecciones} variant="link" className="-m-4 text-zinc-500" >
                                 {seccionActiva.seccion.nombre}
-                            </button>
+                            </Button>
                         </>
                     )}
                     {moduloActivo && (
@@ -36,7 +37,7 @@ export function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialI
                         </>
                     )}
                 </div>
-                <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl font-bold ml-4 shrink-0">✕</button>
+                <Button size="sm" onClick={onCerrar} variant="ghost" iconOnly Icon={X} />
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
@@ -44,10 +45,9 @@ export function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialI
                     <p className="text-center text-sm text-gray-400 py-12">Cargando progreso...</p>
                 ) : moduloActivo ? (
                     <div className="max-w-2xl mx-auto space-y-4">
-                        <button onClick={volverAModulos}
-                            className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-                            ← Módulos
-                        </button>
+                        <Button Icon={ChevronLeft} onClick={volverAModulos} variant="outline" >
+                            Módulos
+                        </Button>
                         {cargandoRetro ? (
                             <p className="text-center text-sm text-gray-400 py-6">Cargando respuestas...</p>
                         ) : retro ? (
@@ -58,10 +58,9 @@ export function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialI
                     </div>
                 ) : seccionActiva ? (
                     <div className="space-y-5">
-                        <button onClick={() => setSeccionActivaId(null)}
-                            className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-                            ← Secciones
-                        </button>
+                        <Button Icon={ChevronLeft} onClick={volverASecciones} variant="outline" >
+                            Cursos
+                        </Button>
                         {seccionActiva.modulos.length === 0 ? (
                             <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
                                 <p className="text-gray-400 text-sm">Esta sección no tiene módulos todavía.</p>
@@ -81,15 +80,15 @@ export function VisorProgresoOperador({ usuarioId, usuarioNombre, moduloInicialI
                             const completadosTotal = todosLosModulos.filter(m => m.estado === "completado").length;
                             const pctTotal = todosLosModulos.length ? Math.round((completadosTotal / todosLosModulos.length) * 100) : 0;
                             return (
-                                <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h3 className="text-sm font-bold text-gray-700">Avance general</h3>
-                                        <span className="text-sm font-bold text-[#802907]">{pctTotal}%</span>
+                                <div className="flex flex-col rounded-3xl border border-zinc-200 bg-white gap-2 p-5">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-bold text-gray-700">Tu avance general</h3>
+                                        <span className="text-sm font-bold">{pctTotal}%</span>
                                     </div>
-                                    <div className="rounded-full bg-gray-200 h-2.5 overflow-hidden">
-                                        <div className="h-2.5 rounded-full bg-brand-primary transition-all" style={{ width: `${pctTotal}%` }} />
+                                    <div className="rounded-full bg-gray-200 h-2 overflow-hidden">
+                                        <div className="h-2.5 rounded-full bg-green-500 transition-all" style={{ width: `${pctTotal}%` }} />
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-2">{completadosTotal} de {todosLosModulos.length} módulo(s) completados</p>
+                                    <p className="text-xs text-gray-400">{completadosTotal} de {todosLosModulos.length} módulo(s) completados</p>
                                 </div>
                             );
                         })()}

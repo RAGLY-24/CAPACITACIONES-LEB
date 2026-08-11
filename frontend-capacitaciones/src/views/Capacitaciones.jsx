@@ -29,10 +29,10 @@ function Capacitaciones() {
           </p>
         </div>
         {esAdmin && (
-          <div className="flex rounded-lg border border-gray-200 bg-white p-1 shrink-0 shadow-sm">
+          <div className="flex rounded-2xl border border-gray-200 bg-white p-1 shrink-0">
             {[["admin", "Reporte General"], ["empleado", "Vista Empleado"]].map(([k, l]) => (
               <button key={k} onClick={() => setVista(k)}
-                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${vista === k ? "bg-brand-primary text-white" : "text-gray-600 hover:text-gray-800"}`}>
+                className={`rounded-xl px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer  ${vista === k ? "bg-brand-primary/90 text-white" : "text-gray-600 hover:text-gray-800"}`}>
                 {l}
               </button>
             ))}
