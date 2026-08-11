@@ -49,7 +49,7 @@ function Contenido() {
                 <div>
                     <h2 className="text-xl font-bold text-gray-800">Editar Contenido</h2>
                     <p className="text-sm text-gray-500">
-                        Selecciona una sección para ver y gestionar sus módulos.
+                        Selecciona un curso para ver y gestionar sus módulos.
                     </p>
                 </div>
 
@@ -58,7 +58,7 @@ function Contenido() {
                     size="sm"
                     onClick={() => setModalSec({ tipo: "crear", datos: null })}
                 >
-                    Nueva Sección
+                    Nuevo curso
                 </Button>
             </div>
 
