@@ -1,4 +1,4 @@
-import { Box, FileText, ImagesIcon, VideoIcon } from "lucide-react";
+import { Box, FileText, ImagesIcon, LockKeyhole, VideoIcon } from "lucide-react";
 import Button from "../../components/Buttons/Button";
 import { Badge } from "./Badge";
 
@@ -7,7 +7,7 @@ export function TarjetaModuloEmpleado({ item, onAbrir }) {
     const desbloqueado = item.desbloqueado !== false;
     const imgSrc = modulo.imagen_url || null;
     const necesitaRepaso = estado === "reprobado" && item.intentos_restantes === 0;
-    const isApproved = estado == "completado"
+    const isApproved = estado === "completado"
     const botonLabel = () => {
         if (!desbloqueado) return "Bloqueado";
         if (necesitaRepaso) return "Repasar contenido";
@@ -32,7 +32,7 @@ export function TarjetaModuloEmpleado({ item, onAbrir }) {
                     </div>
                 )}
                 {!desbloqueado && (
-                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-3xl">🔒</div>
+                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-3xl"><LockKeyhole size={40} /> </div>
                 )}
                 {modulo.file_type && (
                     <span className={`absolute top-2.5 left-3 text-[10px] font-bold rounded-xl px-4 py-1 ${modulo.file_type === "pdf" ? "bg-red-600 text-white"
@@ -45,25 +45,99 @@ export function TarjetaModuloEmpleado({ item, onAbrir }) {
                 <span className="absolute top-2.5 right-3"><Badge estado={estado} /></span>
             </div>
 
-            {/* Info del módulo */}
-            <div className="p-4 flex flex-col gap-3 flex-1">
-                <div>
-                    <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{modulo.nombre}</h4>
-                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{modulo.descripcion}</p>
+            {/* Información del módulo */}
+            <div className="flex flex-1 flex-col gap-4 p-4">
+                <div className="flex flex-1 flex-col gap-4">
+                    {/* Título y descripción */}
+                    <div>
+                        <h4 className="line-clamp-2 text-sm font-semibold leading-snug text-gray-800">
+                            {modulo.nombre}
+                        </h4>
+
+                        <p className="line-clamp-2 text-xs text-gray-400">
+                            {modulo.descripcion}
+                        </p>
+                    </div>
+
+                    {/* Estado del módulo */}
+                    <div className="flex flex-col items-start gap-4 text-[10px]">
+                        <div className="flex flex-row items-center gap-4 ">
+                            {tiene_examen && (
+                                <span className="rounded-full bg-sky-100 px-2 py-1 font-bold text-sky-600">
+                                    Examen
+                                </span>
+                            )}
+
+                            {intentos > 0 && (
+                                <span className="text-gray-400">
+                                    {intentos} intento(s)
+                                </span>
+                            )}
+
+                            {puntaje !== null && (
+                                <span
+                                    className={`font-medium ${puntaje >= 70
+                                        ? "text-green-600"
+                                        : "text-red-500"
+                                        }`}
+                                >
+                                    {puntaje}%
+                                </span>
+                            )}
+                        </div>
+
+                        {!desbloqueado && (
+                            <span className="flex items-center gap-2 text-gray-400">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-sky-500">
+                                    <LockKeyhole
+                                        size={10}
+                                        strokeWidth={3}
+                                        className="text-white"
+                                    />
+                                </span>
+
+                                Requiere aprobar:{" "}
+                                {item.requiere_modulo || "el módulo anterior"}
+                            </span>
+                        )}
+
+                        {desbloqueado && necesitaRepaso && (
+                            <span className="flex items-center gap-2 text-gray-400">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-yellow-500">
+                                    <LockKeyhole
+                                        size={10}
+                                        strokeWidth={3}
+                                        className="text-white"
+                                    />
+                                </span>
+                                Repasa el contenido para reintentar
+                            </span>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap text-[10px]">
-                    {tiene_examen && <span className="font-bold rounded-full px-2 py-1 bg-sky-100 text-sky-600">Examen</span>}
-                    {intentos > 0 && <span className="text-gray-400">{intentos} intento(s)</span>}
-                    {puntaje !== null && (
-                        <span className={`font-medium ${puntaje >= 70 ? "text-green-600" : "text-red-500"}`}>{puntaje}%</span>
-                    )}
-                    {!desbloqueado && <span className="text-gray-400">🔒 Requiere aprobar: {item.requiere_modulo || "el módulo anterior"}</span>}
-                    {desbloqueado && necesitaRepaso && <span className="font-bold text-amber-600">🔒 Repasa el contenido para reintentar</span>}
-                </div>
-                <Button variant={`${isApproved ? "success" : "secondary"}`} title={!desbloqueado ? `Aprueba el examen de "${item.requiere_modulo || "el módulo anterior"}" (mínimo 70%) para desbloquearlo` : undefined} size="sm" onClick={e => { e.stopPropagation(); if (desbloqueado) onAbrir(modulo.id); }} disabled={!desbloqueado}>
-                    {botonLabel()}
-                </Button>
-            </div>
+
+                {/* Acción principal */}
+                <Button
+                    variant={isApproved ? necesitaRepaso ? "warning" : "success" : "secondary"}
+                size="sm"
+                disabled={!desbloqueado}
+                title={
+                    !desbloqueado
+                        ? `Aprueba el examen de "${item.requiere_modulo || "el módulo anterior"
+                        }" (mínimo 70%) para desbloquearlo`
+                        : undefined
+                }
+                onClick={(e) => {
+                    e.stopPropagation();
+
+                    if (desbloqueado) {
+                        onAbrir(modulo.id);
+                    }
+                }}
+                >
+                {botonLabel()}
+            </Button>
         </div>
+        </div >
     );
 }
