@@ -17,10 +17,10 @@ const TextArea = forwardRef(
 
         const variants = {
             primary:
-                "border border-slate-200 bg-slate-50 text-black placeholder-gray-400 focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary",
+                "border border-zinc-200 bg-zinc-50 text-black placeholder-gray-400 focus:border-brand-primary focus:bg-white focus:ring-1 focus:ring-brand-primary",
 
             secondary:
-                "border border-slate-300 bg-transparent text-slate-700 placeholder-gray-400 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary",
+                "border border-zinc-300 bg-transparent text-zinc-700 placeholder-gray-400 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary",
         };
 
         return (
@@ -28,7 +28,7 @@ const TextArea = forwardRef(
                 {label && (
                     <label
                         htmlFor={textareaId}
-                        className="text-[14px] font-medium text-slate-700"
+                        className="text-[14px] font-medium text-zinc-700"
                     >
                         {label}
                         {isRequired && (

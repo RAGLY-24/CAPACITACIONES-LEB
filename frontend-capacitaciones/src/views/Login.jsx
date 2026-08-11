@@ -57,7 +57,7 @@ function Login() {
       />
 
       {/* Oscurecer */}
-      <div className="absolute inset-0 bg-slate-200/80" />
+      <div className="absolute inset-0 bg-zinc-200/80" />
 
       {/* Cuadrícula */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.08)_1px,transparent_1px)] bg-[size:48px_48px]" />
@@ -72,7 +72,7 @@ function Login() {
             Iniciar sesión
           </h1>
 
-          <span className="text-center text-md text-slate-500">
+          <span className="text-center text-md text-zinc-500">
             Capacitaciones
           </span>
         </div>

@@ -4,13 +4,15 @@ import { useVistaAdmin } from "../../hooks/capacitaciones/useVistaAdmin";
 import { GraficaPastel } from "./GraficaPastel";
 import { LeyendaPastel } from "./LeyendaPastel";
 import { VisorProgresoOperador } from "./VisorProgresoOperador";
+import Button from "../../components/Buttons/Button";
+import Select from "../../components/Fields/Select";
 
 // Configuración de estilos para el DataTable
 const customStyles = {
     tableWrapper: { style: { borderTop: '1px solid #e5e7eb' } },
     headRow: { style: { backgroundColor: '#f9fafb', borderBottomWidth: '1px', borderBottomColor: '#e5e7eb' } },
     headCells: { style: { color: '#374151', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase' } },
-    rows: { style: { fontSize: '0.875rem', color: '#4b5563', backgroundColor: '#ffffff' } },
+    rows: { style: { fontSize: '0.875rem', color: '#4b5563', backgroundColor: '#ffffff' }, highlightOnHoverStyle: { backgroundColor: "#e2e8f0", color: "#1f2937", cursor: "pointer", transition: "background-color 150ms ease, color 150ms ease", }, },
 };
 
 export function VistaAdmin() {
@@ -22,7 +24,7 @@ export function VistaAdmin() {
         operadorSeleccionado, setOperadorSeleccionado,
         dataTableData, seccionesUnicas,
     } = useVistaAdmin();
-
+    console.log(dataTableData)
     // Columnas principales de Operadores
     const columnas = useMemo(() => [
         {
@@ -92,11 +94,11 @@ export function VistaAdmin() {
         <div className="space-y-6">
             {/* Gráficas de pastel por sección */}
             {pieData.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                    <h3 className="text-base font-bold text-gray-800 mb-4 border-b pb-2">Avance Global por Sección</h3>
+                <div className="bg-white rounded-3xl border border-zinc-200 p-6 ">
+                    <h3 className="text-base font-bold text-gray-800 mb-4 border-b border-zinc-200 pb-2">Avance Global por Sección</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                         {pieData.map(sec => (
-                            <div key={sec.seccion_id} className="rounded-xl border border-gray-100 bg-gray-50 p-4 flex flex-col items-center gap-2 hover:shadow-md transition-shadow">
+                            <div key={sec.seccion_id} className="rounded-xl border border-zinc-100 bg-zinc-50 p-4 flex flex-col items-center gap-2 transition-shadow">
                                 <p className="text-xs font-bold text-gray-700 text-center wrap-break-word w-full line-clamp-2 min-h-8" title={sec.nombre}>
                                     {sec.nombre}
                                 </p>
@@ -104,7 +106,7 @@ export function VistaAdmin() {
                                     <GraficaPastel datos={sec} size={130} />
                                 </div>
                                 <LeyendaPastel datos={sec} />
-                                <p className="text-[10px] text-gray-400 mt-2 border-t pt-2 w-full text-center">
+                                <p className="text-[10px] text-gray-400 mt-2 border-t border-zinc-200 pt-2 w-full text-center">
                                     {sec.total} capacitación(es) registrada(s)
                                 </p>
                             </div>
@@ -114,48 +116,117 @@ export function VistaAdmin() {
             )}
 
             {/* Filtros para la tabla de operadores */}
-            <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm flex flex-wrap gap-3 items-center">
-                <span className="text-sm font-bold text-gray-700 mr-2">Filtros de cursos:</span>
-                <select value={filtroSec} onChange={e => setFiltroSec(e.target.value)}
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#802907]">
-                    <option value="">Todas las secciones</option>
-                    {seccionesUnicas.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                </select>
-                <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#802907]">
-                    <option value="">Todos los estados</option>
-                    <option value="en_progreso">En Progreso</option>
-                    <option value="completado">Completado</option>
-                    <option value="reprobado">Reprobado</option>
-                </select>
-                <button onClick={cargar} className="rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
-                    Actualizar Datos
-                </button>
-                {(filtroSec || filtroEstado) && (
-                    <button onClick={() => { setFiltroSec(""); setFiltroEstado(""); }}
-                        className="text-xs font-semibold text-[#802907] hover:underline ml-2">
-                        Limpiar filtros de cursos
-                    </button>
-                )}
-            </div>
+            <div className="rounded-3xl bg-white border border-zinc-200 overflow-hidden">
 
-            {/* Tabla de Operadores: al hacer clic en una fila se abre su progreso en tarjetas */}
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <DataTable
-                    columns={columnas}
-                    data={dataTableData}
-                    onRowClicked={row => setOperadorSeleccionado(row)}
-                    pointerOnHover
-                    pagination
-                    paginationPerPage={10}
-                    paginationRowsPerPageOptions={[10, 25, 50]}
-                    highlightOnHover
-                    responsive
-                    customStyles={customStyles}
-                    subHeader
-                    subHeaderComponent={BuscadorDataTable}
-                    noDataComponent={<div className="p-8 text-gray-500 text-center">No se encontraron operadores con estos filtros.</div>}
-                />
+                {/* Encabezado de filtros */}
+                <div className="p-6">
+                    <div className="flex flex-col gap-4">
+
+                        {/* Título */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-800">
+                                    Filtros de cursos
+                                </h3>
+
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Filtra los operadores por sección y estado de curso.
+                                </p>
+                            </div>
+
+                            {(filtroSec || filtroEstado) && (
+                                <Button
+                                    type="button"
+                                    variant="link"
+                                    size="xs"
+                                    onClick={() => {
+                                        setFiltroSec("");
+                                        setFiltroEstado("");
+                                    }}
+                                >
+                                    Limpiar filtros
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Controles */}
+                        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+
+                            {/* Sección */}
+                            <Select
+                                name="seccion"
+                                label="Sección"
+                                value={filtroSec}
+                                onChange={e => setFiltroSec(e.target.value)}
+                                placeholder="Todas las secciones"
+                                options={seccionesUnicas.map(s => ({
+                                    value: s.id,
+                                    label: s.nombre,
+                                }))}
+                                variant="primary"
+                                containerClassName="flex-1 min-w-[200px]"
+                            />
+
+                            {/* Estado */}
+                            <Select
+                                name="estado"
+                                label="Estado del curso"
+                                value={filtroEstado}
+                                onChange={e => setFiltroEstado(e.target.value)}
+                                placeholder="Todos los estados"
+                                options={[
+                                    {
+                                        value: "en_progreso",
+                                        label: "En Progreso",
+                                    },
+                                    {
+                                        value: "completado",
+                                        label: "Completado",
+                                    },
+                                    {
+                                        value: "reprobado",
+                                        label: "Reprobado",
+                                    },
+                                ]}
+                                variant="primary"
+                                containerClassName="flex-1 min-w-[200px]"
+                            />
+
+                            {/* Actualizar */}
+                            <Button
+                                type="button"
+                                variant="primary"
+                                size="md"
+                                onClick={cargar}
+                                className="shrink-0"
+                            >
+                                Actualizar datos
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tabla */}
+                <div className="w-full px-6">
+                    <DataTable
+                        columns={columnas}
+                        data={dataTableData}
+                        onRowClicked={row => setOperadorSeleccionado(row)}
+                        pointerOnHover
+                        pagination
+                        paginationPerPage={10}
+                        paginationRowsPerPageOptions={[10, 25, 50]}
+                        highlightOnHover
+                        responsive
+                        customStyles={customStyles}
+                        subHeaderComponent={BuscadorDataTable}
+                        noDataComponent={
+                            <div className="w-full p-8 text-center text-gray-500">
+                                No se encontraron operadores con estos filtros.
+                            </div>
+                        }
+                    />
+                </div>
             </div>
 
             {operadorSeleccionado && (

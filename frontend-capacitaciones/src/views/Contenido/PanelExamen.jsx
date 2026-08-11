@@ -298,7 +298,7 @@ export function PanelExamen({ modulo, onCerrar }) {
 
                         {/* Nueva pregunta */}
                         {nueva && (
-                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                                 <div className="mb-3 flex items-center justify-between gap-3">
                                     <p className="text-sm font-semibold text-gray-700">
                                         Nueva pregunta

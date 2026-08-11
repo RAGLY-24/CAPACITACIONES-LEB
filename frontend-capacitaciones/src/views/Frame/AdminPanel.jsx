@@ -171,7 +171,7 @@ function AdminPanel({ user, routes }) {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
 
       {/* --- BARRA SUPERIOR (NAVBAR) Fija arriba --- */}
       <nav className="fixed top-0 left-0 w-full z-50 flex h-14 items-center justify-between bg-white border-b border-zinc-200 px-6 ">

@@ -11,7 +11,7 @@ export function TarjetaModulo({ modulo, onEditar, onExamen, onEliminar, onImagen
         <div
             onClick={() => onVerContenido(modulo)}
             title="Haz clic para ver el contenido del módulo"
-            className="rounded-3xl border border-zinc-200 bg-white  overflow-hidden flex flex-col group  hover:border-slate-300 hover:bg-slate-50 transition-all cursor-pointer"
+            className="rounded-3xl border border-zinc-200 bg-white  overflow-hidden flex flex-col group  hover:border-zinc-300 hover:bg-zinc-50 transition-all cursor-pointer"
         >
             {/* Zona de imagen */}
             <div

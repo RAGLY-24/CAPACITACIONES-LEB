@@ -5,7 +5,7 @@ export function TarjetaSeccionEmpleado({ seccion, modulos, desbloqueada, seccion
     return (
         <div
             onClick={onClick}
-            className={`rounded-3xl border border-zinc-200 bg-white p-6 cursor-pointer transition-all group relative ${desbloqueada ? "hover:border-slate-200 hover:bg-slate-50" : "opacity-70"}`}
+            className={`rounded-3xl border border-zinc-200 bg-white p-6 cursor-pointer transition-all group relative ${desbloqueada ? "hover:border-zinc-200 hover:bg-zinc-50" : "opacity-70"}`}
         >
             <div className="flex items-center gap-2 mb-1">
                 <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${pct === 100 ? "bg-green-500" : "bg-gray-300"}`} />

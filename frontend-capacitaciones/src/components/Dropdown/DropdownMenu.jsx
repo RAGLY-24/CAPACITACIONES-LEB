@@ -28,8 +28,8 @@ export const DropdownMenu = ({
                 transition-colors
                 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer
                 ${item.variant === "danger"
-                                ? "text-red-600 hover:bg-slate-50"
-                                : "text-slate-900 hover:bg-slate-50"
+                                ? "text-red-600 hover:bg-zinc-50"
+                                : "text-zinc-900 hover:bg-zinc-50"
                             }
             `}
                     >

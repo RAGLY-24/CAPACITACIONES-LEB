@@ -12,7 +12,7 @@ export function TarjetaSeccion({
     return (
         <div
             onClick={onClick}
-            className="group relative flex min-h-42.5 cursor-pointer flex-col rounded-3xl border border-gray-200 bg-white hover:bg-slate-50 p-4 transition-all hover:border-slate-200 "
+            className="group relative flex min-h-42.5 cursor-pointer flex-col rounded-3xl border border-gray-200 bg-white hover:bg-zinc-50 p-4 transition-all hover:border-zinc-200 "
         >
             {/* Encabezado */}
             <div className="flex items-start justify-between gap-1">

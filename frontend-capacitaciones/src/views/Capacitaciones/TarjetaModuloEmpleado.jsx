@@ -7,12 +7,13 @@ export function TarjetaModuloEmpleado({ item, onAbrir }) {
     const desbloqueado = item.desbloqueado !== false;
     const imgSrc = modulo.imagen_url || null;
     const necesitaRepaso = estado === "reprobado" && item.intentos_restantes === 0;
-
+    const isApproved = estado == "completado"
     const botonLabel = () => {
         if (!desbloqueado) return "Bloqueado";
         if (necesitaRepaso) return "Repasar contenido";
         if (estado === "pendiente") return "Iniciar";
         if (estado === "en_progreso") return "Continuar";
+        if (estado === "completado") return "Completado";
         return "Reintentar";
     };
 
@@ -27,7 +28,7 @@ export function TarjetaModuloEmpleado({ item, onAbrir }) {
                     <img src={imgSrc} alt={modulo.nombre} className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-zinc-600 text-4xl">
-                        {modulo.file_type === "pdf" ? <FileText size={40} /> : modulo.file_type === "presentacion" ? <ImagesIcon size={40} /> : modulo.file_type === "video" ? <VideoIcon size={40}/> : <Box size={40}/>}
+                        {modulo.file_type === "pdf" ? <FileText size={40} /> : modulo.file_type === "presentacion" ? <ImagesIcon size={40} /> : modulo.file_type === "video" ? <VideoIcon size={40} /> : <Box size={40} />}
                     </div>
                 )}
                 {!desbloqueado && (
@@ -59,7 +60,7 @@ export function TarjetaModuloEmpleado({ item, onAbrir }) {
                     {!desbloqueado && <span className="text-gray-400">🔒 Requiere aprobar: {item.requiere_modulo || "el módulo anterior"}</span>}
                     {desbloqueado && necesitaRepaso && <span className="font-bold text-amber-600">🔒 Repasa el contenido para reintentar</span>}
                 </div>
-                <Button title={!desbloqueado ? `Aprueba el examen de "${item.requiere_modulo || "el módulo anterior"}" (mínimo 70%) para desbloquearlo` : undefined} size="sm" onClick={e => { e.stopPropagation(); if (desbloqueado) onAbrir(modulo.id); }} disabled={!desbloqueado}>
+                <Button variant={`${isApproved ? "success" : "secondary"}`} title={!desbloqueado ? `Aprueba el examen de "${item.requiere_modulo || "el módulo anterior"}" (mínimo 70%) para desbloquearlo` : undefined} size="sm" onClick={e => { e.stopPropagation(); if (desbloqueado) onAbrir(modulo.id); }} disabled={!desbloqueado}>
                     {botonLabel()}
                 </Button>
             </div>
