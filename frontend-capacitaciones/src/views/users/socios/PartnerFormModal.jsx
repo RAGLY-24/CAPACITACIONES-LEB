@@ -105,7 +105,7 @@ export default function PartnerFormModal({
                         <Button variant="outline" onClick={handleClose} type="button">
                             Cancelar
                         </Button>
-                        <Button type="submit" form="users-form">
+                        <Button type="submit" form="partners-form">
                             {mode === "create" ? "Crear" : "Guardar"}
                         </Button>
                     </>
