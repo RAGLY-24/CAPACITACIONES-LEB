@@ -7,6 +7,7 @@ use App\Models\Seccion;
 use App\Models\User;
 use App\Models\ProgresoModulo;
 use App\Services\ArchivoStorageService;
+use App\Services\NotificacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,7 +15,7 @@ class ModuloController extends Controller
 {
     private ArchivoStorageService $archivos;
 
-    public function __construct(ArchivoStorageService $archivos)
+    public function __construct(ArchivoStorageService $archivos, private NotificacionService $notificaciones)
     {
         $this->archivos = $archivos;
     }
@@ -118,6 +119,17 @@ class ModuloController extends Controller
             'created_by'  => Auth::id(),
         ]);
 
+        if ($modulo->estado === 'Activo') {
+            $this->notificaciones->notificarContenido(
+                'modulo_creado',
+                "Nuevo módulo: {$modulo->nombre}",
+                $modulo->descripcion,
+                $modulo->seccion_id,
+                $modulo->id,
+                Auth::id(),
+            );
+        }
+
         return response()->json([
             'message' => 'Módulo creado exitosamente.',
             'modulo'  => $modulo->load('creator:id,name'),
@@ -182,6 +194,17 @@ class ModuloController extends Controller
         }
 
         $modulo->update($datos);
+
+        if ($modulo->estado === 'Activo') {
+            $this->notificaciones->notificarContenido(
+                'modulo_actualizado',
+                "Módulo actualizado: {$modulo->nombre}",
+                $modulo->descripcion,
+                $modulo->seccion_id,
+                $modulo->id,
+                Auth::id(),
+            );
+        }
 
         return response()->json([
             'message' => 'Módulo actualizado exitosamente.',

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMe } from "../hooks/auth/useMe";
 import { VistaAdmin } from "./Capacitaciones/VistaAdmin";
 import { VistaEmpleado } from "./Capacitaciones/VistaEmpleado";
@@ -13,7 +14,21 @@ function Capacitaciones() {
   const permisos = storedUser?.permissions || {};
   const esAdmin = rol === "SistemasAdmin" || permisos.edit_trainings;
 
-  const [vista, setVista] = useState(esAdmin ? "admin" : "empleado");
+  // Deep-link desde una notificación: ?seccion=7&modulo=3 lleva directo a
+  // esa sección o abre el visor de ese módulo, aunque el usuario sea admin.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const seccionInicialId = searchParams.get("seccion") ? Number(searchParams.get("seccion")) : null;
+  const moduloInicialId = searchParams.get("modulo") ? Number(searchParams.get("modulo")) : null;
+  const tieneDeepLink = !!(seccionInicialId || moduloInicialId);
+
+  const [vista, setVista] = useState(esAdmin && !tieneDeepLink ? "admin" : "empleado");
+
+  // Limpiamos los query params una vez consumidos para que no se re-disparen
+  // en futuras navegaciones dentro de la misma sesión de la pestaña.
+  useEffect(() => {
+    if (tieneDeepLink) setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="p-6 space-y-6">
@@ -40,7 +55,9 @@ function Capacitaciones() {
         )}
       </div>
 
-      {esAdmin && vista === "admin" ? <VistaAdmin /> : <VistaEmpleado />}
+      {esAdmin && vista === "admin"
+        ? <VistaAdmin />
+        : <VistaEmpleado seccionInicialId={seccionInicialId} moduloInicialId={moduloInicialId} />}
     </div>
   );
 }

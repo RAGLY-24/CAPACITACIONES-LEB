@@ -11,6 +11,7 @@ import ProfileFormModal from "./ProfileFormModal";
 import { Avatar } from "../../components/Avatar/Avatar";
 import { DropdownMenu } from "../../components/Dropdown/DropdownMenu";
 import Button from "../../components/Buttons/Button";
+import { NotificationBell } from "../../components/Notifications/NotificationBell";
 
 const API_URL = URL
 
@@ -189,8 +190,10 @@ function AdminPanel({ user, routes }) {
           <Button onClick={() => setIsSidebarOpen(!isSidebarOpen)} iconOnly Icon={Menu} variant="ghost" />
         </div>
 
-        {/* Lado Derecho: Avatar del Usuario */}
-        <div className="flex items-center">
+        {/* Lado Derecho: Notificaciones y Avatar del Usuario */}
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}

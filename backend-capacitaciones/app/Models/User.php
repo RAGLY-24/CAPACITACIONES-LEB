@@ -119,4 +119,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Socio::class);
     }
+
+    public function notificaciones()
+    {
+        return $this->hasMany(Notificacion::class, 'user_id');
+    }
 }
