@@ -35,12 +35,12 @@ const Button = ({
             soft: "bg-zinc-200 text-zinc-700 hover:bg-zinc-300",
         },
         ghost: {
-            solid: "bg-transparent text-slate-700 hover:bg-zinc-100",
-            soft: "bg-slate-100 text-slate-700 hover:bg-slate-200",
+            solid: "bg-transparent text-zinc-700 hover:bg-zinc-100",
+            soft: "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
         },
         outline: {
-            solid: "bg-transparent border border-zinc-300 text-slate-700 hover:bg-zinc-200",
-            soft: "bg-zinc-100 border border-zinc-200 text-slate-700 hover:bg-zinc-200",
+            solid: "bg-transparent border border-zinc-300 text-zinc-700 hover:bg-zinc-200",
+            soft: "bg-zinc-100 border border-zinc-200 text-zinc-700 hover:bg-zinc-200",
         },
         link: {
             solid: "bg-transparent text-blue-500 hover:bg-transparent hover:underline px-0 py-0",
@@ -49,6 +49,11 @@ const Button = ({
     };
 
     const sizes = {
+        xs: {
+            className: "h-7 px-3 text-xs",
+            iconOnly: "h-7 w-7 aspect-square",
+            icon: 12,
+        },
         sm: {
             className: "h-9 px-3 text-xs",
             iconOnly: "h-9 w-9 aspect-square",

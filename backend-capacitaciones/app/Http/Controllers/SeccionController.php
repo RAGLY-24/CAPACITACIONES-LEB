@@ -37,6 +37,26 @@ class SeccionController extends Controller
         return response()->json($secciones, 200);
     }
 
+    // GET /secciones/{id} — una sección puntual con sus módulos
+    public function show(int $id)
+    {
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            return response()->json(['message' => 'No autenticado.'], 401);
+        }
+
+        if ($this->esAdmin()) {
+            $seccion = Seccion::with(['modulos' => fn($q) => $q->withCount('preguntas')->orderBy('orden'), 'requiere'])
+                ->findOrFail($id);
+        } else {
+            $seccion = Seccion::where('estado', 'Activo')
+                ->with(['modulos' => fn($q) => $q->where('estado', 'Activo')->withCount('preguntas')->orderBy('orden'), 'requiere'])
+                ->findOrFail($id);
+        }
+
+        return response()->json($seccion, 200);
+    }
+
     // POST /secciones
     public function store(Request $request)
     {
