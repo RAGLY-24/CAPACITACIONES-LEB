@@ -24,9 +24,9 @@ class ExamenController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
-        $modulo = Modulo::with(['preguntas.opciones'])->findOrFail($moduloId);
+        $modulo = Modulo::with(['preguntas.opciones', 'seccion:id,estado'])->findOrFail($moduloId);
 
-        if ($modulo->estado === 'Inactivo') {
+        if ($modulo->noDisponible()) {
             return response()->json(['message' => 'Este módulo no está disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {
@@ -41,11 +41,11 @@ class ExamenController extends Controller
             return response()->json(['message' => 'Este módulo aún no tiene examen configurado.'], 404);
         }
 
-        // preguntas para poder sortear 5 distintas en cada intento.
+        // preguntas para poder sortear 3 distintas en cada intento.
         $banco = $modulo->preguntas->where('tipo', Pregunta::TIPO_OPCION_MULTIPLE)->values();
-        if ($banco->count() < 15) {
+        if ($banco->count() < 10) {
             return response()->json([
-                'message' => 'El banco de preguntas de este módulo debe tener al menos 15 preguntas de opción múltiple para generar el examen. Actualmente tiene ' . $banco->count() . '.',
+                'message' => 'El banco de preguntas de este módulo debe tener al menos 10 preguntas de opción múltiple para generar el examen. Actualmente tiene ' . $banco->count() . '.',
             ], 422);
         }
         $feedback = $modulo->preguntas->where('tipo', Pregunta::TIPO_FEEDBACK)->values();
@@ -60,15 +60,15 @@ class ExamenController extends Controller
         }
 
         // Si ya hay un intento en curso (el usuario solo recargó la página),
-        // se reutilizan las mismas 5 preguntas. Si no, se sortea un set
+        // se reutilizan las mismas 3 preguntas. Si no, se sortea un set
         // nuevo, evitando repetir las que ya se mostraron en este ciclo.
         if (!$progreso->intento_pendiente || empty($progreso->preguntas_examen_actual)) {
             $usadas = $progreso->preguntas_usadas_ciclo ?? [];
             $disponibles = $banco->whereNotIn('id', $usadas)->values();
-            $seleccion = $disponibles->count() >= 5
-                ? $disponibles->shuffle()->take(5)
+            $seleccion = $disponibles->count() >= 3
+                ? $disponibles->shuffle()->take(3)
                 : $disponibles->concat(
-                    $banco->whereIn('id', $usadas)->shuffle()->take(5 - $disponibles->count())
+                    $banco->whereIn('id', $usadas)->shuffle()->take(3 - $disponibles->count())
                 );
             $idsSeleccion = $seleccion->pluck('id')->values()->all();
 
@@ -112,9 +112,9 @@ class ExamenController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
-        $modulo = Modulo::with('preguntas.opciones')->findOrFail($moduloId);
+        $modulo = Modulo::with(['preguntas.opciones', 'seccion:id,estado'])->findOrFail($moduloId);
 
-        if ($modulo->estado === 'Inactivo') {
+        if ($modulo->noDisponible()) {
             return response()->json(['message' => 'Este módulo no está disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {

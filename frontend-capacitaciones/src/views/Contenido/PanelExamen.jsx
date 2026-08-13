@@ -25,11 +25,11 @@ export function PanelExamen({ modulo, onCerrar }) {
                 </div>
                 {!cargando && (() => {
                     const numOpcionMultiple = preguntas.filter(p => p.tipo !== "feedback").length;
-                    const listo = numOpcionMultiple >= 15;
+                    const listo = numOpcionMultiple >= 10;
                     return (
                         <div className={`px-6 py-2 text-xs font-medium shrink-0 border-b ${listo ? "bg-green-50 text-green-700 border-green-100" : "bg-amber-50 text-amber-800 border-amber-100"}`}>
-                            {listo ? "✓" : "⚠"} Banco de preguntas: {numOpcionMultiple} de 15 preguntas de opción múltiple mínimas
-                            {!listo && ` (faltan ${15 - numOpcionMultiple} para poder generar el examen)`}
+                            {listo ? "✓" : "⚠"} Banco de preguntas: {numOpcionMultiple} de 10 preguntas de opción múltiple mínimas
+                            {!listo && ` (faltan ${10 - numOpcionMultiple} para poder generar el examen)`}
                         </div>
                     );
                 })()}

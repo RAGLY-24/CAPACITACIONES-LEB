@@ -113,6 +113,14 @@ class Modulo extends Model
             : $this->moduloAnterior();
     }
 
+    // Un módulo no está disponible para los usuarios si él mismo está
+    // inactivo, o si la sección a la que pertenece fue desactivada (aunque
+    // el módulo en sí siga marcado como Activo).
+    public function noDisponible(): bool
+    {
+        return $this->estado === 'Inactivo' || $this->seccion?->estado === 'Inactivo';
+    }
+
     // Un módulo está bloqueado si su módulo requerido tiene examen y el
     // usuario aún no lo ha aprobado (calificación mínima 70%).
     public function estaBloqueadoPara(User $user): bool

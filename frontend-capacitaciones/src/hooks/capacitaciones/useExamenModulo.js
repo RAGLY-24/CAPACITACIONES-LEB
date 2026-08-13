@@ -24,7 +24,7 @@ export function useExamenModulo({ moduloId, estadoInicial, onCalificado }) {
             setPreguntas(data.preguntas || []);
         } catch (err) {
             // 404: el módulo aún no tiene preguntas. 422: tiene preguntas pero el
-            // banco no llega al mínimo de 15 para poder sortear el examen.
+            // banco no llega al mínimo de 10 para poder sortear el examen.
             if (err.response?.status === 404 || err.response?.status === 422) {
                 setSinExamen(true);
                 setSinExamenMensaje(err.response.data?.message || "Este módulo aún no tiene examen configurado.");
