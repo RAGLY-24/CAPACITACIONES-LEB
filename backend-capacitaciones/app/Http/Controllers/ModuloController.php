@@ -83,7 +83,7 @@ class ModuloController extends Controller
             'estado'      => 'required|in:Activo,Inactivo',
             'prerequisite_module_id' => 'nullable|exists:modulos,id',
             'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:102400',
-            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:20480',
         ], [
             'nombre.min'       => 'El nombre debe tener al menos 5 caracteres.',
             'nombre.max'       => 'El nombre no puede exceder 150 caracteres.',
@@ -92,7 +92,7 @@ class ModuloController extends Controller
             'archivo.mimes'    => 'Solo se permiten archivos PDF, MP4 o WEBM.',
             'archivo.max'      => 'El archivo no puede superar los 100 MB.',
             'imagen.mimes'     => 'La imagen debe ser JPG, PNG o WEBP.',
-            'imagen.max'       => 'La imagen no puede superar los 5 MB.',
+            'imagen.max'       => 'La imagen no puede superar los 20 MB.',
         ]);
 
         $filePath = null;
@@ -150,7 +150,7 @@ class ModuloController extends Controller
             'estado'      => 'required|in:Activo,Inactivo',
             'prerequisite_module_id' => 'nullable|exists:modulos,id',
             'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:102400',
-            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:20480',
         ], [
             'nombre.min'      => 'El nombre debe tener al menos 5 caracteres.',
             'nombre.max'      => 'El nombre no puede exceder 150 caracteres.',
@@ -159,7 +159,7 @@ class ModuloController extends Controller
             'archivo.mimes'   => 'Solo se permiten archivos PDF, MP4 o WEBM.',
             'archivo.max'     => 'El archivo no puede superar los 100 MB.',
             'imagen.mimes'    => 'La imagen debe ser JPG, PNG o WEBP.',
-            'imagen.max'      => 'La imagen no puede superar los 5 MB.',
+            'imagen.max'      => 'La imagen no puede superar los 20 MB.',
         ]);
 
         $carpetaAnterior = $modulo->carpeta();
@@ -281,7 +281,7 @@ class ModuloController extends Controller
 
     private function guardarImagen($file, string $carpeta): string
     {
-        return $this->archivos->guardar($file, $carpeta, 'img_');
+        return $this->archivos->guardarImagen($file, $carpeta, 'img_');
     }
 
     private function eliminarImagenFisica(?string $filename, string $carpeta): void

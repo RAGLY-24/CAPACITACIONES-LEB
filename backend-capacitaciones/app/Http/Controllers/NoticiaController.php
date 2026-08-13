@@ -44,6 +44,9 @@ class NoticiaController extends Controller
             'evidence' => 'nullable|string',
             'files' => 'nullable|array',
             'files.*' => 'file|mimes:jpg,jpeg,png|max:20480',
+        ], [
+            'files.*.mimes' => 'Solo se permiten imágenes JPG o PNG.',
+            'files.*.max'   => 'La imagen no debe pesar más de 20 MB.',
         ]);
 
         $paths = []; // Aquí guardaremos solo el nombre del archivo
@@ -51,7 +54,7 @@ class NoticiaController extends Controller
         // Si enviaron múltiples archivos, los recorremos y guardamos uno por uno
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $paths[] = $this->archivos->guardar($file, 'noticias');
+                $paths[] = $this->archivos->guardarImagen($file, 'noticias');
             }
         }
 
@@ -81,6 +84,9 @@ class NoticiaController extends Controller
             'evidence' => 'nullable|string',
             'files' => 'nullable|array',
             'files.*' => 'file|mimes:jpg,jpeg,png|max:20480',
+        ], [
+            'files.*.mimes' => 'Solo se permiten imágenes JPG o PNG.',
+            'files.*.max'   => 'La imagen no debe pesar más de 20 MB.',
         ]);
 
         $dataToUpdate = [
@@ -100,7 +106,7 @@ class NoticiaController extends Controller
             // 2. Guardamos las nuevas fotos
             $paths = [];
             foreach ($request->file('files') as $file) {
-                $paths[] = $this->archivos->guardar($file, 'noticias');
+                $paths[] = $this->archivos->guardarImagen($file, 'noticias');
             }
             $dataToUpdate['file_paths'] = $paths;
         }

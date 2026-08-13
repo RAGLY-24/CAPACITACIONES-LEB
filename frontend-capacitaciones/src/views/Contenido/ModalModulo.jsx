@@ -56,21 +56,34 @@ export function ModalModulo({
         }));
 
     return (
-        <Modal
-            open={true}
-            title={tipo === "crear" ? "Nuevo Módulo" : "Editar Módulo"}
-            size="lg"
-            aspect="default"
-            onClose={onCerrar}
-            footer={
-                <>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onCerrar}
-                    >
-                        Cancelar
-                    </Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
+                    <h3 className="font-bold text-gray-800">{tipo === "crear" ? "Nuevo Módulo" : "Editar Módulo"}</h3>
+                    <button onClick={onCerrar} className="text-gray-400 hover:text-gray-700 text-xl">✕</button>
+                </div>
+                <form onSubmit={submit} className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {/* Imagen portada */}
+                    <div>
+                        <label className="text-sm font-semibold text-gray-700">Imagen de portada</label>
+                        <label className="mt-1 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:border-[#802907] transition-colors overflow-hidden"
+                            style={{ minHeight: 140 }}>
+                            {preview ? (
+                                <img src={preview} alt="portada" className="w-full h-36 object-cover" />
+                            ) : (
+                                <div className="flex flex-col items-center gap-2 py-8 text-gray-400">
+                                    {Ico.img}
+                                    <span className="text-xs">Haz clic para subir imagen (JPG, PNG, WEBP · máx. 20 MB, se comprime a 5 MB)</span>
+                                </div>
+                            )}
+                            <input type="file" name="imagen" accept=".jpg,.jpeg,.png,.webp" onChange={handle} className="hidden" />
+                        </label>
+                        {preview && (
+                            <button type="button" onClick={quitarImagen}
+                                className="mt-1 text-xs text-red-500 hover:underline">Quitar imagen</button>
+                        )}
+                        {errs.imagen && <p className="text-xs text-red-500 mt-1">{errs.imagen}</p>}
+                    </div>
 
                     <Button
                         type="submit"
