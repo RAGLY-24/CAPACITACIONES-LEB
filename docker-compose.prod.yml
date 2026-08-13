@@ -1,5 +1,6 @@
 services:
   web:
+    restart: unless-stopped
     build:
       context: ./frontend-capacitaciones
       dockerfile: Dockerfile
@@ -32,7 +33,7 @@ services:
 
   laravel:
     image: nginx:alpine
-    restart: always
+    restart: unless-stopped
     ports:
       - "${APP_PORT:-8000}:80"
     volumes:
