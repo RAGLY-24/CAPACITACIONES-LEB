@@ -10,7 +10,7 @@ import { File, LockKeyhole, LockKeyholeOpen, X } from "lucide-react";
 export function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizado }) {
     useLockBodyScroll();
     const { activoId, tab, setTab, contenidoListo, setContenidoListo, activo, seccionActiva, seleccionar, marcarContenidoListo } =
-        useVisorCurso({ secciones, moduloInicialId });
+        useVisorCurso({ secciones, moduloInicialId, onProgresoActualizado });
 
     if (!activo) return null;
 

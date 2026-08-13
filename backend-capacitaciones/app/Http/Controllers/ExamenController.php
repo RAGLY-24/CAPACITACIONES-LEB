@@ -24,9 +24,9 @@ class ExamenController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
-        $modulo = Modulo::with(['preguntas.opciones'])->findOrFail($moduloId);
+        $modulo = Modulo::with(['preguntas.opciones', 'seccion:id,estado'])->findOrFail($moduloId);
 
-        if ($modulo->estado === 'Inactivo') {
+        if ($modulo->noDisponible()) {
             return response()->json(['message' => 'Este módulo no está disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {
@@ -112,9 +112,9 @@ class ExamenController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
-        $modulo = Modulo::with('preguntas.opciones')->findOrFail($moduloId);
+        $modulo = Modulo::with(['preguntas.opciones', 'seccion:id,estado'])->findOrFail($moduloId);
 
-        if ($modulo->estado === 'Inactivo') {
+        if ($modulo->noDisponible()) {
             return response()->json(['message' => 'Este módulo no está disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {

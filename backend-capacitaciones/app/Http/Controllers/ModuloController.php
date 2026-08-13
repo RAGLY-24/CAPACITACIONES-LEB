@@ -53,9 +53,9 @@ class ModuloController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
-        $modulo = Modulo::with(['preguntas.opciones'])->findOrFail($id);
+        $modulo = Modulo::with(['preguntas.opciones', 'seccion:id,estado'])->findOrFail($id);
 
-        if (!$this->esAdmin() && $modulo->estado === 'Inactivo') {
+        if (!$this->esAdmin() && $modulo->noDisponible()) {
             return response()->json(['message' => 'Módulo no disponible.'], 403);
         }
 
@@ -222,6 +222,7 @@ class ModuloController extends Controller
         $carpeta = $modulo->carpeta();
         $this->eliminarArchivoFisico($modulo->file_path, $carpeta);
         $this->eliminarImagenFisica($modulo->imagen, $carpeta);
+        $this->notificaciones->eliminarPorModulo($modulo->id);
         $modulo->delete();
 
         return response()->json(['message' => 'Módulo eliminado exitosamente.'], 200);

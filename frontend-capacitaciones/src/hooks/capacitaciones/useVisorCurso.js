@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { capacitacionesApi } from "../../api/capacitaciones.api";
 
 // Navegación y estado del módulo activo dentro del visor de curso (estilo Cisco).
-export function useVisorCurso({ secciones, moduloInicialId }) {
+export function useVisorCurso({ secciones, moduloInicialId, onProgresoActualizado }) {
     const [activoId, setActivoId] = useState(moduloInicialId);
     const [tab, setTab] = useState("contenido");
     // El examen se desbloquea solo tras revisar el contenido (scroll al final
@@ -42,7 +42,16 @@ export function useVisorCurso({ secciones, moduloInicialId }) {
 
     const marcarContenidoListo = () => {
         setContenidoListo(true);
-        if (activo) capacitacionesApi.marcarContenidoVisto(activo.modulo.id).catch(() => { });
+        if (!activo) return;
+
+        capacitacionesApi.marcarContenidoVisto(activo.modulo.id)
+            .then(() => {
+                // Los módulos sin examen quedan completados al terminar el
+                // contenido; refrescamos el progreso para que se refleje al
+                // instante (badge verde, % de la sección, etc.).
+                if (!activo.tiene_examen) onProgresoActualizado?.();
+            })
+            .catch(() => { });
     };
 
     return { activoId, tab, setTab, contenidoListo, setContenidoListo, activo, seccionActiva, seleccionar, marcarContenidoListo };

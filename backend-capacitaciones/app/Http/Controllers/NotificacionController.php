@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\Auth;
 
 class NotificacionController extends Controller
 {
-    // GET /notificaciones — últimas notificaciones del usuario autenticado
     public function index()
     {
         $notificaciones = Auth::user()->notificaciones()
+            ->whereNull('read_at')
             ->with(['seccion:id,nombre', 'modulo:id,nombre,seccion_id'])
             ->orderByDesc('created_at')
             ->limit(50)

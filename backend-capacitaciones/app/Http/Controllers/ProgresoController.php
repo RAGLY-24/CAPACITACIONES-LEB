@@ -30,8 +30,8 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
-        $modulo = Modulo::findOrFail($moduloId);
-        if ($modulo->estado === 'Inactivo') {
+        $modulo = Modulo::with('seccion:id,estado')->findOrFail($moduloId);
+        if ($modulo->noDisponible()) {
             return response()->json(['message' => 'Módulo no disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {
@@ -51,8 +51,10 @@ class ProgresoController extends Controller
     }
 
     // POST /modulos/{id}/contenido-visto — el usuario terminó de revisar el
-    // contenido (PDF hasta el final o video completo). Reinicia el contador
-    // de intentos del ciclo actual, dándole 2 intentos nuevos para el examen.
+    // contenido (PDF hasta el final o video completo). Si el módulo no tiene
+    // examen, no hay nada más que aprobar: se marca directamente como
+    // completado. Si tiene examen, reinicia el contador de intentos del
+    // ciclo actual, dándole 2 intentos nuevos.
     public function marcarContenidoVisto(int $moduloId)
     {
         $user = Auth::user();
@@ -60,10 +62,25 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
+        $modulo = Modulo::withCount('preguntas')->with('seccion:id,estado')->findOrFail($moduloId);
+        if ($modulo->noDisponible()) {
+            return response()->json(['message' => 'Módulo no disponible.'], 403);
+        }
+
         $progreso = ProgresoModulo::firstOrCreate(
             ['user_id' => $user->id, 'modulo_id' => $moduloId],
             ['estado' => 'en_progreso', 'started_at' => now(), 'intentos' => 0]
         );
+
+        if ($modulo->preguntas_count === 0) {
+            if ($progreso->estado !== 'completado') {
+                $progreso->estado = 'completado';
+                $progreso->completed_at = now();
+                $progreso->save();
+            }
+
+            return response()->json(['estado' => $progreso->estado], 200);
+        }
 
         $progreso->intentos_ciclo = 0;
         $progreso->preguntas_usadas_ciclo = []; // Reinicia el ciclo de preguntas usadas
@@ -182,8 +199,9 @@ class ProgresoController extends Controller
         }
 
         $progresos = ProgresoModulo::with([
-            'user:id,name,lastname,usuario,socio_id',
+            'user:id,name,lastname,usuario,socio_id,puesto_id',
             'user.socio:id,nombre',
+            'user.puesto:id,nombre',
             'modulo' => fn($q) => $q->select('id', 'nombre', 'estado', 'seccion_id')->withCount('preguntas'),
             'modulo.seccion:id,nombre',
         ])
@@ -194,6 +212,7 @@ class ProgresoController extends Controller
             'user_id'       => $p->user_id,
             'usuario'       => trim($p->user?->name . ' ' . $p->user?->lastname),
             'usuario_login' => $p->user?->usuario,
+            'rol'           => $p->user?->puesto?->nombre,
             'socio'         => $p->user?->socio?->nombre,
             'modulo'        => $p->modulo?->nombre,
             'modulo_id'     => $p->modulo_id,
