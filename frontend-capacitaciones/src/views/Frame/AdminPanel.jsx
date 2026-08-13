@@ -212,7 +212,7 @@ function AdminPanel({ user, routes }) {
 
       {/* --- BARRA LATERAL (SIDEBAR) A la Izquierda --- */}
       <div
-        className={`fixed left-0 top-10 z-40 h-[calc(100vh-54px)] w-64 bg-white border-r border-zinc-200 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed left-0 top-10 z-40 h-[calc(100vh-40px)] w-64 bg-white border-r border-zinc-200 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         <div className="flex flex-col gap-2 p-4 mt-4">

@@ -5,7 +5,9 @@ import { useMe } from "../hooks/auth/useMe";
 import Noticias from "../views/News/Noticias";
 import Usuarios from "../views/users/Usuarios";
 import AdminPanel from "../views/Frame/AdminPanel";
-import { BookText, Newspaper, Pencil, User } from "lucide-react";
+import { BookText, Film, ListVideo, Newspaper, Pencil, User } from "lucide-react";
+import Videos from "../views/Videos";
+import ManageVideosView from "../views/Videos/ManageVideosView";
 
 
 export function ProtectedRoutes() {
@@ -35,11 +37,12 @@ export function ProtectedRoutes() {
             element: <Capacitaciones />,
             visible: muestraCapacitaciones,
         },
+
         {
-            icon: Pencil,
-            label: "Editar Contenido",
-            path: "/contenido",
-            element: <Contenido />,
+            icon: Film,
+            label: "Videos",
+            path: "/videos",
+            element: <Videos />,
             visible: muestraContenido,
         },
         {
@@ -49,6 +52,23 @@ export function ProtectedRoutes() {
             element: <Usuarios />,
             visible: muestraUsuarios,
         },
+        {
+            icon: ListVideo,
+            label: "Gestionar videos",
+            path: "/manage_videos",
+            element: <ManageVideosView />,
+            visible: muestraContenido,
+        },
+
+        {
+            icon: Pencil,
+            label: "Gestionar Capacitaciones",
+            path: "/contenido",
+            element: <Contenido />,
+            visible: muestraContenido,
+        },
+
+
     ];
 
     const routes = routesConfig.filter(i => i.visible)

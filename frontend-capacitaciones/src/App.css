@@ -189,3 +189,12 @@
 body .swal2-container .swal2-loader {
   border-color: #802907 transparent #802907 transparent !important;
 }
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

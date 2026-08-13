@@ -207,6 +207,8 @@ export function VistaAdmin() {
                             </Button>
                         </div>
                         <Input
+                            type="text"
+                            autocomplete="off"
                             label="Buscar"
                             placeholder="Nombre o usuario..."
                             value={buscarUser}
