@@ -29,7 +29,7 @@ export function TarjetaModuloOperador({ item, onVer }) {
                 <span className="absolute top-2.5 right-3"><Badge estado={estado} /></span>
             </div>
 
-            <div className="p-4 flex flex-col gap-3 flex-1">
+            <div className="p-4 flex flex-col justify-between  gap-3 flex-1">
                 <div>
                     <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{modulo.nombre}</h4>
                     <p className="text-xs text-gray-400 mt-1 line-clamp-2">{modulo.descripcion}</p>
@@ -41,7 +41,7 @@ export function TarjetaModuloOperador({ item, onVer }) {
                         <span className={`font-medium ${puntaje >= 70 ? "text-green-600" : "text-red-500"}`}>{puntaje}%</span>
                     )}
                 </div>
-                <Button size="sm" onClick={e => { e.stopPropagation(); if (puedeVer) onVer(item); }}>
+                <Button size="sm" onClick={e => { e.stopPropagation(); if (puedeVer) onVer(item); }} disabled={!puedeVer}>
                     {puedeVer ? "Ver respuestas" : tiene_examen ? "Aún sin contestar" : "Sin examen"}
                 </Button>
             </div>
