@@ -157,6 +157,7 @@ class SeccionController extends Controller
             ], 422);
         }
 
+        $this->notificaciones->eliminarPorSeccion($seccion->id);
         $seccion->delete();
 
         return response()->json(['message' => 'Sección eliminada.'], 200);

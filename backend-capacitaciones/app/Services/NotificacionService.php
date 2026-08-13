@@ -43,4 +43,14 @@ class NotificacionService
             Notificacion::insert($lote);
         }
     }
+
+    public function eliminarPorSeccion(int $seccionId): void
+    {
+        Notificacion::where('seccion_id', $seccionId)->delete();
+    }
+
+    public function eliminarPorModulo(int $moduloId): void
+    {
+        Notificacion::where('modulo_id', $moduloId)->delete();
+    }
 }

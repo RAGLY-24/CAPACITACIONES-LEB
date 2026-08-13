@@ -222,6 +222,7 @@ class ModuloController extends Controller
         $carpeta = $modulo->carpeta();
         $this->eliminarArchivoFisico($modulo->file_path, $carpeta);
         $this->eliminarImagenFisica($modulo->imagen, $carpeta);
+        $this->notificaciones->eliminarPorModulo($modulo->id);
         $modulo->delete();
 
         return response()->json(['message' => 'Módulo eliminado exitosamente.'], 200);
