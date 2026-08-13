@@ -1,9 +1,12 @@
 import { useState } from "react";
+import Swal from "sweetalert2";
 import Button from "../../components/Buttons/Button";
 import { Modal } from "../../components/Modal";
 import Input from "../../components/Fields/Input";
 import TextArea from "../../components/Fields/TextArea";
 import { Avatar } from "../../components/Avatar/Avatar";
+
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20 MB (el backend la comprime a 5 MB si hace falta)
 
 export default function ProfileFormModal({
     open,
@@ -55,6 +58,18 @@ export default function ProfileFormModal({
     const handleFotoChange = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        if (file.size > MAX_IMAGE_SIZE) {
+            Swal.fire({
+                icon: "warning",
+                title: "Imagen muy pesada",
+                text: "La imagen no debe pesar más de 20 MB.",
+                confirmButtonColor: "#802907",
+            });
+            e.target.value = "";
+            return;
+        }
+
         setFotoFile(file);
         setFotoPreview(URL.createObjectURL(file));
     };

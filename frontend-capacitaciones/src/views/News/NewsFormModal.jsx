@@ -43,10 +43,25 @@ export default function NewsFormModal({
         }));
     };
 
+    const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20 MB (el backend la comprime a 5 MB si hace falta)
+
     const handleFileChange = ({ target: { files } }) => {
+        const selected = Array.from(files);
+
+        const archivoMuyPesado = selected.some((file) => file.size > MAX_IMAGE_SIZE);
+        if (archivoMuyPesado) {
+            Swal.fire({
+                icon: "warning",
+                title: "Imagen muy pesada",
+                text: "La imagen no debe pesar más de 20 MB.",
+                confirmButtonColor: "#802907",
+            });
+            return;
+        }
+
         setFormData((prev) => ({
             ...prev,
-            files: Array.from(files),
+            files: selected,
         }));
     };
 

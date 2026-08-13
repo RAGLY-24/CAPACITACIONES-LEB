@@ -25,7 +25,7 @@ export function ModalModulo({ tipo, seccionId, datos, modulos, onGuardar, onAbri
                             ) : (
                                 <div className="flex flex-col items-center gap-2 py-8 text-gray-400">
                                     {Ico.img}
-                                    <span className="text-xs">Haz clic para subir imagen (JPG, PNG, WEBP · máx. 5 MB)</span>
+                                    <span className="text-xs">Haz clic para subir imagen (JPG, PNG, WEBP · máx. 20 MB, se comprime a 5 MB)</span>
                                 </div>
                             )}
                             <input type="file" name="imagen" accept=".jpg,.jpeg,.png,.webp" onChange={handle} className="hidden" />

@@ -29,13 +29,13 @@ class PerfilController extends Controller
             'name'        => 'required|string|max:255',
             'lastname'    => 'nullable|string|max:255',
             'descripcion' => 'nullable|string|max:500',
-            'foto'        => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'foto'        => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:20480',
         ], [
             'name.required'      => 'El nombre es obligatorio.',
             'descripcion.max'    => 'La descripción no puede exceder 500 caracteres.',
             'foto.image'         => 'El archivo debe ser una imagen.',
             'foto.mimes'         => 'La imagen debe ser JPG, PNG o WEBP.',
-            'foto.max'           => 'La imagen no puede superar los 5 MB.',
+            'foto.max'           => 'La imagen no puede superar los 20 MB.',
         ]);
 
         $datos = [
@@ -59,7 +59,7 @@ class PerfilController extends Controller
 
     private function guardarFoto($file): string
     {
-        return $this->archivos->guardar($file, 'perfiles', 'perfil_');
+        return $this->archivos->guardarImagen($file, 'perfiles', 'perfil_');
     }
 
     private function eliminarFotoFisica(?string $filename): void

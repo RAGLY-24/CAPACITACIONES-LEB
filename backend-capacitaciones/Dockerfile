@@ -37,6 +37,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # Install and enable OPcache for production performance
 RUN docker-php-ext-install opcache
 COPY ./docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY ./docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
 # Set deployment working directory
 WORKDIR /var/www
