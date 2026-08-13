@@ -5,12 +5,17 @@ import { IconoEstadoModulo } from "./IconoEstadoModulo";
 import { SeccionExamen } from "./SeccionExamen";
 import Button from "../../components/Buttons/Button";
 import { File, LockKeyhole, LockKeyholeOpen, X } from "lucide-react";
+import { useState } from "react";
 
 // VISTA ESTILO CISCO
 export function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoActualizado }) {
+
     useLockBodyScroll();
     const { activoId, tab, setTab, contenidoListo, setContenidoListo, activo, seccionActiva, seleccionar, marcarContenidoListo } =
         useVisorCurso({ secciones, moduloInicialId, onProgresoActualizado });
+
+    const [percent, setPercent] = useState(0)
+
 
     if (!activo) return null;
 
@@ -46,6 +51,13 @@ export function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoAct
                                 </div>
                                 {modulos.map(item => {
                                     const esActivo = item.modulo.id === activoId;
+                                    if (esActivo)
+                                    {
+                                        console.log(item.estado)
+                                    }
+                                    if (esActivo && (item.estado == undefined || item.estado == "pendiente")){
+                                        item.estado = "en_progreso"
+                                    }
                                     const bloqueado = !item.desbloqueado;
                                     return (
                                         <button key={item.modulo.id}
@@ -56,7 +68,7 @@ export function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoAct
                                                 : bloqueado ? "border-transparent text-gray-400 cursor-not-allowed"
                                                     : "border-transparent text-gray-600 hover:bg-gray-100"
                                                 }`}>
-                                            <IconoEstadoModulo estado={item.estado} desbloqueado={item.desbloqueado} />
+                                            <IconoEstadoModulo estado={item.estado} percent={esActivo ? percent : 0} desbloqueado={item.desbloqueado} />
                                             <span className="truncate flex-1">{item.modulo.nombre}</span>
                                         </button>
                                     );
@@ -82,7 +94,7 @@ export function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoAct
                             <button onClick={() => contenidoListo && setTab("examen")}
                                 disabled={!contenidoListo}
                                 title={!contenidoListo ? "Revisa todo el contenido (PDF hasta el final o video completo) para desbloquear el examen" : undefined}
-                                className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === "examen" ? "border-b-2 border-[#802907] text-[#802907] bg-white"
+                                className={`px-5 py-2 text-sm font-semibold transition-colors rounded-t-lg ${tab === "examen" ? "border-b border-[#802907] bg-white"
                                     : !contenidoListo ? "text-gray-300 cursor-not-allowed"
                                         : "text-gray-500 hover:text-gray-700"
                                     }`}>
@@ -101,7 +113,9 @@ export function VisorCurso({ secciones, moduloInicialId, onCerrar, onProgresoAct
                         {tab === "contenido" ? (
                             <div className="h-full flex flex-col gap-4">
                                 <VisorArchivo fileUrl={modulo.file_url} fileType={modulo.file_type} presentacionJson={modulo.presentacion_json}
-                                    onCompletado={marcarContenidoListo} />
+                                    onCompletado={marcarContenidoListo}
+                                    setPercent={(e) => { setPercent(e);}}
+                                />
 
                             </div>
                         ) : (
