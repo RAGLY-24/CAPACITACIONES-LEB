@@ -6,6 +6,7 @@ import { LeyendaPastel } from "./LeyendaPastel";
 import { VisorProgresoOperador } from "./VisorProgresoOperador";
 import Button from "../../components/Buttons/Button";
 import Select from "../../components/Fields/Select";
+import Input from "../../components/Fields/Input";
 
 // Configuración de estilos para el DataTable
 const customStyles = {
@@ -147,6 +148,7 @@ export function VistaAdmin() {
                                     Limpiar filtros
                                 </Button>
                             )}
+
                         </div>
 
                         {/* Controles */}
@@ -166,6 +168,7 @@ export function VistaAdmin() {
                                 variant="primary"
                                 containerClassName="flex-1 min-w-[200px]"
                             />
+
 
                             {/* Estado */}
                             <Select
@@ -203,6 +206,13 @@ export function VistaAdmin() {
                                 Actualizar datos
                             </Button>
                         </div>
+                        <Input
+                            label="Buscar"
+                            placeholder="Nombre o usuario..."
+                            value={buscarUser}
+                            onChange={e => setBuscarUser(e.target.value)}
+                        >
+                        </Input>
                     </div>
                 </div>
 
