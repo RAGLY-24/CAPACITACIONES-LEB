@@ -465,12 +465,12 @@ function Usuarios() {
         cell: row => {
           if (editarPuestoId === row.id) {
             return (
-              <input
+
+              <Input
                 autoFocus
                 type="text"
                 value={editarPuestoNombre}
                 onChange={(e) => setEditarPuestoNombre(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2 focus:border-[#802907] focus:outline-none"
               />
             );
           }
@@ -631,7 +631,7 @@ function Usuarios() {
             ) : socios && socios.map((socio) => (
               <div
                 key={socio.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50 bg-white"
+                className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3 transition hover:border-zinc-200 hover:bg-zinc-50 bg-white"
               >
                 <button
                   type="button"

@@ -10,20 +10,31 @@ const UMBRAL_FINAL_PX = 24;
 
 // Renderiza el PDF página por página en canvases dentro de un contenedor con
 // scroll propio, para poder detectar cuándo el usuario llega al final.
-export function VisorPDF({ src, onScrollFinal }) {
+export function VisorPDF({ src, onScrollFinal, setPercent }) {
   const contenedorRef = useRef(null);
   const avisadoRef = useRef(false);
   const [estado, setEstado] = useState("cargando");
 
   const verificarFinal = useCallback(() => {
     const el = contenedorRef.current;
-    if (!el || avisadoRef.current) return;
+
+    if (avisadoRef.current) return;
     const alFinal = el.scrollTop + el.clientHeight >= el.scrollHeight - UMBRAL_FINAL_PX;
     if (alFinal) {
       avisadoRef.current = true;
       onScrollFinal?.();
     }
   }, [onScrollFinal]);
+
+
+  const handleOnScroll = (e) => {
+    const el = e.target
+
+    if (!el) return
+    const percent = Math.max(0, Math.min(1, (el.scrollTop) / (el.scrollHeight - el.clientHeight)))
+    setPercent(percent)
+    verificarFinal()
+  }
 
   useEffect(() => {
     avisadoRef.current = false;
@@ -59,7 +70,7 @@ export function VisorPDF({ src, onScrollFinal }) {
     })();
 
     return () => { cancelado = true; };
-  }, [src, verificarFinal]);
+  }, [src]);
 
   if (estado === "error") {
     return (
@@ -79,7 +90,7 @@ export function VisorPDF({ src, onScrollFinal }) {
           <p className="text-sm text-gray-400">Cargando documento...</p>
         </div>
       )}
-      <div ref={contenedorRef} onScroll={verificarFinal} className="flex-1 min-h-0 overflow-y-auto p-3" />
+      <div ref={contenedorRef} onScroll={handleOnScroll} className="flex-1 min-h-0 overflow-y-auto p-3" />
     </div>
   );
 }

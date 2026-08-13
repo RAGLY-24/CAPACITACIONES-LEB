@@ -43,7 +43,7 @@ const Checkbox = forwardRef(
                     />
                 </div>
 
-                <span className="select-none text-sm text-slate-700">
+                <span className="select-none text-sm text-zinc-700">
                     {label}
                 </span>
             </label>

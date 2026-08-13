@@ -22,10 +22,14 @@ function SinArchivo() {
 // hizo scroll hasta el final del PDF o dejó que el video terminara. Los
 // demás tipos de contenido (presentación, o si no hay archivo) no soportan
 // esa detección, así que no bloquean el examen.
-export function VisorArchivo({ fileUrl, fileType, presentacionJson, onCompletado }) {
+export function VisorArchivo({ fileUrl, fileType, presentacionJson, onCompletado, setPercent }) {
+  const handleSetPercent = (e) => {
+    if (!setPercent) return
+    setPercent(e)
+  }
   const [estado, setEstado] = useState("verificando");
-
   useEffect(() => {
+    handleSetPercent(0)
     if (fileType === "presentacion") { onCompletado?.(); return; }
     if (!fileUrl) { setEstado("error"); onCompletado?.(); return; }
     setEstado("verificando");
@@ -77,5 +81,5 @@ export function VisorArchivo({ fileUrl, fileType, presentacionJson, onCompletado
     );
   }
 
-  return <VisorPDF src={src} onScrollFinal={onCompletado} />;
+  return <VisorPDF src={src} onScrollFinal={onCompletado} setPercent={handleSetPercent} />;
 }

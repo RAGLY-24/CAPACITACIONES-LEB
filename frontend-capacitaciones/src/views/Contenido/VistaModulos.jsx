@@ -1,11 +1,12 @@
 import { lazy, Suspense } from "react";
 import { useVistaModulos } from "../../hooks/contenido/useVistaModulos";
-import { Ico } from "./icons";
 import { ModalModulo } from "./ModalModulo";
 import { ModalSeccion } from "./ModalSeccion";
 import { ModalVistaPrevia } from "./ModalVistaPrevia";
 import { PanelExamen } from "./PanelExamen";
 import { TarjetaModulo } from "./TarjetaModulo";
+import Button from "../../components/Buttons/Button";
+import {  ChevronLeft, Library, Pencil, Plus } from "lucide-react";
 
 // Carga diferida: tldraw es pesado y solo se necesita al crear/editar presentaciones.
 const EditorPresentacion = lazy(() =>
@@ -25,27 +26,18 @@ export function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
     return (
         <div className="space-y-5">
             {/* Breadcrumb + acciones */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                    <button onClick={onVolver}
-                        className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-                        {Ico.back} Secciones
-                    </button>
-                    <span className="text-gray-400">/</span>
-                    <span className="font-semibold text-gray-800">{seccion.nombre}</span>
-                    <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${seccion.estado === "Activo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-                        {seccion.estado}
-                    </span>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={() => setEditSec(true)}
-                        className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-                        {Ico.edit} Editar sección
-                    </button>
-                    <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
-                        className="flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-                        {Ico.plus} Nuevo módulo
-                    </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {/* Breadcrumb / información de la sección */}
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <Button variant="outline" size="sm" Icon={ChevronLeft} onClick={onVolver} > Cursos </Button>
+                    <span className="text-gray-300">/</span>
+                    <span className="max-w-55 truncate text-sm font-semibold text-gray-800 sm:max-w-none">
+                        {seccion.nombre} </span>
+                    <span className={`rounded-full px-2 py-1 text-[11px] font-semibold leading-none ${seccion.estado === "Activo" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`} > {seccion.estado} </span>
+                </div> {/* Acciones */}
+                <div className="flex w-full gap-2 sm:w-auto">
+                    <Button variant="outline" size="sm" Icon={Pencil} onClick={() => setEditSec(true)} className="flex-1 sm:flex-none" > Editar sección </Button>
+                    <Button variant="primary" size="sm" Icon={Plus} onClick={() => setModalMod({ tipo: "crear", datos: null })} className="flex-1 sm:flex-none" > Nuevo módulo </Button>
                 </div>
             </div>
 
@@ -55,13 +47,15 @@ export function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
 
             {/* Grid de tarjetas de módulo */}
             {(seccion.modulos || []).length === 0 ? (
-                <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white py-16 text-center">
-                    <p className="text-gray-400 text-sm mb-4">Esta sección no tiene módulos todavía.</p>
-                    <button onClick={() => setModalMod({ tipo: "crear", datos: null })}
-                        className="rounded-lg bg-brand-primary px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a1b04]">
-                        + Nuevo módulo
-                    </button>
+                <div className="rounded-xl gap-4 flex flex-col items-center border border-zinc-200 bg-white p-16 text-center">
+                    <Library size={40} />
+                    <p className="text-lg font-semibold text-gray-800 ">Sin Módulos</p>
+                    <p className="text-sm text-gray-400 ">Este curso no tiene módulos todavía.</p>
+                    <Button variant="secondary" onClick={() => setModalMod({ tipo: "crear", datos: null })}>
+                        Crear primer módulo
+                    </Button>
                 </div>
+
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     {(seccion.modulos || []).map(m => (
@@ -93,6 +87,7 @@ export function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
             {examenMod && (
                 <PanelExamen modulo={examenMod} onCerrar={() => { setExamenMod(null); onRefrescar(); }} />
             )}
+
             {presentacionMod && (
                 <Suspense fallback={
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
@@ -103,11 +98,17 @@ export function VistaModulos({ seccion, secciones, onVolver, onRefrescar }) {
                         onGuardado={() => onRefrescar()} />
                 </Suspense>
             )}
-            {editSec && (
-                <ModalSeccion tipo="editar" datos={seccion} secciones={secciones}
+
+            {editSec &&
+                (<ModalSeccion
+                    open={true}
+                    tipo={"editar"}
+                    datos={seccion}
+                    secciones={secciones}
                     onGuardar={alGuardarSeccion}
-                    onCerrar={() => setEditSec(false)} />
-            )}
+                    onCerrar={() => setEditSec(false)}
+                />)
+            }
         </div>
     );
 }

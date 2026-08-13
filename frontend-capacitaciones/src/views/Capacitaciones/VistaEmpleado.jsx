@@ -3,6 +3,8 @@ import { useVistaEmpleado } from "../../hooks/capacitaciones/useVistaEmpleado";
 import { TarjetaModuloEmpleado } from "./TarjetaModuloEmpleado";
 import { TarjetaSeccionEmpleado } from "./TarjetaSeccionEmpleado";
 import { VisorCurso } from "./VisorCurso";
+import Button from "../../components/Buttons/Button";
+import { ChevronLeft } from "lucide-react";
 
 export function VistaEmpleado({ seccionInicialId = null, moduloInicialId = null } = {}) {
     const {
@@ -28,12 +30,11 @@ export function VistaEmpleado({ seccionInicialId = null, moduloInicialId = null 
                 // ── Módulos de la sección activa, en tarjetas ──
                 <>
                     <div className="flex items-center gap-2 flex-wrap">
-                        <button onClick={() => setSeccionActivaId(null)}
-                            className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-                            ← Secciones
-                        </button>
+                        <Button onClick={() => setSeccionActivaId(null)} Icon={ChevronLeft} variant="outline" size="sm">
+                            Cursos
+                        </Button>
                         <span className="text-gray-400">/</span>
-                        <span className="font-semibold text-gray-800">{seccionActiva.seccion.nombre}</span>
+                        <span className="font-medium text-sm text-zinc-800">{seccionActiva.seccion.nombre}</span>
                     </div>
                     {seccionActiva.seccion.descripcion && (
                         <p className="text-sm text-gray-500">{seccionActiva.seccion.descripcion}</p>
@@ -59,15 +60,15 @@ export function VistaEmpleado({ seccionInicialId = null, moduloInicialId = null 
                         const completadosTotal = todosLosModulos.filter(m => m.estado === "completado").length;
                         const pctTotal = todosLosModulos.length ? Math.round((completadosTotal / todosLosModulos.length) * 100) : 0;
                         return (
-                            <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
-                                <div className="flex items-center justify-between mb-2">
+                            <div className="flex flex-col rounded-3xl border border-zinc-200 bg-white gap-2 p-5">
+                                <div className="flex items-center justify-between">
                                     <h3 className="text-sm font-bold text-gray-700">Tu avance general</h3>
-                                    <span className="text-sm font-bold text-[#802907]">{pctTotal}%</span>
+                                    <span className="text-sm font-bold">{pctTotal}%</span>
                                 </div>
-                                <div className="rounded-full bg-gray-200 h-2.5 overflow-hidden">
-                                    <div className="h-2.5 rounded-full bg-brand-primary transition-all" style={{ width: `${pctTotal}%` }} />
+                                <div className="rounded-full bg-gray-200 h-2 overflow-hidden">
+                                    <div className="h-2.5 rounded-full bg-green-500 transition-all" style={{ width: `${pctTotal}%` }} />
                                 </div>
-                                <p className="text-xs text-gray-400 mt-2">{completadosTotal} de {todosLosModulos.length} módulo(s) completados</p>
+                                <p className="text-xs text-gray-400">{completadosTotal} de {todosLosModulos.length} módulo(s) completados</p>
                             </div>
                         );
                     })()}
