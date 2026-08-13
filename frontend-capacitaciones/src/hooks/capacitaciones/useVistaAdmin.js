@@ -30,14 +30,10 @@ export function useVistaAdmin() {
 
     useEffect(() => { cargar(); }, [cargar]);
 
-    // 1. Excluir únicamente los roles administrativos (SistemasAdmin y Gerente); el resto de roles sí se muestran
-    const rolesExcluidos = ["sistemasadmin", "gerente"];
-    const soloOperadores = datos.progresos.filter(p =>
-        !rolesExcluidos.includes(p.rol?.toLowerCase())
-    );
-
-    // 2. Aplicar filtros de la barra superior a los cursos
-    const cursosFiltrados = soloOperadores.filter(p => {
+    // El backend (/progreso/admin) ya excluye los roles administrativos
+    // (SistemasAdmin, Gerente y cualquier puesto con permisos de gestión);
+    // aquí solo aplicamos los filtros de la barra superior.
+    const cursosFiltrados = datos.progresos.filter(p => {
         const okSec = filtroSec ? String(p.seccion_id) === filtroSec : true;
         const okEst = filtroEstado ? p.estado === filtroEstado : true;
         return okSec && okEst;
