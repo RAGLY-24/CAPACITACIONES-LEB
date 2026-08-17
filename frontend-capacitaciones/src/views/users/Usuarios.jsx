@@ -511,7 +511,7 @@ function Usuarios() {
               {row.nombre !== 'SistemasAdmin' && (
                 <IconButton
                   icon={ShieldCheck}
-                  variant="secondary"
+                  variant="primary"
                   title="Permisos predeterminados"
                   filled={false}
                   onClick={() => editarPermisosPuesto(row.id)}
