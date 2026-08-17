@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { VideoOff } from "lucide-react";
 import bg from "../assets/bg.jpeg";
+import { useVideos } from "../hooks/videos/useVideos";
+import { getYoutubeEmbedUrl } from "../utils/youtube";
 
 function Videos() {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -8,8 +10,11 @@ function Videos() {
     const iframeRefs = useRef([]);
     const itemRefs = useRef([]);
 
-    const shorts = [
-    ];
+    const { data: videosData } = useVideos().Get();
+
+    const shorts = (videosData || [])
+        .map((video) => getYoutubeEmbedUrl(video.url))
+        .filter(Boolean);
 
     const videos = [
         ...shorts,

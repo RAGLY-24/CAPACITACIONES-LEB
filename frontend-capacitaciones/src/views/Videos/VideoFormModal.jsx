@@ -12,7 +12,7 @@ export default function VideoFormModal({
     onClose,
 }) {
     const initialState = {
-        videoTitle: "",
+        titulo: "",
         url: "",
     };
 
@@ -22,7 +22,7 @@ export default function VideoFormModal({
         if (mode === "editar" && video) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setFormData({
-                videoTitle: video.videoTitle || "",
+                titulo: video.titulo || "",
                 url: video.url || "",
             });
         } else {
@@ -41,7 +41,7 @@ export default function VideoFormModal({
     const guardarVideo = async (e) => {
         e.preventDefault();
 
-        if (!formData.videoTitle || !formData.url) {
+        if (!formData.titulo || !formData.url) {
             Swal.fire({
                 icon: "warning",
                 title: "Faltan datos",
@@ -59,7 +59,7 @@ export default function VideoFormModal({
 
         try {
             const dataToSend = {
-                videoTitle: formData.videoTitle,
+                titulo: formData.titulo,
                 url: formData.url,
             };
 
@@ -118,10 +118,10 @@ export default function VideoFormModal({
             >
                 <Input
                     isRequired
-                    name="videoTitle"
+                    name="titulo"
                     label="Título del video"
                     placeholder="Título del video..."
-                    value={formData.videoTitle}
+                    value={formData.titulo}
                     onChange={handleChange}
                 />
 
