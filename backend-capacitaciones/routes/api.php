@@ -17,6 +17,7 @@ use App\Http\Controllers\SocioController;
 use App\Http\Controllers\AvisoEmergenciaController;
 use App\Http\Controllers\EnlaceRegistroController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\VideoController;
 use App\Http\Middleware\CheckSistemasAdmin;
 
 /*
@@ -97,6 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/modulos/{id}/update', [ModuloController::class, 'update']); // POST+_method por multipart/form-data
     Route::put('/modulos/{id}/presentacion', [ModuloController::class, 'guardarPresentacion']);
     Route::delete('/modulos/{id}', [ModuloController::class, 'destroy']);
+
+    // --- VIDEOS (reels) ---
+    Route::get('/videos', [VideoController::class, 'index']);
+    Route::post('/videos', [VideoController::class, 'store']);
+    Route::put('/videos/{id}', [VideoController::class, 'update']);
+    Route::delete('/videos/{id}', [VideoController::class, 'destroy']);
 
     // --- PREGUNTAS DE EXAMEN (solo admin) ---
     Route::get('/modulos/{id}/preguntas', [PreguntaController::class, 'index']);

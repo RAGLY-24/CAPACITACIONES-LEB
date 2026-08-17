@@ -1,8 +1,11 @@
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import { Pencil, PlusIcon, Trash2 } from "lucide-react";
 import { IconButton } from "../../components/IconButton";
 import VideoFormModal from "./VideoFormModal";
 import Button from "../../components/Buttons/Button";
+import { useVideos } from "../../hooks/videos/useVideos";
 
 function ManageVideosView() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -15,10 +18,22 @@ function ManageVideosView() {
 
     const modalType = isEdit ? "editar" : isCreate ? "crear" : null;
 
-    // Tus videos vendrían del backend
-    const videos = [];
+    const UseVideos = useVideos();
 
-    const videoSeleccionado = videos.find(
+    const { data: videos, isLoading, error: videosError } = UseVideos.Get();
+
+    const { mutateAsync: createVideo } = UseVideos.Create;
+    const { mutateAsync: updateVideo } = UseVideos.Update;
+    const { mutateAsync: deleteVideo, isPending: isDeleting } = UseVideos.Delete;
+
+    useEffect(() => {
+        if (videosError && !isLoading) {
+            console.error(videosError);
+            Swal.fire({ icon: "error", title: "Error", text: "No se pudieron cargar los videos.", confirmButtonColor: "#802907" });
+        }
+    }, [isLoading, videosError]);
+
+    const videoSeleccionado = (videos || []).find(
         (video) => String(video.id) === String(actionId)
     );
 
@@ -41,19 +56,39 @@ function ManageVideosView() {
 
     const guardarVideo = async (data) => {
         if (isCreate) {
-            // POST
-            console.log("Agregar video", data);
+            await createVideo(data);
         }
 
         if (isEdit) {
-            // PUT / PATCH
-            console.log("Editar video", actionId, data);
+            await updateVideo({ id: actionId, data });
         }
     };
 
     const eliminarVideo = async (video) => {
-        console.log("Eliminar video", video);
+        const confirm = await Swal.fire({
+            title: "Eliminar video",
+            text: `¿Deseas eliminar "${video.titulo}"?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+            showLoaderOnConfirm: isDeleting,
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        try {
+            await deleteVideo(video.id);
+            Swal.fire({ icon: "success", title: "Eliminado", confirmButtonColor: "#802907" });
+        } catch (err) {
+            console.error(err);
+            Swal.fire({ icon: "error", title: "Error", text: "No se pudo eliminar el video.", confirmButtonColor: "#802907" });
+        }
     };
+
+    if (isLoading) return null;
 
     return (
         <div className="relative p-6">
@@ -80,7 +115,7 @@ function ManageVideosView() {
 
                 <div className="mt-4">
                     <div className="grid gap-2 text-sm text-gray-700">
-                        {videos.length === 0 ? (
+                        {!videos || videos.length === 0 ? (
                             <p className="text-gray-500">
                                 No hay videos registrados.
                             </p>
@@ -92,7 +127,7 @@ function ManageVideosView() {
                                 >
                                     <div className="min-w-0 flex-1">
                                         <p className="font-semibold text-gray-800">
-                                            {video.videoTitle}
+                                            {video.titulo}
                                         </p>
 
                                         <p
