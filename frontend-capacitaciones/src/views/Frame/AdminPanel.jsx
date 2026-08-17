@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from 'axios';
 import logoEmpresa from '../../assets/leb_logotipo.png';
@@ -144,11 +144,8 @@ function AdminPanel({ user, routes }) {
     }
   };
 
+  const location = useLocation();
   const currentPath = location.pathname;
-
-  const isCurrentPath = (item) => {
-    return currentPath.startsWith(item.path);
-  };
 
 
   useEffect(() => {
@@ -220,7 +217,7 @@ function AdminPanel({ user, routes }) {
             .filter((item) => item.visible)
             .map((item) => {
               const Icon = item.icon
-              const isActive = isCurrentPath(item)
+              const isActive = currentPath.includes(item.path)
               return (
                 <Link
                   key={item.path}

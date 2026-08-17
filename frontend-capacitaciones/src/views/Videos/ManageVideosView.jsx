@@ -93,7 +93,7 @@ function ManageVideosView() {
     return (
         <div className="relative p-6">
             {/* SECCIÓN DE VIDEOS */}
-            <div className="mt-8 rounded-3xl border border-gray-200 bg-white p-6">
+            <div className="rounded-3xl border border-gray-200 bg-white p-6">
                 <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
                         <h3 className="text-lg font-bold text-gray-800">
