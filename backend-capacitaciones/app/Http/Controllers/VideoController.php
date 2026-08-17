@@ -12,7 +12,7 @@ class VideoController extends Controller
     private function esAdmin(): bool
     {
         $user = Auth::user();
-        return $user instanceof User && ($user->puesto?->nombre === 'SistemasAdmin' || $user->hasPermission('edit_trainings'));
+        return $user instanceof User && ($user->puesto?->nombre === 'SistemasAdmin' || $user->hasPermission('manage_videos'));
     }
 
     public function index()

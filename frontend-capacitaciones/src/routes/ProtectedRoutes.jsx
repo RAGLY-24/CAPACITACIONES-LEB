@@ -21,6 +21,7 @@ export function ProtectedRoutes() {
     const muestraUsuarios = esAdmin || permisos.create_users || permisos.delete_users || permisos.assign_permissions;
     const muestraContenido = esAdmin || permisos.edit_trainings;
     const muestraCapacitaciones = true;
+    const muestraGestionVideos = esAdmin || permisos.manage_videos;
 
     const routesConfig = [
         {
@@ -43,7 +44,7 @@ export function ProtectedRoutes() {
             label: "Videos",
             path: "/videos",
             element: <Videos />,
-            visible: muestraContenido,
+            visible: true,
         },
         {
             icon: User,
@@ -57,7 +58,7 @@ export function ProtectedRoutes() {
             label: "Gestionar videos",
             path: "/manage_videos",
             element: <ManageVideosView />,
-            visible: muestraContenido,
+            visible: muestraGestionVideos,
         },
 
         {
