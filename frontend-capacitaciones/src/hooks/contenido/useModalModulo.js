@@ -18,11 +18,17 @@ export function useModalModulo({ tipo, seccionId, datos, onGuardar, onAbrirLienz
     const [errs, setErrs] = useState({});
     const [saving, setSaving] = useState(false);
     const tienePresentacion = datos?.file_type === "presentacion";
+    const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20 MB (el backend la comprime a 5 MB si hace falta)
 
     const handle = e => {
         const { name, value, files } = e.target;
         if (files && files[0]) {
             const file = files[0];
+            if (name === "imagen" && file.size > MAX_IMAGE_SIZE) {
+                setErrs(p => ({ ...p, imagen: "La imagen no debe pesar más de 20 MB." }));
+                e.target.value = "";
+                return;
+            }
             setForm(p => ({ ...p, [name]: file }));
             if (name === "imagen") setPreview(window.URL.createObjectURL(file));
         } else {

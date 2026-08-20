@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from 'axios';
 import logoEmpresa from '../../assets/leb_logotipo.png';
@@ -11,6 +11,7 @@ import ProfileFormModal from "./ProfileFormModal";
 import { Avatar } from "../../components/Avatar/Avatar";
 import { DropdownMenu } from "../../components/Dropdown/DropdownMenu";
 import Button from "../../components/Buttons/Button";
+import { NotificationBell } from "../../components/Notifications/NotificationBell";
 
 const API_URL = URL
 
@@ -143,11 +144,8 @@ function AdminPanel({ user, routes }) {
     }
   };
 
+  const location = useLocation();
   const currentPath = location.pathname;
-
-  const isCurrentPath = (item) => {
-    return currentPath.startsWith(item.path);
-  };
 
 
   useEffect(() => {
@@ -189,8 +187,10 @@ function AdminPanel({ user, routes }) {
           <Button onClick={() => setIsSidebarOpen(!isSidebarOpen)} iconOnly Icon={Menu} variant="ghost" />
         </div>
 
-        {/* Lado Derecho: Avatar del Usuario */}
-        <div className="flex items-center">
+        {/* Lado Derecho: Notificaciones y Avatar del Usuario */}
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -209,7 +209,7 @@ function AdminPanel({ user, routes }) {
 
       {/* --- BARRA LATERAL (SIDEBAR) A la Izquierda --- */}
       <div
-        className={`fixed left-0 top-10 z-40 h-[calc(100vh-54px)] w-64 bg-white border-r border-zinc-200 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed left-0 top-10 z-40 h-[calc(100vh-40px)] w-64 bg-white border-r border-zinc-200 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         <div className="flex flex-col gap-2 p-4 mt-4">
@@ -217,7 +217,7 @@ function AdminPanel({ user, routes }) {
             .filter((item) => item.visible)
             .map((item) => {
               const Icon = item.icon
-              const isActive = isCurrentPath(item)
+              const isActive = currentPath.includes(item.path)
               return (
                 <Link
                   key={item.path}

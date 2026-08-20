@@ -30,26 +30,14 @@ export function useVistaAdmin() {
 
     useEffect(() => { cargar(); }, [cargar]);
 
-    // 1. Filtrar SOLO operadores (Por rol si existe, o buscando la palabra 'operador' en el nombre/usuario)
-    const soloOperadores = datos.progresos.filter(p =>
-        (p.rol && p.rol.toLowerCase().includes("operador")) ||
-        p.usuario?.toLowerCase().includes("operador") ||
-        p.usuario_login?.toLowerCase().includes("operador")
-    );
-
-    // 2. Aplicar filtros de la barra superior a los cursos
+    // El backend (/progreso/admin) ya excluye los roles administrativos
+    // (SistemasAdmin, Gerente y cualquier puesto con permisos de gestión);
+    // aquí solo aplicamos los filtros de la barra superior.
     const cursosFiltrados = datos.progresos.filter(p => {
         const okSec = filtroSec ? String(p.seccion_id) === filtroSec : true;
         const okEst = filtroEstado ? p.estado === filtroEstado : true;
         return okSec && okEst;
     });
-    /*
-     const cursosFiltrados = soloOperadores.filter(p => {
-         const okSec = filtroSec ? String(p.seccion_id) === filtroSec : true;
-         const okEst = filtroEstado ? p.estado === filtroEstado : true;
-         return okSec && okEst;
-     });
-    */
 
     // 3. Agrupar los cursos filtrados por Usuario para mostrar en el DataTable
     const usuariosAgrupados = Object.values(cursosFiltrados.reduce((acc, p) => {

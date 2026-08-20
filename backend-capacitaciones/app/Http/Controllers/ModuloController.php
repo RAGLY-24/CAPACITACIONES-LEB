@@ -7,6 +7,7 @@ use App\Models\Seccion;
 use App\Models\User;
 use App\Models\ProgresoModulo;
 use App\Services\ArchivoStorageService;
+use App\Services\NotificacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,7 +15,7 @@ class ModuloController extends Controller
 {
     private ArchivoStorageService $archivos;
 
-    public function __construct(ArchivoStorageService $archivos)
+    public function __construct(ArchivoStorageService $archivos, private NotificacionService $notificaciones)
     {
         $this->archivos = $archivos;
     }
@@ -52,9 +53,9 @@ class ModuloController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
-        $modulo = Modulo::with(['preguntas.opciones'])->findOrFail($id);
+        $modulo = Modulo::with(['preguntas.opciones', 'seccion:id,estado'])->findOrFail($id);
 
-        if (!$this->esAdmin() && $modulo->estado === 'Inactivo') {
+        if (!$this->esAdmin() && $modulo->noDisponible()) {
             return response()->json(['message' => 'Módulo no disponible.'], 403);
         }
 
@@ -82,7 +83,7 @@ class ModuloController extends Controller
             'estado'      => 'required|in:Activo,Inactivo',
             'prerequisite_module_id' => 'nullable|exists:modulos,id',
             'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:102400',
-            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:20480',
         ], [
             'nombre.min'       => 'El nombre debe tener al menos 5 caracteres.',
             'nombre.max'       => 'El nombre no puede exceder 150 caracteres.',
@@ -91,7 +92,7 @@ class ModuloController extends Controller
             'archivo.mimes'    => 'Solo se permiten archivos PDF, MP4 o WEBM.',
             'archivo.max'      => 'El archivo no puede superar los 100 MB.',
             'imagen.mimes'     => 'La imagen debe ser JPG, PNG o WEBP.',
-            'imagen.max'       => 'La imagen no puede superar los 5 MB.',
+            'imagen.max'       => 'La imagen no puede superar los 20 MB.',
         ]);
 
         $filePath = null;
@@ -118,6 +119,17 @@ class ModuloController extends Controller
             'created_by'  => Auth::id(),
         ]);
 
+        if ($modulo->estado === 'Activo') {
+            $this->notificaciones->notificarContenido(
+                'modulo_creado',
+                "Nuevo módulo: {$modulo->nombre}",
+                $modulo->descripcion,
+                $modulo->seccion_id,
+                $modulo->id,
+                Auth::id(),
+            );
+        }
+
         return response()->json([
             'message' => 'Módulo creado exitosamente.',
             'modulo'  => $modulo->load('creator:id,name'),
@@ -138,7 +150,7 @@ class ModuloController extends Controller
             'estado'      => 'required|in:Activo,Inactivo',
             'prerequisite_module_id' => 'nullable|exists:modulos,id',
             'archivo'     => 'nullable|file|mimes:pdf,mp4,webm|max:102400',
-            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'imagen'      => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:20480',
         ], [
             'nombre.min'      => 'El nombre debe tener al menos 5 caracteres.',
             'nombre.max'      => 'El nombre no puede exceder 150 caracteres.',
@@ -147,7 +159,7 @@ class ModuloController extends Controller
             'archivo.mimes'   => 'Solo se permiten archivos PDF, MP4 o WEBM.',
             'archivo.max'     => 'El archivo no puede superar los 100 MB.',
             'imagen.mimes'    => 'La imagen debe ser JPG, PNG o WEBP.',
-            'imagen.max'      => 'La imagen no puede superar los 5 MB.',
+            'imagen.max'      => 'La imagen no puede superar los 20 MB.',
         ]);
 
         $carpetaAnterior = $modulo->carpeta();
@@ -183,6 +195,17 @@ class ModuloController extends Controller
 
         $modulo->update($datos);
 
+        if ($modulo->estado === 'Activo') {
+            $this->notificaciones->notificarContenido(
+                'modulo_actualizado',
+                "Módulo actualizado: {$modulo->nombre}",
+                $modulo->descripcion,
+                $modulo->seccion_id,
+                $modulo->id,
+                Auth::id(),
+            );
+        }
+
         return response()->json([
             'message' => 'Módulo actualizado exitosamente.',
             'modulo'  => $modulo->load('creator:id,name'),
@@ -199,6 +222,7 @@ class ModuloController extends Controller
         $carpeta = $modulo->carpeta();
         $this->eliminarArchivoFisico($modulo->file_path, $carpeta);
         $this->eliminarImagenFisica($modulo->imagen, $carpeta);
+        $this->notificaciones->eliminarPorModulo($modulo->id);
         $modulo->delete();
 
         return response()->json(['message' => 'Módulo eliminado exitosamente.'], 200);
@@ -257,7 +281,7 @@ class ModuloController extends Controller
 
     private function guardarImagen($file, string $carpeta): string
     {
-        return $this->archivos->guardar($file, $carpeta, 'img_');
+        return $this->archivos->guardarImagen($file, $carpeta, 'img_');
     }
 
     private function eliminarImagenFisica(?string $filename, string $carpeta): void

@@ -16,6 +16,8 @@ use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\SocioController;
 use App\Http\Controllers\AvisoEmergenciaController;
 use App\Http\Controllers\EnlaceRegistroController;
+use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\VideoController;
 use App\Http\Middleware\CheckSistemasAdmin;
 
 /*
@@ -47,6 +49,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Aviso de emergencia fijo en la sección de Noticias
     Route::get('/aviso-emergencia', [AvisoEmergenciaController::class, 'show']);
     Route::put('/aviso-emergencia', [AvisoEmergenciaController::class, 'update']);
+
+    // Notificaciones de contenido (nuevas/actualizadas secciones y módulos)
+    Route::get('/notificaciones', [NotificacionController::class, 'index']);
+    Route::get('/notificaciones/no-leidas/count', [NotificacionController::class, 'noLeidasCount']);
+    Route::put('/notificaciones/{id}/leer', [NotificacionController::class, 'marcarLeida']);
+    Route::put('/notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas']);
 
     // Cursos - Gestión del módulo de Capacitaciones
     Route::get('/cursos', [CursoController::class, 'index']);
@@ -90,6 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/modulos/{id}/update', [ModuloController::class, 'update']); // POST+_method por multipart/form-data
     Route::put('/modulos/{id}/presentacion', [ModuloController::class, 'guardarPresentacion']);
     Route::delete('/modulos/{id}', [ModuloController::class, 'destroy']);
+
+    // --- VIDEOS (reels) ---
+    Route::get('/videos', [VideoController::class, 'index']);
+    Route::post('/videos', [VideoController::class, 'store']);
+    Route::put('/videos/{id}', [VideoController::class, 'update']);
+    Route::delete('/videos/{id}', [VideoController::class, 'destroy']);
 
     // --- PREGUNTAS DE EXAMEN (solo admin) ---
     Route::get('/modulos/{id}/preguntas', [PreguntaController::class, 'index']);

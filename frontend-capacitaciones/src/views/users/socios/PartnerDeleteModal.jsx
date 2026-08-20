@@ -13,7 +13,6 @@ export default function PartnerDeleteModal({
     }
 
     if (!partner) return
-    console.log(partner.nombre)
     return (
         <Modal
             open={open}

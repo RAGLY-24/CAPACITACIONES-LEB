@@ -18,5 +18,6 @@ class PermissionCatalog
         'manage_passwords',
         'view_reports',
         'manage_content',
+        'manage_videos',
     ];
 }

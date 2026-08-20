@@ -3,11 +3,13 @@ import Swal from "sweetalert2";
 import { capacitacionesApi } from "../../api/capacitaciones.api";
 
 // Progreso propio del empleado: secciones/módulos y navegación entre ellos.
-export function useVistaEmpleado() {
+// seccionInicialId/moduloInicialId permiten llegar directo a una sección o
+// abrir el visor de un módulo específico (p. ej. desde una notificación).
+export function useVistaEmpleado({ seccionInicialId = null, moduloInicialId = null } = {}) {
     const [secciones, setSecciones] = useState([]);
     const [cargando, setCargando] = useState(true);
-    const [seccionActivaId, setSeccionActivaId] = useState(null);
-    const [cursoModuloId, setCursoModuloId] = useState(null);
+    const [seccionActivaId, setSeccionActivaId] = useState(seccionInicialId);
+    const [cursoModuloId, setCursoModuloId] = useState(moduloInicialId);
 
     // silencioso=true evita el parpadeo de "Cargando..." cuando se refresca el
     // progreso mientras el visor de curso sigue abierto (p. ej. tras un examen).

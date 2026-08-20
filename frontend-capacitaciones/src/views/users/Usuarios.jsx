@@ -110,7 +110,6 @@ function Usuarios() {
 
 
   const handleSaveChanges = useCallback(async (d) => {
-    console.log(d)
 
     const { type, mode, payload } = d
 
@@ -165,7 +164,6 @@ function Usuarios() {
         }
       }
 
-
       else if (type == "partner") {
         if (mode == "create") {
           isValidAction = true
@@ -190,7 +188,6 @@ function Usuarios() {
       } else {
         Swal.close();
       }
-      setSearchParams({})
     } catch (error) {
       let title = "Error del servidor";
       let text = "Ocurrió un problema al enviar la información";
@@ -204,13 +201,26 @@ function Usuarios() {
         text = "Verifica la información ingresada.";
 
         const erroresBackend = error.response.data.errors;
+
+        if (!erroresBackend) {
+          const message =
+            error.response.data?.message || "Los datos enviados no son válidos.";
+
+          Swal.fire({
+            icon: "error",
+            title: "Datos inválidos",
+            text: message,
+          });
+
+          return;
+        }
+
         const mapeoErrores = {};
 
         Object.keys(erroresBackend).forEach((key) => {
           mapeoErrores[key] = erroresBackend[key][0];
         });
 
-        console.error(mapeoErrores)
       }
 
       Swal.close();
@@ -222,7 +232,9 @@ function Usuarios() {
         confirmButtonColor: "#802907",
       });
 
-      console.error(error);
+    }
+    finally {
+      setSearchParams({})
     }
   }, [createPartner, createPosition, createUser, deletePartner, deletePosition, deleteUser, refetchPartners, setSearchParams, updatePartner, updatePosition, updateUser]
   )
@@ -511,7 +523,7 @@ function Usuarios() {
               {row.nombre !== 'SistemasAdmin' && (
                 <IconButton
                   icon={ShieldCheck}
-                  variant="secondary"
+                  variant="primary"
                   title="Permisos predeterminados"
                   filled={false}
                   onClick={() => editarPermisosPuesto(row.id)}

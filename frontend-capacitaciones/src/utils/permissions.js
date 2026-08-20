@@ -12,6 +12,7 @@ export const PERMISSION_CATALOG = [
     { key: "manage_passwords", label: "Administrar contraseñas" },
     { key: "view_reports", label: "Ver reportes" },
     { key: "manage_content", label: "Gestionar contenido" },
+    { key: "manage_videos", label: "Gestionar videos" },
 ];
 
 export const emptyPermissions = () =>

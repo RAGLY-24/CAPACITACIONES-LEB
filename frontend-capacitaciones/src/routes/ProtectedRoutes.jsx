@@ -5,7 +5,9 @@ import { useMe } from "../hooks/auth/useMe";
 import Noticias from "../views/News/Noticias";
 import Usuarios from "../views/users/Usuarios";
 import AdminPanel from "../views/Frame/AdminPanel";
-import { BookText, Newspaper, Pencil, User } from "lucide-react";
+import { BookText, Film, ListVideo, Newspaper, Pencil, User } from "lucide-react";
+import Videos from "../views/Videos";
+import ManageVideosView from "../views/Videos/ManageVideosView";
 
 
 export function ProtectedRoutes() {
@@ -19,6 +21,7 @@ export function ProtectedRoutes() {
     const muestraUsuarios = esAdmin || permisos.create_users || permisos.delete_users || permisos.assign_permissions;
     const muestraContenido = esAdmin || permisos.edit_trainings;
     const muestraCapacitaciones = true;
+    const muestraGestionVideos = esAdmin || permisos.manage_videos;
 
     const routesConfig = [
         {
@@ -35,12 +38,13 @@ export function ProtectedRoutes() {
             element: <Capacitaciones />,
             visible: muestraCapacitaciones,
         },
+
         {
-            icon: Pencil,
-            label: "Editar Contenido",
-            path: "/contenido",
-            element: <Contenido />,
-            visible: muestraContenido,
+            icon: Film,
+            label: "Videos",
+            path: "/videos",
+            element: <Videos />,
+            visible: true,
         },
         {
             icon: User,
@@ -49,6 +53,23 @@ export function ProtectedRoutes() {
             element: <Usuarios />,
             visible: muestraUsuarios,
         },
+        {
+            icon: ListVideo,
+            label: "Gestionar videos",
+            path: "/manage_videos",
+            element: <ManageVideosView />,
+            visible: muestraGestionVideos,
+        },
+
+        {
+            icon: Pencil,
+            label: "Gestionar Capacitaciones",
+            path: "/contenido",
+            element: <Contenido />,
+            visible: muestraContenido,
+        },
+
+
     ];
 
     const routes = routesConfig.filter(i => i.visible)

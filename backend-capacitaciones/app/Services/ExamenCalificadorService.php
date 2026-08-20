@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 // lógica de comparar cada opción contra la correcta.
 //
 // Recibe explícitamente el subconjunto de preguntas del intento (no todo el
-// banco del módulo): con el examen aleatorio, cada intento solo cubre 5 de
+// banco del módulo): con el examen aleatorio, cada intento solo cubre 3 de
 // las preguntas de opción múltiple del banco, más las de tipo feedback.
 //
 // Las preguntas tipo "feedback" (opinión del operador sobre el módulo) se

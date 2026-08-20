@@ -6,13 +6,13 @@ import { VisorCurso } from "./VisorCurso";
 import Button from "../../components/Buttons/Button";
 import { ChevronLeft } from "lucide-react";
 
-export function VistaEmpleado() {
+export function VistaEmpleado({ seccionInicialId = null, moduloInicialId = null } = {}) {
     const {
         secciones, cargando, hayModulos,
         setSeccionActivaId, seccionActiva,
         cursoModuloId, setCursoModuloId,
         cargar,
-    } = useVistaEmpleado();
+    } = useVistaEmpleado({ seccionInicialId, moduloInicialId });
 
     if (cargando) return <p className="text-center text-sm text-gray-400 py-12">Cargando módulos...</p>;
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Modulo;
 use App\Models\Pregunta;
+use App\Models\Puesto;
 use App\Models\Seccion;
 use App\Models\ProgresoModulo;
 use App\Models\User;
@@ -22,6 +23,44 @@ class ProgresoController extends Controller
         return $user instanceof User && ($user->puesto?->nombre === 'SistemasAdmin' || $user->hasPermission('edit_trainings'));
     }
 
+    // Permisos de PermissionCatalog que denotan un rol administrativo/de
+    // gestión. Se excluye 'news_access' a propósito: es de acceso a
+    // noticias (opt-out, prácticamente universal), no administrativo — el
+    // rol Operador lo tiene por defecto y no debe excluirlo de los avances.
+    private const PERMISOS_ADMINISTRATIVOS = [
+        'manage_news',
+        'edit_trainings',
+        'create_users',
+        'delete_users',
+        'assign_permissions',
+        'manage_passwords',
+        'view_reports',
+        'manage_content',
+    ];
+
+    // Puestos que no deben aparecer en los reportes de avances: los
+    // administrativos fijos (SistemasAdmin=1, Gerente=2) y cualquier otro
+    // puesto al que se le haya otorgado algún permiso administrativo por
+    // defecto (ver PERMISOS_ADMINISTRATIVOS). Así, si en el futuro se le dan
+    // esos permisos a un puesto nuevo, queda excluido automáticamente sin
+    // tocar código.
+    private function puestosExcluidosDeAvances()
+    {
+        return Puesto::all()->filter(function (Puesto $puesto) {
+            if (in_array($puesto->id, [1, 2], true)) {
+                return true;
+            }
+
+            foreach (self::PERMISOS_ADMINISTRATIVOS as $permiso) {
+                if (data_get($puesto->default_permissions, $permiso) === true) {
+                    return true;
+                }
+            }
+
+            return false;
+        })->pluck('id');
+    }
+
     // POST /modulos/{id}/iniciar
     public function iniciar(int $moduloId)
     {
@@ -30,8 +69,8 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
-        $modulo = Modulo::findOrFail($moduloId);
-        if ($modulo->estado === 'Inactivo') {
+        $modulo = Modulo::with('seccion:id,estado')->findOrFail($moduloId);
+        if ($modulo->noDisponible()) {
             return response()->json(['message' => 'Módulo no disponible.'], 403);
         }
         if ($modulo->estaBloqueadoPara($user)) {
@@ -51,8 +90,10 @@ class ProgresoController extends Controller
     }
 
     // POST /modulos/{id}/contenido-visto — el usuario terminó de revisar el
-    // contenido (PDF hasta el final o video completo). Reinicia el contador
-    // de intentos del ciclo actual, dándole 2 intentos nuevos para el examen.
+    // contenido (PDF hasta el final o video completo). Si el módulo no tiene
+    // examen, no hay nada más que aprobar: se marca directamente como
+    // completado. Si tiene examen, reinicia el contador de intentos del
+    // ciclo actual, dándole 2 intentos nuevos.
     public function marcarContenidoVisto(int $moduloId)
     {
         $user = Auth::user();
@@ -60,10 +101,25 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'No autenticado.'], 401);
         }
 
+        $modulo = Modulo::withCount('preguntas')->with('seccion:id,estado')->findOrFail($moduloId);
+        if ($modulo->noDisponible()) {
+            return response()->json(['message' => 'Módulo no disponible.'], 403);
+        }
+
         $progreso = ProgresoModulo::firstOrCreate(
             ['user_id' => $user->id, 'modulo_id' => $moduloId],
             ['estado' => 'en_progreso', 'started_at' => now(), 'intentos' => 0]
         );
+
+        if ($modulo->preguntas_count === 0) {
+            if ($progreso->estado !== 'completado') {
+                $progreso->estado = 'completado';
+                $progreso->completed_at = now();
+                $progreso->save();
+            }
+
+            return response()->json(['estado' => $progreso->estado], 200);
+        }
 
         $progreso->intentos_ciclo = 0;
         $progreso->preguntas_usadas_ciclo = []; // Reinicia el ciclo de preguntas usadas
@@ -181,12 +237,18 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'Acceso denegado.'], 403);
         }
 
+        $puestosExcluidos = $this->puestosExcluidosDeAvances();
+
         $progresos = ProgresoModulo::with([
-            'user:id,name,lastname,usuario,socio_id',
+            'user:id,name,lastname,usuario,socio_id,puesto_id',
             'user.socio:id,nombre',
+            'user.puesto:id,nombre',
             'modulo' => fn($q) => $q->select('id', 'nombre', 'estado', 'seccion_id')->withCount('preguntas'),
             'modulo.seccion:id,nombre',
         ])
+        ->whereHas('user', fn($q) => $q->where(
+            fn($q2) => $q2->whereNotIn('puesto_id', $puestosExcluidos)->orWhereNull('puesto_id')
+        ))
         ->orderByDesc('updated_at')
         ->get()
         ->map(fn($p) => [
@@ -194,6 +256,7 @@ class ProgresoController extends Controller
             'user_id'       => $p->user_id,
             'usuario'       => trim($p->user?->name . ' ' . $p->user?->lastname),
             'usuario_login' => $p->user?->usuario,
+            'rol'           => $p->user?->puesto?->nombre,
             'socio'         => $p->user?->socio?->nombre,
             'modulo'        => $p->modulo?->nombre,
             'modulo_id'     => $p->modulo_id,
@@ -227,13 +290,20 @@ class ProgresoController extends Controller
             return response()->json(['message' => 'Acceso denegado.'], 403);
         }
 
-        $totalUsuarios = User::count();
+        $puestosExcluidos = $this->puestosExcluidosDeAvances();
+
+        $totalUsuarios = User::where(
+            fn($q) => $q->whereNotIn('puesto_id', $puestosExcluidos)->orWhereNull('puesto_id')
+        )->count();
         $secciones     = Seccion::with('modulos:id,seccion_id')->orderBy('orden')->get();
 
         // Una sola consulta para todos los módulos de todas las secciones, en vez de
         // una consulta por sección dentro del map() de abajo.
         $todosModuloIds = $secciones->flatMap(fn($s) => $s->modulos->pluck('id'))->all();
         $progresosPorModulo = ProgresoModulo::whereIn('modulo_id', $todosModuloIds)
+            ->whereHas('user', fn($q) => $q->where(
+                fn($q2) => $q2->whereNotIn('puesto_id', $puestosExcluidos)->orWhereNull('puesto_id')
+            ))
             ->get()
             ->groupBy('modulo_id');
 

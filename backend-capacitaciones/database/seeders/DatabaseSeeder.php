@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
                 'assign_permissions' => true,
                 'view_reports' => true,
                 'manage_content' => true,
+                'manage_videos' => true,
             ],
         ]);
         $puestoGerente = Puesto::firstOrCreate(['nombre' => 'Gerente'], [
@@ -40,6 +41,7 @@ class DatabaseSeeder extends Seeder
                 'assign_permissions' => false,
                 'view_reports' => true,
                 'manage_content' => true,
+                'manage_videos' => true,
             ],
         ]);
         // Rol base: nace con acceso solo a noticias (realizar capacitaciones
