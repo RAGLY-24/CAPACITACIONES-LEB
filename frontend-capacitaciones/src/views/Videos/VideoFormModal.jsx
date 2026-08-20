@@ -50,6 +50,17 @@ export default function VideoFormModal({
             });
             return;
         }
+        const youtubeShortRegex = /^https?:\/\/(?:www\.)?youtube\.com\/shorts\/[A-Za-z0-9_-]+(?:\?.*)?$/;
+
+        if (!youtubeShortRegex.test(formData.url.trim())) {
+            Swal.fire({
+                icon: "warning",
+                title: "Enlace Incorrecto",
+                text: "El enlace debe corresponder a un Short de YouTube.",
+                confirmButtonColor: "#802907",
+            });
+            return;
+        }
 
         Swal.fire({
             title: mode === "crear" ? "Agregando video..." : "Guardando video...",
@@ -130,7 +141,7 @@ export default function VideoFormModal({
                     name="url"
                     type="url"
                     label="URL del video"
-                    placeholder="https://..."
+                    placeholder="https://www.youtube.com/shorts/......"
                     value={formData.url}
                     onChange={handleChange}
                 />
