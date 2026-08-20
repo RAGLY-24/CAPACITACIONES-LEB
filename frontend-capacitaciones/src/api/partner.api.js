@@ -2,7 +2,6 @@ import { httpClient } from "./http.client";
 
 export const partnerApi = {
     getAll: async () => {
-        console.log("GET ALL PARTNERS");
         const { data } = await httpClient.get('/socios');
         return data
     },
