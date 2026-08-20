@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class VideoController extends Controller
 {
+    private const YOUTUBE_SHORTS_REGEX = '/^https?:\/\/(www\.|m\.)?youtube\.com\/shorts\/[A-Za-z0-9_-]+(\?.*)?$/i';
+
     private function esAdmin(): bool
     {
         $user = Auth::user();
@@ -29,12 +31,13 @@ class VideoController extends Controller
 
         $request->validate([
             'titulo' => 'required|string|min:3|max:150',
-            'url'    => 'required|url|max:500',
+            'url'    => ['required', 'url', 'max:500', 'regex:' . self::YOUTUBE_SHORTS_REGEX],
         ], [
             'titulo.min' => 'El título debe tener al menos 3 caracteres.',
             'titulo.max' => 'El título no puede exceder 150 caracteres.',
             'url.url'    => 'La URL no es válida.',
             'url.max'    => 'La URL no puede exceder 500 caracteres.',
+            'url.regex'  => 'Solo se permiten enlaces de YouTube Shorts (https://www.youtube.com/shorts/...).',
         ]);
 
         $video = Video::create([
@@ -59,12 +62,13 @@ class VideoController extends Controller
 
         $request->validate([
             'titulo' => 'required|string|min:3|max:150',
-            'url'    => 'required|url|max:500',
+            'url'    => ['required', 'url', 'max:500', 'regex:' . self::YOUTUBE_SHORTS_REGEX],
         ], [
             'titulo.min' => 'El título debe tener al menos 3 caracteres.',
             'titulo.max' => 'El título no puede exceder 150 caracteres.',
             'url.url'    => 'La URL no es válida.',
             'url.max'    => 'La URL no puede exceder 500 caracteres.',
+            'url.regex'  => 'Solo se permiten enlaces de YouTube Shorts (https://www.youtube.com/shorts/...).',
         ]);
 
         $video->update([
