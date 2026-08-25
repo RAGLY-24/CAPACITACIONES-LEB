@@ -71,10 +71,16 @@ export default function PartnerFormModal({
             setErroresForm("Ingrese un nombre para el socio.");
             return;
         }
-        if (!formData.telefono.trim()) {
-            setErroresForm("Ingrese un número de contacto para el socio.");
+        
+        const telefono = formData.telefono.trim();
+
+        if (telefono && !/^\d{10}$/.test(telefono)) {
+            setErroresForm({
+                telefono: "Ingrese un número de teléfono válido de 10 dígitos."
+            });
             return;
         }
+
         if (!formData.correo.trim()) {
             setErroresForm("Ingrese un correo para el socio.");
             return;
@@ -125,13 +131,26 @@ export default function PartnerFormModal({
 
                 <Input
                     name="telefono"
-                    label="Número"
+                    label="Número de teléfono"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]{10}"
+                    maxLength={10}
                     placeholder="Ej: 5551234567"
-                    isRequired
                     value={formData.telefono}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+
+                        handleChange({
+                            target: {
+                                name: "telefono",
+                                value,
+                            },
+                        });
+                    }}
                     error={erroresForm.telefono}
                 />
+
 
                 <Input
                     name="correo"
