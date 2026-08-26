@@ -159,6 +159,7 @@ export default function PartnerFormModal({
                     error={erroresForm.telefono}
                 />
 
+
                 <Input
                     name="correo"
                     label="Correo"
