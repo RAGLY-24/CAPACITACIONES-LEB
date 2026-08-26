@@ -591,7 +591,7 @@ function Usuarios() {
             <h3 className="text-lg font-bold text-gray-800">Directorio de Usuarios</h3>
           </div>
           {puedeCrearUsuarios && (
-            <div className="flex gap-2 w-full">
+            <div className="flex gap-2">
               <Button variant="outline" Icon={Link} onClick={generarEnlaceRegistro}>
                 Generar Enlace
               </Button>
