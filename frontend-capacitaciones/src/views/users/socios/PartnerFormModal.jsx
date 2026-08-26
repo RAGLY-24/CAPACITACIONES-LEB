@@ -46,9 +46,10 @@ export default function PartnerFormModal({
 
     useEffect(() => {
         if (mode === "edit" && partner) {
-            console.log(partner)
+            // El teléfono llega oculto desde el backend (ej. xxxxxxxx32), así que
+            // el campo inicia vacío: si no se escribe uno nuevo, no se modifica.
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setFormData({ nombre: partner.nombre || "", telefono: partner.telefono || "", correo: partner.correo || "", estado: partner.estado || "Activo" });
+            setFormData({ nombre: partner.nombre || "", telefono: "", correo: partner.correo || "", estado: partner.estado || "Activo" });
 
         } else {
             setFormData(initialState);
@@ -71,7 +72,7 @@ export default function PartnerFormModal({
             setErroresForm("Ingrese un nombre para el socio.");
             return;
         }
-        
+
         const telefono = formData.telefono.trim();
 
         if (telefono && !/^\d{10}$/.test(telefono)) {
@@ -88,10 +89,14 @@ export default function PartnerFormModal({
 
         const payload = {
             nombre: formData.nombre.trim(),
-            telefono: formData.telefono.trim(),
             correo: formData.correo.trim(),
             estado: formData.estado,
         };
+        if (telefono) {
+            payload.telefono = telefono;
+        } else if (mode === "create") {
+            payload.telefono = null;
+        }
         if (partner && partner.id) {
             payload["id"] = partner.id
         }
@@ -136,11 +141,14 @@ export default function PartnerFormModal({
                     inputMode="numeric"
                     pattern="[0-9]{10}"
                     maxLength={10}
-                    placeholder="Ej: 5551234567"
+                    placeholder={
+                        mode === "edit" && partner?.telefono
+                            ? `Actual: ${partner.telefono} (dejar vacío para no cambiar)`
+                            : "Ej: 5551234567"
+                    }
                     value={formData.telefono}
                     onChange={(e) => {
                         const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-
                         handleChange({
                             target: {
                                 name: "telefono",
