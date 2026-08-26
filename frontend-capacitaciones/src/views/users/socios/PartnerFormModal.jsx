@@ -100,7 +100,11 @@ export default function PartnerFormModal({
         if (partner && partner.id) {
             payload["id"] = partner.id
         }
-        await onSave({ mode, payload: payload, type: "partner" });
+        const errors = await onSave({ mode, payload: payload, type: "partner" });
+        if (errors){
+            setErroresForm(errors)
+        }
+        console.log(errors)
     };
 
     return (
