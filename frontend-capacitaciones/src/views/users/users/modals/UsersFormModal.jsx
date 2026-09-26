@@ -77,6 +77,7 @@ export default function UsersFormModal({
 
 
     const [formData, setFormData] = useState(initialState);
+    const [erroresForm, setErroresForm] = useState({});
 
     const [isDirty, setIsDirty] = useState(false);
 
@@ -126,6 +127,7 @@ export default function UsersFormModal({
         } else {
             setFormData(initialState);
         }
+        setErroresForm({});
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mode, user, open]);
 
@@ -213,7 +215,10 @@ export default function UsersFormModal({
 
         const formContent = { ...formData };
         if (!esAdmin && !permisosUsuario.assign_permissions) delete formContent.permissions;
-        await onSave({ mode, payload: formContent, type: "user" });
+        const errors = await onSave({ mode, payload: formContent, type: "user" });
+        if (errors) {
+            setErroresForm(errors)
+        }
     };
 
     const handlePermissionChange = (e) => {
@@ -222,7 +227,6 @@ export default function UsersFormModal({
         setIsDirty(true);
     };
 
-    const [erroresForm, setErroresForm] = useState({});
 
     const partnerOptions = partners?.map((socio) => ({
         value: socio.id,

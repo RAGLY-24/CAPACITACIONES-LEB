@@ -109,6 +109,7 @@ function Usuarios() {
   };
 
 
+
   const handleSaveChanges = useCallback(async (d) => {
 
     const { type, mode, payload } = d
@@ -185,6 +186,7 @@ function Usuarios() {
           text: mensajes[type]?.[mode] ?? "Operación realizada correctamente.",
           confirmButtonColor: "#802907",
         });
+        setSearchParams({})
       } else {
         Swal.close();
       }
@@ -192,13 +194,10 @@ function Usuarios() {
       let title = "Error del servidor";
       let text = "Ocurrió un problema al enviar la información";
       let icon = "error";
-
       if (error.response?.status === 403) {
         title = "Acceso denegado";
         text = "No tienes permisos para realizar esta acción.";
       } else if (error.response?.status === 422) {
-        title = "Datos inválidos";
-        text = "Verifica la información ingresada.";
 
         const erroresBackend = error.response.data.errors;
 
@@ -210,8 +209,8 @@ function Usuarios() {
             icon: "error",
             title: "Datos inválidos",
             text: message,
-          });
-
+          }); 
+          Swal.close();
           return;
         }
 
@@ -220,11 +219,10 @@ function Usuarios() {
         Object.keys(erroresBackend).forEach((key) => {
           mapeoErrores[key] = erroresBackend[key][0];
         });
-
+        Swal.close();
+        return mapeoErrores;
       }
-
       Swal.close();
-
       Swal.fire({
         icon,
         title,
@@ -233,9 +231,7 @@ function Usuarios() {
       });
 
     }
-    finally {
-      setSearchParams({})
-    }
+  
   }, [createPartner, createPosition, createUser, deletePartner, deletePosition, deleteUser, refetchPartners, setSearchParams, updatePartner, updatePosition, updateUser]
   )
 
@@ -597,10 +593,10 @@ function Usuarios() {
           {puedeCrearUsuarios && (
             <div className="flex gap-2">
               <Button variant="outline" Icon={Link} onClick={generarEnlaceRegistro}>
-                Crear Nuevo Usuario
+                Generar Enlace
               </Button>
               <Button Icon={PlusIcon} onClick={abrirModalCrear}>
-                Crear Nuevo Usuario
+                Nuevo Usuario
               </Button>
             </div>
           )}

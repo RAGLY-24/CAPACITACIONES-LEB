@@ -6,6 +6,7 @@ use App\Models\Socio;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class SocioController extends Controller
 {
@@ -13,6 +14,18 @@ class SocioController extends Controller
     {
         $user = Auth::user();
         return $user instanceof User && ($user->puesto?->nombre === 'SistemasAdmin' || $user->hasPermission('create_users'));
+    }
+
+    // Oculta el teléfono dejando visibles solo los últimos 2 dígitos,
+    // al estilo del login de Google (ej. 4921231212 -> xxxxxxxx12).
+    private function ocultarTelefono(?string $telefono): ?string
+    {
+        if (!$telefono) {
+            return $telefono;
+        }
+
+        $visible = substr($telefono, -2);
+        return str_repeat('x', max(strlen($telefono) - 2, 0)) . $visible;
     }
 
     // Lista mínima (id + nombre) para el select de la pantalla pública de
@@ -37,6 +50,10 @@ class SocioController extends Controller
             ->orderBy('nombre')
             ->get();
 
+        $socios->each(function ($socio) {
+            $socio->telefono = $this->ocultarTelefono($socio->telefono);
+        });
+
         return response()->json($socios, 200);
     }
 
@@ -47,12 +64,16 @@ class SocioController extends Controller
         }
 
         $request->validate([
-            'nombre' => 'required|string|min:3|max:150',
-            'telefono' => 'required|string|max:30',
-            'correo' => 'required|email|max:150',
+            'nombre' => 'required|string|min:3|max:150|unique:socios,nombre',
+            'telefono' => 'nullable|regex:/^\d{10}$/',
+            'correo' => 'required|email|max:150|unique:socios,correo',
             'empresa' => 'nullable|string|max:150',
             'estado' => 'required|in:Activo,Inactivo',
             'descripcion' => 'nullable|string|max:1000',
+        ], [
+            'nombre.unique' => 'Ya existe un socio registrado con ese nombre.',
+            'correo.unique' => 'Ya existe un socio registrado con ese correo.',
+            'telefono.regex' => 'Ingrese un número de teléfono válido de 10 dígitos.',
         ]);
 
         $socio = Socio::create([
@@ -76,15 +97,24 @@ class SocioController extends Controller
 
         $socio = Socio::findOrFail($id);
         $request->validate([
-            'nombre' => 'required|string|min:3|max:150',
-            'telefono' => 'required|string|max:30',
-            'correo' => 'required|email|max:150',
+            'nombre' => ['required', 'string', 'min:3', 'max:150', Rule::unique('socios', 'nombre')->ignore($socio->id)],
+            'telefono' => 'nullable|regex:/^\d{10}$/',
+            'correo' => ['required', 'email', 'max:150', Rule::unique('socios', 'correo')->ignore($socio->id)],
             'empresa' => 'nullable|string|max:150',
             'estado' => 'required|in:Activo,Inactivo',
             'descripcion' => 'nullable|string|max:1000',
+        ], [
+            'nombre.unique' => 'Ya existe un socio registrado con ese nombre.',
+            'correo.unique' => 'Ya existe un socio registrado con ese correo.',
+            'telefono.regex' => 'Ingrese un número de teléfono válido de 10 dígitos.',
         ]);
 
-        $socio->update($request->only(['nombre', 'telefono', 'correo', 'empresa', 'estado', 'descripcion']));
+        // El teléfono se devuelve oculto en los GETs, así que si el campo no
+        // se envía (el usuario no lo tocó en el modal), se conserva el actual.
+        $socio->update($request->only(['nombre', 'correo', 'empresa', 'estado', 'descripcion']));
+        if ($request->has('telefono')) {
+            $socio->update(['telefono' => $request->telefono]);
+        }
 
         return response()->json(['message' => 'Socio actualizado.', 'socio' => $socio], 200);
     }
